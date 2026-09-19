@@ -1,0 +1,26 @@
+{
+  "id": 7,
+  "title": "3 eggs, serves 4 → 1",
+  "yield": {
+    "quantity": 4,
+    "unit": "servings"
+  },
+  "targetYield": 1,
+  "ingredients": [
+    {
+      "rawText": "3 eggs",
+      "quantity": 3,
+      "unit": "each",
+      "name": "eggs",
+      "optional": false,
+      "scalable": true,
+      "confidence": "high"
+    }
+  ],
+  "expected": {
+    "factor": 0.25,
+    "lines": [
+      "Eggs — ¾"
+    ]
+  }
+}

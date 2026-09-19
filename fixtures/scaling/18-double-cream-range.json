@@ -1,0 +1,27 @@
+{
+  "id": 18,
+  "title": "2–3 tbsp double cream, serves 4 → 1",
+  "yield": {
+    "quantity": 4,
+    "unit": "servings"
+  },
+  "targetYield": 1,
+  "ingredients": [
+    {
+      "rawText": "2–3 tbsp double cream",
+      "quantity": 2,
+      "quantityMax": 3,
+      "unit": "tbsp",
+      "name": "double cream",
+      "optional": false,
+      "scalable": true,
+      "confidence": "high"
+    }
+  ],
+  "expected": {
+    "factor": 0.25,
+    "lines": [
+      "Double cream — ½–¾ tbsp"
+    ]
+  }
+}

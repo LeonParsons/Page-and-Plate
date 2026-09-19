@@ -1,0 +1,30 @@
+{
+  "id": 3,
+  "title": "1 x 400g tin chopped tomatoes, serves 4 → 6",
+  "yield": {
+    "quantity": 4,
+    "unit": "servings"
+  },
+  "targetYield": 6,
+  "ingredients": [
+    {
+      "rawText": "1 x 400g tin chopped tomatoes",
+      "quantity": 1,
+      "unit": "tin",
+      "packageSize": {
+        "quantity": 400,
+        "unit": "g"
+      },
+      "name": "chopped tomatoes",
+      "optional": false,
+      "scalable": true,
+      "confidence": "high"
+    }
+  ],
+  "expected": {
+    "factor": 1.5,
+    "lines": [
+      "Chopped tomatoes — 1½ tins (400 g)"
+    ]
+  }
+}

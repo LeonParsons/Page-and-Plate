@@ -1,0 +1,15 @@
+{
+  "id": 13,
+  "title": "Makes 12 muffins, target 18 → factor 1.5",
+  "yield": {
+    "quantity": 12,
+    "unit": "muffins",
+    "rawText": "Makes 12 muffins"
+  },
+  "targetYield": 18,
+  "ingredients": [],
+  "expected": {
+    "factor": 1.5,
+    "lines": []
+  }
+}

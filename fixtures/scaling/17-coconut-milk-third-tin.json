@@ -1,0 +1,26 @@
+{
+  "id": 17,
+  "title": "1 tin coconut milk, serves 6 → 2",
+  "yield": {
+    "quantity": 6,
+    "unit": "servings"
+  },
+  "targetYield": 2,
+  "ingredients": [
+    {
+      "rawText": "1 tin coconut milk",
+      "quantity": 1,
+      "unit": "tin",
+      "name": "coconut milk",
+      "optional": false,
+      "scalable": true,
+      "confidence": "high"
+    }
+  ],
+  "expected": {
+    "factor": 0.3333333333333333,
+    "lines": [
+      "Coconut milk — ⅓ tin"
+    ]
+  }
+}

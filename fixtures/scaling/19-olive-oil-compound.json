@@ -1,0 +1,36 @@
+{
+  "id": 19,
+  "title": "1 tbsp plus 1 tsp olive oil (two entries), serves 2 → 4",
+  "yield": {
+    "quantity": 2,
+    "unit": "servings"
+  },
+  "targetYield": 4,
+  "ingredients": [
+    {
+      "rawText": "1 tbsp plus 1 tsp olive oil",
+      "quantity": 1,
+      "unit": "tbsp",
+      "name": "olive oil",
+      "optional": false,
+      "scalable": true,
+      "confidence": "high"
+    },
+    {
+      "rawText": "1 tbsp plus 1 tsp olive oil",
+      "quantity": 1,
+      "unit": "tsp",
+      "name": "olive oil",
+      "optional": false,
+      "scalable": true,
+      "confidence": "high"
+    }
+  ],
+  "expected": {
+    "factor": 2,
+    "lines": [
+      "Olive oil — 2 tbsp",
+      "Olive oil — 2 tsp"
+    ]
+  }
+}

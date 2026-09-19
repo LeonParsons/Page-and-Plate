@@ -1,0 +1,26 @@
+{
+  "id": 15,
+  "title": "400 g butter, serves 3 → 1 (133.3 g)",
+  "yield": {
+    "quantity": 3,
+    "unit": "servings"
+  },
+  "targetYield": 1,
+  "ingredients": [
+    {
+      "rawText": "400 g butter",
+      "quantity": 400,
+      "unit": "g",
+      "name": "butter",
+      "optional": false,
+      "scalable": true,
+      "confidence": "high"
+    }
+  ],
+  "expected": {
+    "factor": 0.3333333333333333,
+    "lines": [
+      "Butter — 130 g"
+    ]
+  }
+}

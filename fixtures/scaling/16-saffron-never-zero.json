@@ -1,0 +1,26 @@
+{
+  "id": 16,
+  "title": "1 g saffron, serves 8 → 1 (0.125 g, never zero)",
+  "yield": {
+    "quantity": 8,
+    "unit": "servings"
+  },
+  "targetYield": 1,
+  "ingredients": [
+    {
+      "rawText": "1 g saffron",
+      "quantity": 1,
+      "unit": "g",
+      "name": "saffron",
+      "optional": false,
+      "scalable": true,
+      "confidence": "high"
+    }
+  ],
+  "expected": {
+    "factor": 0.125,
+    "lines": [
+      "Saffron — 0.5 g"
+    ]
+  }
+}

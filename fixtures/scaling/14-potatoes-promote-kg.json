@@ -1,0 +1,26 @@
+{
+  "id": 14,
+  "title": "750 g potatoes, serves 2 → 4",
+  "yield": {
+    "quantity": 2,
+    "unit": "servings"
+  },
+  "targetYield": 4,
+  "ingredients": [
+    {
+      "rawText": "750 g potatoes",
+      "quantity": 750,
+      "unit": "g",
+      "name": "potatoes",
+      "optional": false,
+      "scalable": true,
+      "confidence": "high"
+    }
+  ],
+  "expected": {
+    "factor": 2,
+    "lines": [
+      "Potatoes — 1.5 kg"
+    ]
+  }
+}

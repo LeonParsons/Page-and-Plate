@@ -1,0 +1,16 @@
+{
+  "id": 12,
+  "title": "Serves 4–6, target 2 → factor 0.5",
+  "yield": {
+    "quantity": 4,
+    "quantityMax": 6,
+    "unit": "servings",
+    "rawText": "Serves 4–6"
+  },
+  "targetYield": 2,
+  "ingredients": [],
+  "expected": {
+    "factor": 0.5,
+    "lines": []
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "id": 9,
+  "title": "Salt and freshly ground black pepper → two unquantified staples",
+  "yield": {
+    "quantity": 4,
+    "unit": "servings"
+  },
+  "targetYield": 4,
+  "ingredients": [
+    {
+      "rawText": "Salt and freshly ground black pepper",
+      "name": "salt",
+      "optional": false,
+      "scalable": true,
+      "confidence": "high"
+    },
+    {
+      "rawText": "Salt and freshly ground black pepper",
+      "name": "black pepper",
+      "optional": false,
+      "scalable": true,
+      "confidence": "high"
+    }
+  ],
+  "expected": {
+    "factor": 1,
+    "lines": [
+      "Salt",
+      "Black pepper"
+    ],
+    "staples": [
+      true,
+      true
+    ]
+  }
+}

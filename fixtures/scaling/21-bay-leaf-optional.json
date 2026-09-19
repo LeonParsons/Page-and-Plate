@@ -1,0 +1,26 @@
+{
+  "id": 21,
+  "title": "1 bay leaf (optional), serves 4 → 4",
+  "yield": {
+    "quantity": 4,
+    "unit": "servings"
+  },
+  "targetYield": 4,
+  "ingredients": [
+    {
+      "rawText": "1 bay leaf (optional)",
+      "quantity": 1,
+      "unit": "each",
+      "name": "bay leaf",
+      "optional": true,
+      "scalable": true,
+      "confidence": "high"
+    }
+  ],
+  "expected": {
+    "factor": 1,
+    "lines": [
+      "Bay leaf — 1 (optional)"
+    ]
+  }
+}

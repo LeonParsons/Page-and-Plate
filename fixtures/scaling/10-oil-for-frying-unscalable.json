@@ -1,0 +1,27 @@
+{
+  "id": 10,
+  "title": "2 tbsp oil, for frying, serves 4 → 12 (unscalable)",
+  "yield": {
+    "quantity": 4,
+    "unit": "servings"
+  },
+  "targetYield": 12,
+  "ingredients": [
+    {
+      "rawText": "2 tbsp oil, for frying",
+      "quantity": 2,
+      "unit": "tbsp",
+      "name": "oil",
+      "preparation": "for frying",
+      "optional": false,
+      "scalable": false,
+      "confidence": "high"
+    }
+  ],
+  "expected": {
+    "factor": 3,
+    "lines": [
+      "Oil — 2 tbsp"
+    ]
+  }
+}
