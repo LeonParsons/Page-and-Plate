@@ -1,0 +1,95 @@
+{
+  "source": "fixtures/expected/beef-rendang.json",
+  "targetYield": 1,
+  "notes": "BEEF RENDANG · for 1",
+  "lines": [
+    {
+      "title": "Neutral cooking oil — ¼ tbsp",
+      "isStaple": false
+    },
+    {
+      "title": "Tamarind paste — ½ tbsp",
+      "isStaple": false
+    },
+    {
+      "title": "Cloves — ½",
+      "isStaple": false
+    },
+    {
+      "title": "Green cardamom pods — ¾",
+      "isStaple": false
+    },
+    {
+      "title": "Cinnamon — ¼ stick",
+      "isStaple": false
+    },
+    {
+      "title": "Sugar — ¼ tsp",
+      "isStaple": false
+    },
+    {
+      "title": "Beef shin — 200 g",
+      "isStaple": false
+    },
+    {
+      "title": "Full-fat coconut milk — 100 ml",
+      "isStaple": false
+    },
+    {
+      "title": "Water — 25 ml",
+      "isStaple": true
+    },
+    {
+      "title": "Lemongrass stalk — ¼",
+      "isStaple": false
+    },
+    {
+      "title": "Lime leaves — 1¼",
+      "isStaple": false
+    },
+    {
+      "title": "Desiccated coconut — 1⅛ tbsp",
+      "isStaple": false
+    },
+    {
+      "title": "Dried red chilli flakes",
+      "isStaple": false
+    },
+    {
+      "title": "Salt",
+      "isStaple": true
+    },
+    {
+      "title": "Large onion — ¼",
+      "isStaple": false
+    },
+    {
+      "title": "Garlic — 1 clove",
+      "isStaple": false
+    },
+    {
+      "title": "Lemongrass stalk — ¼",
+      "isStaple": false
+    },
+    {
+      "title": "Ginger — ¼",
+      "isStaple": false
+    },
+    {
+      "title": "Galangal paste — ¼ tsp",
+      "isStaple": false
+    },
+    {
+      "title": "Small dried red chillies — ½–¾",
+      "isStaple": false
+    },
+    {
+      "title": "Fresh red chilli — ¼",
+      "isStaple": false
+    },
+    {
+      "title": "Salt — ¼ pinch",
+      "isStaple": true
+    }
+  ]
+}
