@@ -2,7 +2,7 @@
   "name": "recipe-basket-api",
   "private": true,
   "type": "module",
-  "description": "Cloudflare Worker: POST /extract turns cookbook page photos into structured recipes (SPEC §6).",
+  "description": "Cloudflare Worker: POST /extract turns cookbook page photos into structured recipes (SPEC \u00a76).",
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
@@ -10,7 +10,8 @@
     "typecheck": "tsc -p tsconfig.json && tsc -p scripts/tsconfig.json && tsc -p test/tsconfig.json",
     "schema": "tsx scripts/export-schema.ts",
     "eval": "tsx scripts/eval.ts",
-    "eval:draft": "tsx scripts/eval.ts --draft"
+    "eval:draft": "tsx scripts/eval.ts --draft",
+    "smoke": "tsx scripts/smoke.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.127.0",
