@@ -9,6 +9,7 @@ import {
   RecipeYieldSchema,
   UNITS,
   buildExtractionJSONSchema,
+  buildModelOutputJSONSchema,
 } from "../src/schema.ts";
 
 // Every hand-checked extraction, keyed by file name. Vite resolves the glob at build time, so this works inside workerd.
@@ -144,5 +145,33 @@ describe("ExtractRequestSchema", () => {
   it("rejects an image over 5 MB decoded", () => {
     const tooBig = "A".repeat(Math.ceil((5 * 1024 * 1024 * 4) / 3 / 4) * 4 + 4);
     expect(ExtractRequestSchema.safeParse({ images: [{ ...image, data: tooBig }] }).success).toBe(false);
+  });
+});
+
+describe("buildModelOutputJSONSchema (what the model is constrained by)", () => {
+  const schema = buildModelOutputJSONSchema();
+
+  function walk(node: unknown, visit: (n: Record<string, unknown>) => void) {
+    if (Array.isArray(node)) return node.forEach((n) => walk(n, visit));
+    if (node && typeof node === "object") {
+      visit(node as Record<string, unknown>);
+      Object.values(node).forEach((v) => walk(v, visit));
+    }
+  }
+
+  it("keeps enums for status, unit and confidence", () => {
+    const props = (schema as any).properties;
+    expect(props.status.enum).toEqual(["ok", "no_recipe_found", "unreadable"]);
+    const ingredient = props.recipe.anyOf[0].properties.ingredients.items;
+    expect(ingredient.properties.unit.anyOf[0].enum).toEqual([...UNITS]);
+    expect(ingredient.properties.confidence.enum).toEqual(["high", "low"]);
+  });
+
+  it("contains no keywords the grammar rejects, and every object forbids extra keys", () => {
+    const banned = ["minimum", "maximum", "exclusiveMinimum", "exclusiveMaximum", "minLength", "maxLength", "pattern", "minItems", "maxItems", "$schema"];
+    walk(schema, (n) => {
+      for (const key of banned) expect(n, key).not.toHaveProperty(key);
+      if (n["type"] === "object") expect(n["additionalProperties"]).toBe(false);
+    });
   });
 });

@@ -143,6 +143,29 @@ export type ExtractRequest = z.infer<typeof ExtractRequestSchema>;
 
 export const EXTRACTION_SCHEMA_ID = "https://recipe-basket.app/schema/extraction.schema.json";
 
+/** Keywords the structured-outputs grammar does not accept; Zod still enforces them client-side. */
+const UNSUPPORTED_KEYWORDS = ["minimum", "maximum", "exclusiveMinimum", "exclusiveMaximum", "multipleOf", "minLength", "maxLength", "pattern", "minItems", "maxItems", "$schema"];
+
+function toStructuredOutputSchema(node: unknown): unknown {
+  if (Array.isArray(node)) return node.map(toStructuredOutputSchema);
+  if (node === null || typeof node !== "object") return node;
+  const out: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(node as Record<string, unknown>)) {
+    if (UNSUPPORTED_KEYWORDS.includes(key)) continue;
+    out[key] = key === "enum" || key === "required" ? value : toStructuredOutputSchema(value);
+  }
+  if (out["type"] === "object") out["additionalProperties"] = false;
+  return out;
+}
+
+/**
+ * The JSON Schema sent to the API as `output_config.format.schema`. Built here rather than with the SDK's
+ * `zodOutputFormat`, whose transform drops `enum` into the description — we want the unit list grammar-enforced.
+ */
+export function buildModelOutputJSONSchema(): Record<string, unknown> {
+  return toStructuredOutputSchema(z.toJSONSchema(ModelOutputSchema, { target: "draft-2020-12" })) as Record<string, unknown>;
+}
+
 /** JSON Schema (draft 2020-12) for the 200 body — what `npm run schema` writes to schema/extraction.schema.json. */
 export function buildExtractionJSONSchema(): Record<string, unknown> {
   const generated = z.toJSONSchema(ExtractionResponseSchema, { target: "draft-2020-12" });
