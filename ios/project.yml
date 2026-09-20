@@ -8,6 +8,8 @@ options:
   xcodeVersion: "26.3"
   createIntermediateGroups: true
   defaultConfig: Debug
+  # Local secrets for the app (Worker URL, app key). Never fails a fresh clone.
+  preGenCommand: '[ -f Config/Secrets.xcconfig ] || cp Config/Secrets.example.xcconfig Config/Secrets.xcconfig'
 
 settings:
   base:
@@ -37,15 +39,35 @@ targets:
       - RecipeBasket
     dependencies:
       - package: RecipeCore
+    configFiles:
+      Debug: Config/Secrets.xcconfig
+      Release: Config/Secrets.xcconfig
+    # A real Info.plist (generated here, git-ignored) because RBAPIBaseURL / RBAppKey are custom keys.
+    info:
+      path: RecipeBasket/Info.plist
+      properties:
+        CFBundleDisplayName: Recipe Basket
+        RBAPIBaseURL: $(RB_API_BASE_URL)
+        RBAppKey: $(RB_APP_KEY)
+        NSCameraUsageDescription: Recipe Basket uses the camera to scan cookbook pages.
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true      # plain-http localhost for `wrangler dev`
+        UILaunchScreen: {}
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: true
+        UIApplicationSupportsIndirectInputEvents: true
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        ITSAppUsesNonExemptEncryption: false
     settings:
       base:
         SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
-        INFOPLIST_KEY_CFBundleDisplayName: Recipe Basket
-        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
-        INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
-        INFOPLIST_KEY_UILaunchScreen_Generation: YES
-        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: UIInterfaceOrientationPortrait
-        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
+        GENERATE_INFOPLIST_FILE: NO
 
   RecipeBasketTests:
     type: bundle.unit-test

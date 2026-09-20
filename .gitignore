@@ -20,3 +20,7 @@ api/.dev.vars
 # api (Phase 1)
 api/eval/results/
 api/worker-configuration.d.ts
+
+# ios (Phase 2): generated plist and local secrets
+ios/RecipeBasket/Info.plist
+ios/Config/Secrets.xcconfig
