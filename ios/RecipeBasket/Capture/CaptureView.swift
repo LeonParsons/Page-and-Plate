@@ -18,7 +18,6 @@ struct CaptureView: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .listRowBackground(Color.clear)
-                    .listRowInsets(EdgeInsets())
             }
 
             if !flow.pages.isEmpty {
