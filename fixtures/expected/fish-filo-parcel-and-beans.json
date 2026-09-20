@@ -1,0 +1,153 @@
+{
+  "recipe": {
+    "title": "Fish filo parcel & beans",
+    "yield": {
+      "quantity": 4,
+      "quantityMax": null,
+      "unit": "servings",
+      "rawText": "SERVES 4"
+    },
+    "ingredients": [
+      {
+        "rawText": "320g baby spinach",
+        "section": null,
+        "quantity": 320,
+        "quantityMax": null,
+        "unit": "g",
+        "packageSize": null,
+        "name": "baby spinach",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "1 bunch of dill (20g)",
+        "section": null,
+        "quantity": 1,
+        "quantityMax": null,
+        "unit": "bunch",
+        "packageSize": {
+          "quantity": 20,
+          "unit": "g"
+        },
+        "name": "dill",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "4 sheets of filo pastry",
+        "section": null,
+        "quantity": 4,
+        "quantityMax": null,
+        "unit": "sheet",
+        "packageSize": null,
+        "name": "filo pastry",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "4 x 130g trout or salmon fillets, skin off, pin-boned",
+        "section": null,
+        "quantity": 4,
+        "quantityMax": null,
+        "unit": "each",
+        "packageSize": {
+          "quantity": 130,
+          "unit": "g"
+        },
+        "name": "trout or salmon fillets",
+        "preparation": "skin off, pin-boned",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "2 cloves of garlic",
+        "section": null,
+        "quantity": 2,
+        "quantityMax": null,
+        "unit": "clove",
+        "packageSize": null,
+        "name": "garlic",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "500g ripe cherry tomatoes",
+        "section": null,
+        "quantity": 500,
+        "quantityMax": null,
+        "unit": "g",
+        "packageSize": null,
+        "name": "ripe cherry tomatoes",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "2 x 400g tins of cannellini beans",
+        "section": null,
+        "quantity": 2,
+        "quantityMax": null,
+        "unit": "tin",
+        "packageSize": {
+          "quantity": 400,
+          "unit": "g"
+        },
+        "name": "cannellini beans",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "2 teaspoons Dijon mustard",
+        "section": null,
+        "quantity": 2,
+        "quantityMax": null,
+        "unit": "tsp",
+        "packageSize": null,
+        "name": "Dijon mustard",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "4 heaped tablespoons natural yoghurt",
+        "section": null,
+        "quantity": 4,
+        "quantityMax": null,
+        "unit": "tbsp",
+        "packageSize": null,
+        "name": "natural yoghurt",
+        "preparation": "heaped",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "1 lemon",
+        "section": null,
+        "quantity": 1,
+        "quantityMax": null,
+        "unit": "each",
+        "packageSize": null,
+        "name": "lemon",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      }
+    ]
+  },
+  "warnings": []
+}

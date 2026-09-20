@@ -1,0 +1,108 @@
+{
+  "recipe": {
+    "title": "Smashed flatbread burger",
+    "yield": {
+      "quantity": 1,
+      "quantityMax": null,
+      "unit": "servings",
+      "rawText": "SERVES 1"
+    },
+    "ingredients": [
+      {
+        "rawText": "1 sprig of basil",
+        "section": null,
+        "quantity": 1,
+        "quantityMax": null,
+        "unit": "sprig",
+        "packageSize": null,
+        "name": "basil",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "100g pork or beef mince",
+        "section": null,
+        "quantity": 100,
+        "quantityMax": null,
+        "unit": "g",
+        "packageSize": null,
+        "name": "pork or beef mince",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "80g tinned cannellini beans",
+        "section": null,
+        "quantity": 80,
+        "quantityMax": null,
+        "unit": "g",
+        "packageSize": null,
+        "name": "tinned cannellini beans",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "5g Parmesan cheese",
+        "section": null,
+        "quantity": 5,
+        "quantityMax": null,
+        "unit": "g",
+        "packageSize": null,
+        "name": "Parmesan cheese",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "1 small flatbread (80g)",
+        "section": null,
+        "quantity": 1,
+        "quantityMax": null,
+        "unit": "each",
+        "packageSize": {
+          "quantity": 80,
+          "unit": "g"
+        },
+        "name": "small flatbread",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "80g ripe mixed-colour cherry tomatoes",
+        "section": null,
+        "quantity": 80,
+        "quantityMax": null,
+        "unit": "g",
+        "packageSize": null,
+        "name": "ripe mixed-colour cherry tomatoes",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "1 tablespoon pesto",
+        "section": null,
+        "quantity": 1,
+        "quantityMax": null,
+        "unit": "tbsp",
+        "packageSize": null,
+        "name": "pesto",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      }
+    ]
+  },
+  "warnings": []
+}

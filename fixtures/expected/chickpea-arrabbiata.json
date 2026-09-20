@@ -1,0 +1,108 @@
+{
+  "recipe": {
+    "title": "Chickpea arrabbiata",
+    "yield": {
+      "quantity": 1,
+      "quantityMax": null,
+      "unit": "servings",
+      "rawText": "SERVES 1"
+    },
+    "ingredients": [
+      {
+        "rawText": "1 clove of garlic",
+        "section": null,
+        "quantity": 1,
+        "quantityMax": null,
+        "unit": "clove",
+        "packageSize": null,
+        "name": "garlic",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "1 fresh red chilli",
+        "section": null,
+        "quantity": 1,
+        "quantityMax": null,
+        "unit": "each",
+        "packageSize": null,
+        "name": "fresh red chilli",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "200g passata",
+        "section": null,
+        "quantity": 200,
+        "quantityMax": null,
+        "unit": "g",
+        "packageSize": null,
+        "name": "passata",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "½ x 400g tin of chickpeas",
+        "section": null,
+        "quantity": 0.5,
+        "quantityMax": null,
+        "unit": "tin",
+        "packageSize": {
+          "quantity": 400,
+          "unit": "g"
+        },
+        "name": "chickpeas",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "125g fresh lasagne sheets",
+        "section": null,
+        "quantity": 125,
+        "quantityMax": null,
+        "unit": "g",
+        "packageSize": null,
+        "name": "fresh lasagne sheets",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "30g rocket",
+        "section": null,
+        "quantity": 30,
+        "quantityMax": null,
+        "unit": "g",
+        "packageSize": null,
+        "name": "rocket",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "20g Parmesan cheese",
+        "section": null,
+        "quantity": 20,
+        "quantityMax": null,
+        "unit": "g",
+        "packageSize": null,
+        "name": "Parmesan cheese",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      }
+    ]
+  },
+  "warnings": []
+}

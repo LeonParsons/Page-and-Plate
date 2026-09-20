@@ -1,0 +1,124 @@
+{
+  "recipe": {
+    "title": "CAULI CHICKEN POT PIE",
+    "yield": {
+      "quantity": 4,
+      "quantityMax": null,
+      "unit": "servings",
+      "rawText": "SERVES 4"
+    },
+    "ingredients": [
+      {
+        "rawText": "1 head of cauliflower (800g)",
+        "section": null,
+        "quantity": 1,
+        "quantityMax": null,
+        "unit": "head",
+        "packageSize": {
+          "quantity": 800,
+          "unit": "g"
+        },
+        "name": "cauliflower",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "1 red onion",
+        "section": null,
+        "quantity": 1,
+        "quantityMax": null,
+        "unit": "each",
+        "packageSize": null,
+        "name": "red onion",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "4 skinless, boneless chicken thighs",
+        "section": null,
+        "quantity": 4,
+        "quantityMax": null,
+        "unit": "each",
+        "packageSize": null,
+        "name": "skinless, boneless chicken thighs",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "4 rashers of smoked pancetta",
+        "section": null,
+        "quantity": 4,
+        "quantityMax": null,
+        "unit": "each",
+        "packageSize": null,
+        "name": "smoked pancetta rashers",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "160g ripe cherry tomatoes",
+        "section": null,
+        "quantity": 160,
+        "quantityMax": null,
+        "unit": "g",
+        "packageSize": null,
+        "name": "ripe cherry tomatoes",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "1 heaped teaspoon wholegrain mustard",
+        "section": null,
+        "quantity": 1,
+        "quantityMax": null,
+        "unit": "tsp",
+        "packageSize": null,
+        "name": "wholegrain mustard",
+        "preparation": "heaped",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "2 heaped teaspoons runny honey",
+        "section": null,
+        "quantity": 2,
+        "quantityMax": null,
+        "unit": "tsp",
+        "packageSize": null,
+        "name": "runny honey",
+        "preparation": "heaped",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "1 x 320g sheet of all-butter puff pastry (cold)",
+        "section": null,
+        "quantity": 1,
+        "quantityMax": null,
+        "unit": "sheet",
+        "packageSize": {
+          "quantity": 320,
+          "unit": "g"
+        },
+        "name": "all-butter puff pastry",
+        "preparation": "cold",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      }
+    ]
+  },
+  "warnings": []
+}

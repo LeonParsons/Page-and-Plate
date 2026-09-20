@@ -1,0 +1,143 @@
+{
+  "recipe": {
+    "title": "Golden chicken, peppers & rice",
+    "yield": {
+      "quantity": 2,
+      "quantityMax": null,
+      "unit": "servings",
+      "rawText": "SERVES 2"
+    },
+    "ingredients": [
+      {
+        "rawText": "160g kale",
+        "section": null,
+        "quantity": 160,
+        "quantityMax": null,
+        "unit": "g",
+        "packageSize": null,
+        "name": "kale",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "½ a head of broccoli (160g)",
+        "section": null,
+        "quantity": 0.5,
+        "quantityMax": null,
+        "unit": "head",
+        "packageSize": {
+          "quantity": 160,
+          "unit": "g"
+        },
+        "name": "broccoli",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "1 red pepper (160g)",
+        "section": null,
+        "quantity": 1,
+        "quantityMax": null,
+        "unit": "each",
+        "packageSize": {
+          "quantity": 160,
+          "unit": "g"
+        },
+        "name": "red pepper",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "2 x 150g skinless chicken breasts",
+        "section": null,
+        "quantity": 2,
+        "quantityMax": null,
+        "unit": "each",
+        "packageSize": {
+          "quantity": 150,
+          "unit": "g"
+        },
+        "name": "skinless chicken breasts",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "1 x 250g packet of cooked wholegrain rice",
+        "section": null,
+        "quantity": 1,
+        "quantityMax": null,
+        "unit": "packet",
+        "packageSize": {
+          "quantity": 250,
+          "unit": "g"
+        },
+        "name": "cooked wholegrain rice",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "1 tablespoon harissa paste, plus extra to serve",
+        "section": null,
+        "quantity": 1,
+        "quantityMax": null,
+        "unit": "tbsp",
+        "packageSize": null,
+        "name": "harissa paste",
+        "preparation": "plus extra to serve",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "1 lemon",
+        "section": null,
+        "quantity": 1,
+        "quantityMax": null,
+        "unit": "each",
+        "packageSize": null,
+        "name": "lemon",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "30g feta cheese",
+        "section": null,
+        "quantity": 30,
+        "quantityMax": null,
+        "unit": "g",
+        "packageSize": null,
+        "name": "feta cheese",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "2 heaped tablespoons houmous",
+        "section": null,
+        "quantity": 2,
+        "quantityMax": null,
+        "unit": "tbsp",
+        "packageSize": null,
+        "name": "houmous",
+        "preparation": "heaped",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      }
+    ]
+  },
+  "warnings": []
+}
