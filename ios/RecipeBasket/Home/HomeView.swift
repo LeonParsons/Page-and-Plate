@@ -41,7 +41,7 @@ struct HomeView: View {
             }
         } detail: {
             if let id = selection, let recipe = recipes.first(where: { $0.id == id }) {
-                RecipeDetailView(recipe: recipe) { selection = nil }
+                RecipeDetailView(recipe: recipe) { delete(recipe) }
             } else {
                 ContentUnavailableView("Select a recipe", systemImage: "book", description: Text("Choose a recipe from the list, or add one."))
             }
@@ -50,11 +50,18 @@ struct HomeView: View {
 
     private func delete(at offsets: IndexSet) {
         for offset in offsets {
-            let recipe = recipes[offset]
-            if selection == recipe.id { selection = nil }
-            modelContext.delete(recipe)
+            delete(recipes[offset])
         }
-        try? modelContext.save()
+    }
+
+    /// Clear the selection first so no view is still showing the recipe, then delete, then save on the next turn
+    /// (saving synchronously detaches the pages while a row may still be rendering them).
+    private func delete(_ recipe: Recipe) {
+        if selection == recipe.id { selection = nil }
+        modelContext.delete(recipe)
+        Task { @MainActor in
+            try? modelContext.save()
+        }
     }
 }
 
@@ -64,7 +71,7 @@ private struct RecipeListRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            if let first = recipe.orderedPages.first {
+            if !recipe.isDeleted, let first = recipe.orderedPages.first, !first.isDeleted {
                 PageThumbnail(data: first.imageData)
                     .frame(width: 56, height: 72)
             } else {

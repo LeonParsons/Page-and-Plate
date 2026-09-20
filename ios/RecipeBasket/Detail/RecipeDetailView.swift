@@ -6,9 +6,10 @@ import SwiftUI
 /// "Add to Reminders" and "Share" arrive in Phase 4.
 struct RecipeDetailView: View {
     @Bindable var recipe: Recipe
-    let onDeleted: () -> Void
+    /// The owner deletes (and clears its selection); this view never mutates a recipe it is still showing.
+    let onDelete: () -> Void
 
-    @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
     @State private var isEditing = false
     @State private var isConfirmingDelete = false
     @State private var servesInput: Double?
@@ -23,6 +24,15 @@ struct RecipeDetailView: View {
     }
 
     var body: some View {
+        if recipe.isDeleted {
+            // A deleted model must not be read; the owner has already cleared the selection.
+            Color.clear
+        } else {
+            content
+        }
+    }
+
+    private var content: some View {
         List {
             if let note = recipe.sourceNote {
                 Section {
@@ -76,10 +86,9 @@ struct RecipeDetailView: View {
         .navigationTitle(recipe.title)
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
-            ToolbarItem(placement: .primaryAction) {
+            // Both in the primary group: a .secondaryAction menu would be nested inside iOS 26's own "More" menu.
+            ToolbarItemGroup(placement: .primaryAction) {
                 Button("Edit") { isEditing = true }
-            }
-            ToolbarItem(placement: .secondaryAction) {
                 Menu {
                     Button("Delete recipe…", systemImage: "trash", role: .destructive) { isConfirmingDelete = true }
                 } label: {
@@ -115,9 +124,10 @@ struct RecipeDetailView: View {
     }
 
     private func delete() {
-        modelContext.delete(recipe)
-        try? modelContext.save()
-        onDeleted()
+        // In the collapsed (iPhone) split view the detail is a pushed screen; clearing the selection alone
+        // leaves the placeholder on screen.
+        dismiss()
+        onDelete()
     }
 }
 
