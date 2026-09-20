@@ -6,11 +6,14 @@ import SwiftUI
 /// "Add to Reminders" and "Share" arrive in Phase 4.
 struct RecipeDetailView: View {
     @Bindable var recipe: Recipe
+    var remindersStore: any RemindersStoring = EventKitRemindersStore()
     /// The owner deletes (and clears its selection); this view never mutates a recipe it is still showing.
     let onDelete: () -> Void
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(ExportSettings.self) private var exportSettings
     @State private var isEditing = false
+    @State private var isExporting = false
     @State private var isConfirmingDelete = false
     @State private var servesInput: Double?
     @FocusState private var servesFocused: Bool
@@ -88,6 +91,7 @@ struct RecipeDetailView: View {
         .toolbar {
             // Both in the primary group: a .secondaryAction menu would be nested inside iOS 26's own "More" menu.
             ToolbarItemGroup(placement: .primaryAction) {
+                Button("Add to Reminders", systemImage: "checklist") { isExporting = true }
                 Button("Edit") { isEditing = true }
                 Menu {
                     Button("Delete recipe…", systemImage: "trash", role: .destructive) { isConfirmingDelete = true }
@@ -98,6 +102,9 @@ struct RecipeDetailView: View {
         }
         .sheet(isPresented: $isEditing) {
             EditRecipeView(recipe: recipe)
+        }
+        .sheet(isPresented: $isExporting) {
+            ExportSheet(recipe: recipe, store: remindersStore, settings: exportSettings)
         }
         .confirmationDialog("Delete \"\(recipe.title)\"?", isPresented: $isConfirmingDelete, titleVisibility: .visible) {
             Button("Delete recipe", role: .destructive) { delete() }
