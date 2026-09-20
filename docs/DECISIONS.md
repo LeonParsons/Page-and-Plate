@@ -140,3 +140,27 @@ Each of these is a place where SPEC v0.2 was silent, overlapping or contradictor
 - Tests: 30 app tests (configuration, Keychain, image processing, client via a URLProtocol stub, draft, SwiftData round-trip) + 37 RecipeCore, `xcodebuild test` green with zero compiler warnings.
 - Simulator walkthrough against `wrangler dev`: photo picker → 1176 × 1568 page → extract (Sonnet 5, 16 s) → review with warning banner → edit a quantity (line updates live) → clear the yield (Save disables, reason shown) → restore → Save → Home lists it → cold relaunch keeps it with its thumbnail → server stopped → "No connection — your pages are still here", page intact after Back.
 - Not verified here, by design: the document camera and real airplane mode (device), and the iPad side-by-side layout beyond compiling.
+
+## Phase 3 — recipes list and portions
+
+### 2026-09-20 · Design
+
+- **Home is one `NavigationSplitView`** (sidebar list, detail column) for both devices: on iPhone it collapses to a stack, so a selection pushes the detail. `RecipeDetailView` is the same view in both cases.
+- **`Portions`** (`Detail/Portions.swift`) is the only place the base yield and wanted portions meet: it produces the RecipeCore factor, the "×¼" text (`NumberFormatting.fraction` of the factor — "×⅖" for 5→2, decimals only when no glyph fits) and the scaled rows. `FixtureParityTests` runs all 23 `fixtures/scaling` cases through it and compares the exact `lineText`, which is the SPEC §10 Phase 3 acceptance ("the UI shows the same values as the RecipeCore fixtures").
+- `targetYield` is clamped to 1…999 (spec silent). The stepper and the editable "Recipe serves" field write straight to the SwiftData model, so target portions persist without an explicit save; "Recipe serves" refuses empty/zero (the field reverts on blur) so a saved recipe always has a factor.
+- **Review and Edit share `RecipeFormView`**; `IngredientEditView` works on any `RecipeDraft` binding. `Recipe.apply(draft)` writes title/source/yield/rows/warnings back and bumps `updatedAt`; pages, `targetYield` and `createdAt` are untouched. `RecipeDraft(recipe:)` reads page sizes from the JPEG headers (`ImageProcessing.pixelSize(of:)`) rather than decoding.
+- Section grouping moved to `[Ingredient].sectioned` / `[ScaledIngredient].sectioned` (`Models/IngredientSections.swift`) so review, edit and detail agree on the order (first appearance, main list first).
+- "Add to Reminders" and "Share" are not shown until Phase 4 — no dead buttons.
+
+### 2026-09-20 · Things found while running it
+
+- **Deleting from inside the detail crashed** (`SwiftData/BackingData.swift: This backing data was detached from a context without resolving attribute faults … RecipePage.imageData`): after `save()`, the list row was still rendering the deleted recipe's thumbnail. The detail now only dismisses and asks `HomeView` to delete; `HomeView` clears the selection, deletes, and saves on the next main-actor turn; rows and the detail skip models whose `isDeleted` is set. Deletion is the owner's job, never the view that is showing the object.
+- **iOS 26 nests `.secondaryAction` toolbar items** inside its own "More" menu, so a `Menu` placed there was two taps deep. Edit and the ⋯ menu now share a `ToolbarItemGroup(placement: .primaryAction)`.
+- The Phase 2 store upgraded in place: the Beef rendang saved before Phase 3 (including its edited "750 g" row) opened in the new detail without migration, since no attribute changed.
+- On iPad the add-recipe sheet is compact width, so the review form uses the thumbnail strip there; the side-by-side pages column only appears when the form is in a regular-width container (the edit sheet has the same behaviour).
+
+### 2026-09-20 · Verification
+
+- `xcodebuild test`: 38 app tests (incl. the 23-case parity suite, portions, `targetYield` persistence, `apply(draft)`) + 37 RecipeCore, zero compiler warnings; `swift test` unchanged.
+- iPhone 17 Pro: open the saved recipe → step to 1 serving (×¼: "Beef shin — 190 g", "Cinnamon stick — ¼ stick") → cold relaunch keeps "I want 1 serving" → Edit, change the title, Save → detail and list update → ⋯ → Delete recipe… → confirmation → list.
+- iPad Pro 13-inch (M5): sidebar + detail side by side; stepping to 6 (×1½) updates the detail and the sidebar row together; 800 g → "1.2 kg", "1½ handfuls", "4½ cloves".
