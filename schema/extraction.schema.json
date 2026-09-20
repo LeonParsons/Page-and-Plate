@@ -1,0 +1,267 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://recipe-basket.app/schema/extraction.schema.json",
+  "title": "ExtractionResponse",
+  "description": "Response body of POST /extract (200). Generated from api/src/schema.ts by `npm run schema` — do not edit by hand.",
+  "type": "object",
+  "properties": {
+    "recipe": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The recipe title as printed, in its original capitalisation."
+        },
+        "yield": {
+          "type": "object",
+          "properties": {
+            "quantity": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "exclusiveMinimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\"Serves 4–6\" → 4; \"Makes 12 muffins\" → 12. null if the page states no yield."
+            },
+            "quantityMax": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "exclusiveMinimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\"Serves 4–6\" → 6, else null."
+            },
+            "unit": {
+              "type": "string",
+              "minLength": 1,
+              "description": "\"servings\" for serves/feeds; otherwise the printed noun: \"muffins\", \"loaves\"."
+            },
+            "rawText": {
+              "description": "The printed yield line, e.g. \"SERVES 4\", else null.",
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "quantity",
+            "quantityMax",
+            "unit",
+            "rawText"
+          ],
+          "additionalProperties": false
+        },
+        "ingredients": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "rawText": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The printed ingredient line, verbatim."
+              },
+              "section": {
+                "description": "Sub-heading the line sits under (\"For the curry paste\"), else null.",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "quantity": {
+                "anyOf": [
+                  {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Amount as a decimal (1½ → 1.5). null when unquantified."
+              },
+              "quantityMax": {
+                "anyOf": [
+                  {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Upper bound of a range (\"2–3\" → quantity 2, quantityMax 3), else null."
+              },
+              "unit": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "g",
+                      "kg",
+                      "oz",
+                      "lb",
+                      "ml",
+                      "l",
+                      "tsp",
+                      "tbsp",
+                      "cup",
+                      "fl_oz",
+                      "pint",
+                      "each",
+                      "clove",
+                      "tin",
+                      "jar",
+                      "packet",
+                      "bunch",
+                      "sprig",
+                      "slice",
+                      "sheet",
+                      "stick",
+                      "bulb",
+                      "head",
+                      "pinch",
+                      "dash",
+                      "handful",
+                      "splash"
+                    ],
+                    "description": "Unit exactly as printed in the book, from this closed list. Never convert units. If a count word is not in the list (rasher, fillet, stalk, leaf, can…), use \"each\" and keep the word in `name`."
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "null only when quantity is null."
+              },
+              "packageSize": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "quantity": {
+                        "type": "number",
+                        "exclusiveMinimum": 0
+                      },
+                      "unit": {
+                        "type": "string",
+                        "enum": [
+                          "g",
+                          "kg",
+                          "oz",
+                          "lb",
+                          "ml",
+                          "l",
+                          "tsp",
+                          "tbsp",
+                          "cup",
+                          "fl_oz",
+                          "pint",
+                          "each",
+                          "clove",
+                          "tin",
+                          "jar",
+                          "packet",
+                          "bunch",
+                          "sprig",
+                          "slice",
+                          "sheet",
+                          "stick",
+                          "bulb",
+                          "head",
+                          "pinch",
+                          "dash",
+                          "handful",
+                          "splash"
+                        ],
+                        "description": "Unit exactly as printed in the book, from this closed list. Never convert units. If a count word is not in the list (rasher, fillet, stalk, leaf, can…), use \"each\" and keep the word in `name`."
+                      }
+                    },
+                    "required": [
+                      "quantity",
+                      "unit"
+                    ],
+                    "additionalProperties": false,
+                    "description": "Package size printed with the item: \"1 x 400g tin\" → { quantity: 400, unit: \"g\" }. Never scaled."
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The ingredient itself, lower case unless a proper noun: \"chopped tomatoes\", \"garlic\", \"Parmesan cheese\"."
+              },
+              "preparation": {
+                "description": "How it is prepared or used: \"finely chopped\", \"for frying\", \"to serve\". null if none.",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "optional": {
+                "type": "boolean"
+              },
+              "scalable": {
+                "type": "boolean",
+                "description": "false for usage notes like \"for frying\", \"for greasing\", \"to serve\", \"to taste\"."
+              },
+              "confidence": {
+                "type": "string",
+                "enum": [
+                  "high",
+                  "low"
+                ],
+                "description": "\"low\" when the text is blurred, cut off, or the interpretation is uncertain."
+              }
+            },
+            "required": [
+              "rawText",
+              "section",
+              "quantity",
+              "quantityMax",
+              "unit",
+              "packageSize",
+              "name",
+              "preparation",
+              "optional",
+              "scalable",
+              "confidence"
+            ],
+            "additionalProperties": false
+          },
+          "description": "Every printed ingredient line, in page order."
+        }
+      },
+      "required": [
+        "title",
+        "yield",
+        "ingredients"
+      ],
+      "additionalProperties": false
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Things the user should check: cut-off lists, sub-recipe references, unreadable areas."
+    }
+  },
+  "required": [
+    "recipe",
+    "warnings"
+  ],
+  "additionalProperties": false
+}

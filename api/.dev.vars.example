@@ -1,0 +1,4 @@
+# Copy to .dev.vars (git-ignored). Used by `wrangler dev` and, as a fallback, by `npm run eval`.
+ANTHROPIC_API_KEY=sk-ant-...
+# Shared secret the app sends as x-app-key. Any long random string.
+APP_KEY=change-me-to-a-long-random-string

@@ -1,0 +1,7 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "types": ["node"]
+  },
+  "include": ["../src/schema.ts", "../src/extract.ts", "../src/prompt.ts", "../src/eval", "."]
+}

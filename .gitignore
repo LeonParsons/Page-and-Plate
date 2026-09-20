@@ -16,3 +16,7 @@ DerivedData/
 api/node_modules/
 api/.wrangler/
 api/.dev.vars
+
+# api (Phase 1)
+api/eval/results/
+api/worker-configuration.d.ts

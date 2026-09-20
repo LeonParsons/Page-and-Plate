@@ -1,0 +1,17 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "recipe-basket-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-19",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true },
+  // Non-secret configuration. Secrets (ANTHROPIC_API_KEY, APP_KEY) live in .dev.vars locally and
+  // `wrangler secret put` in production — never here.
+  "vars": {
+    "ANTHROPIC_MODEL": "claude-sonnet-5",
+    "DAILY_LIMIT": "30",
+    "MAX_BODY_BYTES": "8388608"
+  },
+  // Per-device daily extraction counter (SPEC §9). Replace the id with `wrangler kv namespace create QUOTA` on deploy.
+  "kv_namespaces": [{ "binding": "QUOTA", "id": "local-dev-placeholder" }]
+}
