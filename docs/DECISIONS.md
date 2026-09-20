@@ -102,3 +102,41 @@ Each of these is a place where SPEC v0.2 was silent, overlapping or contradictor
 
 - Not deployed. To deploy: `npx wrangler login`, `npx wrangler kv namespace create QUOTA` (paste the id into `wrangler.jsonc`), `npx wrangler secret put ANTHROPIC_API_KEY`, `npx wrangler secret put APP_KEY`, `npm run deploy`. The app (Phase 2) needs the URL and the same APP_KEY.
 - The Anthropic Console spend limit (SPEC §9) is the user's to set.
+
+## Phase 2 — capture and review
+
+### 2026-09-20 · Configuration
+
+- The Worker URL and app key reach the app through `ios/Config/Secrets.xcconfig` (git-ignored; `options.preGenCommand` copies the committed `Secrets.example.xcconfig` on a fresh clone) → Xcode build settings → a real, generated `ios/RecipeBasket/Info.plist` (`RBAPIBaseURL`, `RBAppKey`). This replaces the Phase 0 `GENERATE_INFOPLIST_FILE` choice for the app target: custom keys cannot be expressed as `INFOPLIST_KEY_*`, and the plist also needs `NSCameraUsageDescription` and `NSAllowsLocalNetworking` (plain-http localhost for `wrangler dev`). The test target keeps the generated plist. `AppConfiguration` rejects placeholders so a missing key surfaces as "App not configured", not a 401.
+- The app key is extractable from the binary; SPEC §9 accepts that for personal/TestFlight use.
+
+### 2026-09-20 · Swift 6 in the app target
+
+- With `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`, every non-UI type in the app target is declared `nonisolated` (`AppConfiguration`, `KeychainStore`, `DeviceIdentity`, `CapturedPage`, `ImageProcessing`, `ExtractionClient`, `ExtractionError`, `RecipeDraft`, `AddRecipeFlow.Route`) so tests and background tasks can use them. `@Model` classes and views stay main-actor.
+- `Unit` clashes with Foundation's `Unit` in files that import SwiftUI; the app writes `RecipeCore.Unit`.
+- `PhotosPicker`'s label closure is `@Sendable`; main-actor state read inside it is a warning, so label text is computed outside.
+
+### 2026-09-20 · Model and persistence
+
+- `Recipe` stores `yield: RecipeYield` and `ingredients: [Ingredient]` as SwiftData Codable attributes; the round-trip test proves every field survives, so no JSON-blob fallback was needed.
+- Page images are `RecipePage` rows (`index`, `@Attribute(.externalStorage) imageData`) with cascade delete, because `.externalStorage` applies per `Data` attribute, not to `[Data]`.
+- `targetYield` defaults to the base yield rounded (≥ 1); `Recipe.init(draft:)` is the only constructor, so a recipe can't be created without passing the draft's save gate.
+
+### 2026-09-20 · Capture and upload
+
+- Photo-picker data is resized through ImageIO's thumbnail path (`kCGImageSourceThumbnailMaxPixelSize` 1568, `…WithTransform` for EXIF orientation, JPEG 0.8) so a 12-MP HEIC never gets fully decoded; document-camera `UIImage`s take a renderer path to the same output. A phone's own JPEG can be smaller than the 0.8-quality re-encode (429 KB vs 361 KB for the rendang page); what matters is the 5 MB per-image budget.
+- `AddRecipeFlow` owns the pages for the whole add-recipe sheet; the extracting and review screens only read them, so an error or a trip back never loses a page (SPEC §10 Phase 2). Cancelling an upload cancels the URLSession task; the Worker still counts the attempt (Phase 1 decision).
+- `ExtractionClient` maps `URLError` connectivity codes (not connected, connection lost, cannot connect/find host, DNS, timeout, roaming/data off) to `.offline` — the "airplane mode" message — and everything else to `.network(description)`. Every `ExtractionError` carries its own title, message and `canRetry`.
+- The iOS 26.3 simulator reports `VNDocumentCameraViewController.isSupported == true`, so "Scan pages" shows there too; the real camera path remains a device check.
+
+### 2026-09-20 · Review screen
+
+- Rows show the RecipeCore `lineText` at factor 1 with the printed line underneath and a "Check" badge for low confidence; tapping opens a form with every structured field (SPEC §4 lists them as inline; eight fields per row inline is unusable on an iPhone). Section grouping follows first appearance, main list first; a new row inherits the section of the row above it.
+- Save requires a base yield (SPEC §3) **and** a non-empty title; the blocking reason is shown under the yield fields.
+- iPad regular width shows the pages in a side column next to the form; iPhone uses a thumbnail strip with a zoomable viewer.
+
+### 2026-09-20 · Verification
+
+- Tests: 30 app tests (configuration, Keychain, image processing, client via a URLProtocol stub, draft, SwiftData round-trip) + 37 RecipeCore, `xcodebuild test` green with zero compiler warnings.
+- Simulator walkthrough against `wrangler dev`: photo picker → 1176 × 1568 page → extract (Sonnet 5, 16 s) → review with warning banner → edit a quantity (line updates live) → clear the yield (Save disables, reason shown) → restore → Save → Home lists it → cold relaunch keeps it with its thumbnail → server stopped → "No connection — your pages are still here", page intact after Back.
+- Not verified here, by design: the document camera and real airplane mode (device), and the iPad side-by-side layout beyond compiling.

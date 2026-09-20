@@ -52,6 +52,8 @@ cd api && npm run eval         # extraction accuracy against fixtures/photos (bo
 
 `api/.dev.vars` (git-ignored, copy from `.dev.vars.example`) holds `ANTHROPIC_API_KEY` and `APP_KEY` for local dev and the eval.
 
+The app reads the Worker URL and app key from `ios/Config/Secrets.xcconfig` (git-ignored; `xcodegen generate` copies `Secrets.example.xcconfig` if it is missing). Put the same `APP_KEY` there as in `api/.dev.vars`. In the simulator the app talks to `wrangler dev` on `http://localhost:8787`, so run `npm run dev` first. Put fixture pages in the simulator's photo library with `xcrun simctl addmedia "iPhone 17 Pro" fixtures/photos/*.jpg`. The VisionKit document camera only works on a real device.
+
 Definition of done for any task: `swift test` in RecipeCore, the Xcode test run, and `npm test` in `api` all pass, with no new compiler warnings.
 
 ## Non-negotiable rules
