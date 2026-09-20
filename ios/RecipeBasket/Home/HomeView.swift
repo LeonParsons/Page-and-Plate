@@ -4,10 +4,13 @@ import SwiftUI
 
 /// Recipes (home), SPEC §4: list on the left and the recipe on the right on iPad; a stack on iPhone.
 struct HomeView: View {
+    var remindersStore: any RemindersStoring = EventKitRemindersStore()
+
     @Query(sort: \Recipe.createdAt, order: .reverse) private var recipes: [Recipe]
     @Environment(\.modelContext) private var modelContext
     @State private var selection: Recipe.ID?
     @State private var isAdding = false
+    @State private var isShowingSettings = false
 
     var body: some View {
         NavigationSplitView {
@@ -35,13 +38,19 @@ struct HomeView: View {
                 ToolbarItem(placement: .primaryAction) {
                     Button("Add recipe", systemImage: "plus") { isAdding = true }
                 }
+                ToolbarItem(placement: .secondaryAction) {
+                    Button("Settings", systemImage: "gearshape") { isShowingSettings = true }
+                }
             }
             .sheet(isPresented: $isAdding) {
                 AddRecipeView()
             }
+            .sheet(isPresented: $isShowingSettings) {
+                SettingsView(store: remindersStore)
+            }
         } detail: {
             if let id = selection, let recipe = recipes.first(where: { $0.id == id }) {
-                RecipeDetailView(recipe: recipe) { delete(recipe) }
+                RecipeDetailView(recipe: recipe, remindersStore: remindersStore) { delete(recipe) }
             } else {
                 ContentUnavailableView("Select a recipe", systemImage: "book", description: Text("Choose a recipe from the list, or add one."))
             }
@@ -106,6 +115,7 @@ private struct RecipeListRow: View {
 }
 
 #Preview {
-    HomeView()
+    HomeView(remindersStore: FakeRemindersStore(access: .fullAccess, lists: [.groceries, .shopping]))
+        .environment(ExportSettings(defaults: UserDefaults(suiteName: "preview")!))
         .modelContainer(for: [Recipe.self, RecipePage.self], inMemory: true)
 }
