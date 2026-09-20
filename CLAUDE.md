@@ -43,11 +43,14 @@ brew install xcodegen
 cd ios && xcodegen generate
 cd ios/Packages/RecipeCore && swift test
 xcodebuild test -project ios/RecipeBasket.xcodeproj -scheme RecipeBasket -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
-cd api && npm install && npm test
-cd api && npm run dev          # wrangler dev
+cd api && npm install && npm test && npm run typecheck
+cd api && npm run dev          # wrangler dev on http://localhost:8787 (secrets from api/.dev.vars)
+cd api && npm run smoke -- ../fixtures/photos/chickpea-arrabbiata.jpg   # POST a real page to the dev server
 cd api && npm run schema       # regenerate schema/extraction.schema.json from Zod
-cd api && npm run eval         # extraction accuracy against fixtures/photos
+cd api && npm run eval         # extraction accuracy against fixtures/photos (both models; ≈ $1 per run)
 ```
+
+`api/.dev.vars` (git-ignored, copy from `.dev.vars.example`) holds `ANTHROPIC_API_KEY` and `APP_KEY` for local dev and the eval.
 
 Definition of done for any task: `swift test` in RecipeCore, the Xcode test run, and `npm test` in `api` all pass, with no new compiler warnings.
 
