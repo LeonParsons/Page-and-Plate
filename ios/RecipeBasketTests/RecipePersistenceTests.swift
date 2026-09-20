@@ -60,4 +60,58 @@ struct RecipePersistenceTests {
         #expect(try context.fetchCount(FetchDescriptor<Recipe>()) == 0)
         #expect(try context.fetchCount(FetchDescriptor<RecipePage>()) == 0)
     }
+
+    @Test("Target portions persist per recipe")
+    func targetYieldPersists() throws {
+        let container = try makeContainer()
+        let context = ModelContext(container)
+        let recipe = Recipe(draft: RecipeDraft(response: try Fixtures.expected("chickpea-arrabbiata"), pages: []))
+        context.insert(recipe)
+        try context.save()
+        #expect(recipe.targetYield == 1)
+
+        recipe.targetYield = 6
+        try context.save()
+
+        let fresh = ModelContext(container)
+        let saved = try #require(try fresh.fetch(FetchDescriptor<Recipe>()).first)
+        #expect(saved.targetYield == 6)
+    }
+
+    @Test("apply(draft) updates the editable fields and keeps pages and portions")
+    func applyDraft() throws {
+        let container = try makeContainer()
+        let context = ModelContext(container)
+        let response = try Fixtures.expected("beef-rendang")
+        let pages = [CapturedPage(jpegData: Data([1, 2]), pixelSize: CGSize(width: 1, height: 2))]
+        let recipe = Recipe(draft: RecipeDraft(response: response, pages: pages), now: Date(timeIntervalSince1970: 1_000))
+        recipe.targetYield = 2
+        context.insert(recipe)
+        try context.save()
+
+        var draft = RecipeDraft(recipe: recipe)
+        #expect(draft.title == "BEEF RENDANG")
+        #expect(draft.ingredients == response.recipe.ingredients)
+        #expect(draft.pages.map(\.jpegData) == pages.map(\.jpegData))
+        draft.title = "Beef rendang"
+        draft.sourceNote = "LEON, p.131"
+        draft.yield.quantity = 8
+        draft.removeRow(id: draft.ingredients[0].id)
+        draft.warnings = ["Checked by hand"]
+
+        recipe.apply(draft, now: Date(timeIntervalSince1970: 2_000))
+        try context.save()
+
+        let fresh = ModelContext(container)
+        let saved = try #require(try fresh.fetch(FetchDescriptor<Recipe>()).first)
+        #expect(saved.title == "Beef rendang")
+        #expect(saved.sourceNote == "LEON, p.131")
+        #expect(saved.yield.quantity == 8)
+        #expect(saved.ingredients.count == 21)
+        #expect(saved.warnings == ["Checked by hand"])
+        #expect(saved.targetYield == 2)
+        #expect(saved.orderedPages.map(\.imageData) == pages.map(\.jpegData))
+        #expect(saved.createdAt == Date(timeIntervalSince1970: 1_000))
+        #expect(saved.updatedAt == Date(timeIntervalSince1970: 2_000))
+    }
 }
