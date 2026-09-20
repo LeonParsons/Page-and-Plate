@@ -50,6 +50,7 @@ targets:
         RBAPIBaseURL: $(RB_API_BASE_URL)
         RBAppKey: $(RB_APP_KEY)
         NSCameraUsageDescription: Recipe Basket uses the camera to scan cookbook pages.
+        NSRemindersFullAccessUsageDescription: Recipe Basket adds a recipe's ingredients to a Reminders list you choose. It never reads, changes or deletes your existing reminders.
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true      # plain-http localhost for `wrangler dev`
         UILaunchScreen: {}
