@@ -19,6 +19,7 @@ settings:
     ENABLE_USER_SCRIPT_SANDBOXING: YES
     GENERATE_INFOPLIST_FILE: YES     # no Info.plist files; usage strings are INFOPLIST_KEY_* settings
     CODE_SIGN_STYLE: Automatic
+    DEVELOPMENT_TEAM: $(RB_TEAM_ID)
     CURRENT_PROJECT_VERSION: 1
     MARKETING_VERSION: "1.0"
 

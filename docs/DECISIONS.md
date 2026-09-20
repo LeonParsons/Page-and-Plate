@@ -164,3 +164,26 @@ Each of these is a place where SPEC v0.2 was silent, overlapping or contradictor
 - `xcodebuild test`: 38 app tests (incl. the 23-case parity suite, portions, `targetYield` persistence, `apply(draft)`) + 37 RecipeCore, zero compiler warnings; `swift test` unchanged.
 - iPhone 17 Pro: open the saved recipe → step to 1 serving (×¼: "Beef shin — 190 g", "Cinnamon stick — ¼ stick") → cold relaunch keeps "I want 1 serving" → Edit, change the title, Save → detail and list update → ⋯ → Delete recipe… → confirmation → list.
 - iPad Pro 13-inch (M5): sidebar + detail side by side; stepping to 6 (×1½) updates the detail and the sidebar row together; 800 g → "1.2 kg", "1½ handfuls", "4½ cloves".
+
+## Phase 4 — export
+
+### 2026-09-20 · Design
+
+- **`ShoppingExport` in RecipeCore** owns the last formatting rules: reminder title = `ScaledIngredient.lineText`, notes = "Recipe title · for N" (N = target portions, no unit — SPEC §8 verbatim), share text = "Title — for 1 serving" + blank line + one ticked line per row, no trailing newline. Only "servings" is singularised; other yield units print as-is. Pinned by `fixtures/export/beef-rendang-for-1.{json,txt}`; writing that fixture by hand caught two errors in my own assumptions (the transcription says "large onion"; "water" is a default staple).
+- **EventKit, add-only** (CLAUDE.md rule 9): `EventKitRemindersStore` requests full access (`requestFullAccessToReminders`), lists calendars, and adds one `EKReminder` per ticked line with `save(_, commit: false)` + a single `commit()`. It never fetches reminders. `saveReminder` is imported into Swift as `save(_:commit:)`.
+- **"Shopping" is created in the source of the default Reminders list** (iCloud on a normal phone, Local in the simulator), or reused if one already exists there — no "Shopping 2".
+- **Write-only access** (iOS 17+ lets the user pick it) can't enumerate lists; the sheet then exports to the default list and says so. Denied/restricted shows guidance with "Open Settings" and keeps Share live (§8, §10).
+- Settings are two values in `UserDefaults` (`ExportSettings`): the remembered default list (last successful export wins; "Ask each time" resets it) and the staples list, normalised (trimmed, lower-cased, unique). Matching stays exact (Phase 0 decision 6). The Settings screen also shows the API host so a device build reveals which Worker it talks to.
+- One export sheet serves both "Add to Reminders" and "Share" so they use the same ticks (§8 "the same ticked lines"). Duplicates are never checked for: exporting twice doubles the items, by design.
+
+### 2026-09-20 · Simulator walkthrough (iPhone 17 Pro, real EventKit)
+
+- Prompt shows our usage string → **Don't Allow** → "Reminders access is off" with Open Settings; Share still opens the share sheet and Copy puts the §8 text on the pasteboard (20 lines: header, blank, 18 non-staple rows at 1 serving; salt and water excluded).
+- `simctl privacy reset` → **Allow** → sheet at "For 1 serving", default list "Reminders", staples unticked and labelled, "Add 19 items" → list picker groups by account ("Local") → **Create "Shopping"** → selected → Add → "Added 19 items to Shopping." → second export defaults to Shopping and adds again → the Reminders app shows **Shopping 38**, titles exactly `lineText`, notes "Beef Rendang · for 1". The recipe row shows "Added to Reminders 20 Sep 2026".
+- Settings: adding "sugar" as a staple untickes "Sugar — ¼ tsp" on the next export ("Add 18 items").
+- **Grocery-type lists cannot be tested in the simulator**: without an iCloud account, Reminders' List Info offers no list type, so the "Groceries" conversion (and its automatic sectioning by item name) is a device check. EventKit exposes no API to create or detect that type either; the user converts the list in Reminders.
+- Reminders displays items in its own order (manual sort of insertion), not page order — acceptable; the notes carry the recipe.
+
+### 2026-09-20 · Not yet done (device pass)
+
+- Deployment (`wrangler login`, KV namespace, secrets, `npm run deploy`), `RB_API_BASE_URL` → the workers.dev URL, signing team in `Secrets.xcconfig` (`RB_TEAM_ID`), install on the iPhone, and the SPEC §10 device acceptance including the Grocery-list observation.

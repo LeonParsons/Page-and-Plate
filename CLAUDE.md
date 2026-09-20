@@ -48,6 +48,8 @@ cd api && npm run dev          # wrangler dev on http://localhost:8787 (secrets 
 cd api && npm run smoke -- ../fixtures/photos/chickpea-arrabbiata.jpg   # POST a real page to the dev server
 cd api && npm run schema       # regenerate schema/extraction.schema.json from Zod
 cd api && npm run eval         # extraction accuracy against fixtures/photos (both models; ≈ $1 per run)
+cd api && npm run deploy       # after `npx wrangler login`, a KV namespace id in wrangler.jsonc and the two secrets (see docs/DECISIONS.md)
+xcrun simctl privacy "iPhone 17 Pro" reset reminders com.leonparsons.RecipeBasket   # re-test the Reminders permission prompt
 ```
 
 `api/.dev.vars` (git-ignored, copy from `.dev.vars.example`) holds `ANTHROPIC_API_KEY` and `APP_KEY` for local dev and the eval.
