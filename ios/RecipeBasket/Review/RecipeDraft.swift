@@ -1,0 +1,100 @@
+import Foundation
+import RecipeCore
+
+/// The extraction as the user edits it on the review screen (SPEC §3 step 3). A value type: nothing is saved until
+/// the user taps Save, and going back never loses the pages.
+nonisolated struct RecipeDraft: Equatable, Sendable {
+    var title: String
+    var sourceNote: String
+    var yield: RecipeYield
+    var ingredients: [Ingredient]
+    var warnings: [String]
+    var pages: [CapturedPage]
+
+    init(title: String, sourceNote: String = "", yield: RecipeYield, ingredients: [Ingredient], warnings: [String] = [], pages: [CapturedPage]) {
+        self.title = title
+        self.sourceNote = sourceNote
+        self.yield = yield
+        self.ingredients = ingredients
+        self.warnings = warnings
+        self.pages = pages
+    }
+
+    init(response: ExtractionResponse, pages: [CapturedPage]) {
+        self.init(
+            title: response.recipe.title,
+            yield: response.recipe.yield,
+            ingredients: response.recipe.ingredients,
+            warnings: response.warnings,
+            pages: pages
+        )
+    }
+
+    // MARK: Validation (SPEC §3: save is blocked until the recipe has a base yield)
+
+    var trimmedTitle: String {
+        title.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    var hasBaseYield: Bool {
+        (yield.quantity ?? 0) > 0
+    }
+
+    var canSave: Bool {
+        hasBaseYield && !trimmedTitle.isEmpty
+    }
+
+    var blockingReason: String? {
+        if !hasBaseYield { return "Enter how many this recipe serves." }
+        if trimmedTitle.isEmpty { return "Enter a title." }
+        return nil
+    }
+
+    /// SwiftData's `targetYield` is an Int ≥ 1; the base yield is a Double.
+    var defaultTargetYield: Int {
+        max(1, Int((yield.quantity ?? 1).rounded()))
+    }
+
+    // MARK: Sections
+
+    struct Section: Equatable, Sendable {
+        var name: String?
+        var rows: [Ingredient]
+    }
+
+    /// Rows grouped by `section` in order of first appearance, the main (unsectioned) list first.
+    var sections: [Section] {
+        var order: [String?] = []
+        var grouped: [String?: [Ingredient]] = [:]
+        for ingredient in ingredients {
+            if grouped[ingredient.section] == nil {
+                order.append(ingredient.section)
+                grouped[ingredient.section] = []
+            }
+            grouped[ingredient.section]!.append(ingredient)
+        }
+        order.sort { a, b in (a == nil && b != nil) }
+        return order.map { Section(name: $0, rows: grouped[$0] ?? []) }
+    }
+
+    // MARK: Row editing
+
+    /// Inserts an empty row after `id` (or at the top when nil), inheriting the section of the row it follows.
+    @discardableResult
+    mutating func addRow(after id: Ingredient.ID?) -> Ingredient.ID {
+        let index = id.flatMap { target in ingredients.firstIndex { $0.id == target } }.map { $0 + 1 } ?? 0
+        let section = index > 0 ? ingredients[index - 1].section : nil
+        let row = Ingredient(rawText: "", section: section, name: "", confidence: .high)
+        ingredients.insert(row, at: index)
+        return row.id
+    }
+
+    mutating func update(_ ingredient: Ingredient) {
+        guard let index = ingredients.firstIndex(where: { $0.id == ingredient.id }) else { return }
+        ingredients[index] = ingredient
+    }
+
+    mutating func removeRow(id: Ingredient.ID) {
+        ingredients.removeAll { $0.id == id }
+    }
+}
