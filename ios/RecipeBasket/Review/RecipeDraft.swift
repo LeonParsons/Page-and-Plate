@@ -57,24 +57,11 @@ nonisolated struct RecipeDraft: Equatable, Sendable {
 
     // MARK: Sections
 
-    struct Section: Equatable, Sendable {
-        var name: String?
-        var rows: [Ingredient]
-    }
+    typealias Section = IngredientSection<Ingredient>
 
     /// Rows grouped by `section` in order of first appearance, the main (unsectioned) list first.
     var sections: [Section] {
-        var order: [String?] = []
-        var grouped: [String?: [Ingredient]] = [:]
-        for ingredient in ingredients {
-            if grouped[ingredient.section] == nil {
-                order.append(ingredient.section)
-                grouped[ingredient.section] = []
-            }
-            grouped[ingredient.section]!.append(ingredient)
-        }
-        order.sort { a, b in (a == nil && b != nil) }
-        return order.map { Section(name: $0, rows: grouped[$0] ?? []) }
+        ingredients.sectioned
     }
 
     // MARK: Row editing

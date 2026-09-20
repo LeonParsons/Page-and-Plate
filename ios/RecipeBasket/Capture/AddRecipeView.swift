@@ -20,10 +20,18 @@ struct AddRecipeView: View {
                     case .review:
                         ReviewView(flow: flow) { dismiss() }
                     case let .editIngredient(id):
-                        IngredientEditView(flow: flow, id: id)
+                        IngredientEditView(draft: draftBinding, id: id)
                     }
                 }
         }
         .interactiveDismissDisabled(!flow.pages.isEmpty)
+    }
+
+    /// The flow's draft as a non-optional binding; the edit route only exists once a draft does.
+    private var draftBinding: Binding<RecipeDraft> {
+        Binding(
+            get: { flow.draft ?? RecipeDraft(title: "", yield: .init(unit: "servings"), ingredients: [], pages: []) },
+            set: { flow.draft = $0 }
+        )
     }
 }

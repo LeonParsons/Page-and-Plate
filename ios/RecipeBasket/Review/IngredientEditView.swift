@@ -3,7 +3,7 @@ import SwiftUI
 
 /// Every structured field of one row (SPEC §4). Edits write straight back into the draft.
 struct IngredientEditView: View {
-    @Bindable var flow: AddRecipeFlow
+    @Binding var draft: RecipeDraft
     let id: Ingredient.ID
 
     @Environment(\.dismiss) private var dismiss
@@ -24,11 +24,11 @@ struct IngredientEditView: View {
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             if row == nil {
-                row = flow.draft?.ingredients.first { $0.id == id }
+                row = draft.ingredients.first { $0.id == id }
             }
         }
         .onChange(of: row) { _, newValue in
-            if let newValue { flow.draft?.update(newValue) }
+            if let newValue { draft.update(newValue) }
         }
     }
 
@@ -113,7 +113,7 @@ struct IngredientEditView: View {
 
             Section {
                 Button("Delete ingredient", role: .destructive) {
-                    flow.draft?.removeRow(id: id)
+                    draft.removeRow(id: id)
                     self.row = nil
                     dismiss()
                 }
