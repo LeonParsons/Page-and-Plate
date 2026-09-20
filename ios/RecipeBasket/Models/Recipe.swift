@@ -37,6 +37,34 @@ final class Recipe {
     var orderedPages: [RecipePage] {
         pages.sorted { $0.index < $1.index }
     }
+
+    /// Edit (SPEC §4): everything the form edits comes back; pages, portions and creation date stay.
+    func apply(_ draft: RecipeDraft, now: Date = .now) {
+        title = draft.trimmedTitle
+        let note = draft.sourceNote.trimmingCharacters(in: .whitespacesAndNewlines)
+        sourceNote = note.isEmpty ? nil : note
+        yield = draft.yield
+        ingredients = draft.ingredients
+        warnings = draft.warnings
+        updatedAt = now
+    }
+}
+
+extension RecipeDraft {
+    /// The saved recipe as an editable draft. Page sizes are read from the JPEG headers, not decoded.
+    @MainActor
+    init(recipe: Recipe) {
+        self.init(
+            title: recipe.title,
+            sourceNote: recipe.sourceNote ?? "",
+            yield: recipe.yield,
+            ingredients: recipe.ingredients,
+            warnings: recipe.warnings,
+            pages: recipe.orderedPages.map { page in
+                CapturedPage(jpegData: page.imageData, pixelSize: ImageProcessing.pixelSize(of: page.imageData))
+            }
+        )
+    }
 }
 
 @Model

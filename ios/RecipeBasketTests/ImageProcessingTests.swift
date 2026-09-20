@@ -76,4 +76,11 @@ struct ImageProcessingTests {
             try ImageProcessing.makePage(fromImageData: Data())
         }
     }
+
+    @Test("pixelSize(of:) reads the stored page's size without decoding it")
+    func pixelSize() throws {
+        let page = try ImageProcessing.makePage(fromImageData: try Fixtures.photo("chickpea-arrabbiata"))
+        #expect(ImageProcessing.pixelSize(of: page.jpegData) == page.pixelSize)
+        #expect(ImageProcessing.pixelSize(of: Data("junk".utf8)) == .zero)
+    }
 }

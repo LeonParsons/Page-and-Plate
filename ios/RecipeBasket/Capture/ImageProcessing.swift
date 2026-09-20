@@ -53,6 +53,18 @@ nonisolated enum ImageProcessing {
         return try encode(cgImage)
     }
 
+    /// Width and height from the image header; `.zero` when the data isn't an image.
+    static func pixelSize(of data: Data) -> CGSize {
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil),
+              let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
+              let width = properties[kCGImagePropertyPixelWidth] as? Int,
+              let height = properties[kCGImagePropertyPixelHeight] as? Int
+        else {
+            return .zero
+        }
+        return CGSize(width: width, height: height)
+    }
+
     private static func encode(_ image: CGImage) throws(ProcessingError) -> CapturedPage {
         let data = NSMutableData()
         guard let destination = CGImageDestinationCreateWithData(data, UTType.jpeg.identifier as CFString, 1, nil) else {
