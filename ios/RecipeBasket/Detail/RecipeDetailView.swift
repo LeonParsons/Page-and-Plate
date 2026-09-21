@@ -46,7 +46,7 @@ struct RecipeDetailView: View {
 
             Section("Portions") {
                 HStack {
-                    Text("Recipe serves")
+                    Text(recipe.yield.unit == RecipeYield.servingsUnit ? "Recipe serves" : "Recipe makes")
                     Spacer()
                     TextField("4", value: $servesInput, format: .number)
                         .keyboardType(.decimalPad)

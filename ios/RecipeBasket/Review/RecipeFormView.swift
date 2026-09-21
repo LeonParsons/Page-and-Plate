@@ -72,21 +72,26 @@ struct RecipeFormView: View {
             }
 
             Section {
+                Picker("Yield", selection: $draft.yieldKind) {
+                    Text("Serves").tag(RecipeDraft.YieldKind.serves)
+                    Text("Makes").tag(RecipeDraft.YieldKind.makes)
+                }
+                .pickerStyle(.segmented)
                 HStack {
-                    Text("Serves")
-                    TextField("4", value: $draft.yield.quantity, format: .number)
+                    Text(draft.yieldKind == .serves ? "Serves" : "Makes")
+                    TextField(draft.yieldKind == .serves ? "4" : "12", value: $draft.yield.quantity, format: .number)
                         .keyboardType(.decimalPad)
                         .multilineTextAlignment(.trailing)
+                    if draft.yieldKind == .makes {
+                        TextField("muffins", text: $draft.yield.unit)
+                            .textInputAutocapitalization(.never)
+                            .frame(maxWidth: 140)
+                    }
                 }
                 HStack {
                     Text("Up to")
                     TextField("optional", value: $draft.yield.quantityMax, format: .number)
                         .keyboardType(.decimalPad)
-                        .multilineTextAlignment(.trailing)
-                }
-                HStack {
-                    Text("Unit")
-                    TextField("servings", text: $draft.yield.unit)
                         .multilineTextAlignment(.trailing)
                 }
             } header: {

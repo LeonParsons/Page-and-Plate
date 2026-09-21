@@ -101,4 +101,27 @@ struct RecipeDraftTests {
         #expect(draft.ingredients.count == 22)
         #expect(!draft.ingredients.contains { $0.id == newID })
     }
+
+    @Test("Serves / Makes switch maps onto the yield unit")
+    func yieldKind() throws {
+        var draft = RecipeDraft(response: try Fixtures.expected("chickpea-arrabbiata"), book: "7 a day", page: 40, pages: [])
+        #expect(draft.yield.unit == "servings")
+        #expect(draft.yieldKind == .serves)
+
+        draft.yieldKind = .makes
+        #expect(draft.yield.unit == "", "the noun is the user's to type")
+        #expect(!draft.canSave)
+        #expect(draft.blockingReason == "Enter what the recipe makes, e.g. muffins.")
+
+        draft.yield.unit = "muffins"
+        #expect(draft.yieldKind == .makes)
+        #expect(draft.canSave)
+
+        draft.yieldKind = .serves
+        #expect(draft.yield.unit == "servings")
+        draft.yieldKind = .makes
+        #expect(draft.yield.unit == "muffins", "switching back keeps the last noun")
+        draft.yieldKind = .serves
+        #expect(draft.canSave)
+    }
 }

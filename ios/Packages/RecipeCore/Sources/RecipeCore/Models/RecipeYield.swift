@@ -2,6 +2,9 @@ import Foundation
 
 /// "Serves 4–6" → quantity 4, quantityMax 6, unit "servings" (SPEC §5).
 public struct RecipeYield: Codable, Hashable, Sendable {
+    /// The unit used for "Serves N"; anything else is a "Makes N <unit>" yield.
+    public static let servingsUnit = "servings"
+
     public var quantity: Double?
     public var quantityMax: Double?
     /// "servings", "muffins".
