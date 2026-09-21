@@ -19,6 +19,8 @@ final class Recipe {
     var ingredients: [Ingredient]
     var warnings: [String]
     @Relationship(deleteRule: .cascade, inverse: \RecipePage.recipe) var pages: [RecipePage]
+    /// Where the recipe sits on the plan; deleting the recipe removes these too.
+    @Relationship(deleteRule: .cascade, inverse: \PlannedMeal.recipe) var plannedMeals: [PlannedMeal]
     var createdAt: Date
     var updatedAt: Date
     var lastExportedAt: Date?
@@ -35,6 +37,7 @@ final class Recipe {
         ingredients = draft.ingredients
         warnings = draft.warnings
         pages = draft.pages.enumerated().map { index, page in RecipePage(index: index, imageData: page.jpegData) }
+        plannedMeals = []
         createdAt = now
         updatedAt = now
         lastExportedAt = nil

@@ -13,6 +13,6 @@ struct RecipeBasketApp: App {
             }
             .environment(exportSettings)
         }
-        .modelContainer(for: [Recipe.self, RecipePage.self])
+        .modelContainer(for: AppSchema.models)
     }
 }

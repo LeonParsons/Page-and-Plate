@@ -9,7 +9,7 @@ import RecipeCore
 struct ExportModelTests {
 
     private func makeRecipe(targetYield: Int = 1) throws -> (Recipe, ModelContainer) {
-        let container = try ModelContainer(for: Recipe.self, RecipePage.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
+        let container = try TestContainer.make()
         let recipe = Recipe(draft: RecipeDraft(response: try Fixtures.expected("beef-rendang"), book: "LEON Happy Curries", page: 131, pages: []))
         recipe.targetYield = targetYield
         ModelContext(container).insert(recipe)

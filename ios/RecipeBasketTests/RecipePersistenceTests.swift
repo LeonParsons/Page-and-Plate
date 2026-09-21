@@ -9,7 +9,7 @@ import RecipeCore
 struct RecipePersistenceTests {
 
     private func makeContainer() throws -> ModelContainer {
-        try ModelContainer(for: Recipe.self, RecipePage.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
+        try TestContainer.make()
     }
 
     @Test("A saved recipe comes back with every field, its pages in order, and their bytes")

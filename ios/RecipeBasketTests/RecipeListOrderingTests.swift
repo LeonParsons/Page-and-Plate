@@ -9,7 +9,7 @@ import RecipeCore
 struct RecipeListOrderingTests {
 
     private func makeRecipes() throws -> [Recipe] {
-        let container = try ModelContainer(for: Recipe.self, RecipePage.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
+        let container = try TestContainer.make()
         let context = ModelContext(container)
         func make(_ title: String, book: String?, page: Int?, created: TimeInterval, exported: TimeInterval? = nil) -> Recipe {
             let response = ExtractionResponse(recipe: ExtractedRecipe(title: title, yield: RecipeYield(quantity: 4, unit: "servings"), ingredients: []))

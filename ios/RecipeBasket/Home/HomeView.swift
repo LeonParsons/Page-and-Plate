@@ -169,5 +169,5 @@ private struct RecipeListRow: View {
 #Preview {
     HomeView(remindersStore: FakeRemindersStore(access: .fullAccess, lists: [.groceries, .shopping]))
         .environment(ExportSettings(defaults: UserDefaults(suiteName: "preview")!))
-        .modelContainer(for: [Recipe.self, RecipePage.self], inMemory: true)
+        .modelContainer(for: AppSchema.models, inMemory: true)
 }
