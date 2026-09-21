@@ -59,8 +59,8 @@ struct SettingsView: View {
 
                 Section("About") {
                     Button("Show welcome screen") {
-                        hasSeenWelcome = false
                         dismiss()
+                        hasSeenWelcome = false
                     }
                     LabeledContent("Extraction API", value: serverDescription)
                 }
