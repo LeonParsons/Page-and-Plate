@@ -26,7 +26,7 @@ ios/Packages/RecipeCore/      Pure Swift: Codable models, scaling, rounding, for
 api/                          Cloudflare Worker: POST /extract, eval script, JSON Schema export
 schema/extraction.schema.json Generated from the Worker's Zod schema; the contract between API and app
 fixtures/scaling/             Scaling and formatting cases (JSON)
-fixtures/planning/            Week boundaries and (Phase 6) week-export merge cases
+fixtures/planning/            Week boundaries (weeks.json) and week-export/ merge cases, one per file
 fixtures/photos/              Real cookbook page photos for evals
 fixtures/expected/            Hand-checked expected extractions for those photos
 docs/SPEC.md                  Product spec and phases

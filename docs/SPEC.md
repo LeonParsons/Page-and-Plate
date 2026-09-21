@@ -47,7 +47,7 @@ A **planner** (v0.3) puts recipes on the days of a week, each meal with its own 
 - **Review / Edit recipe:** title, optional source note ("Book name, p.88"), yield fields, warnings banner, ingredient rows. Each row edits structured fields: quantity, max quantity, unit (picker), package size, name, preparation, optional, scalable. The raw printed text is shown read-only under each row.
 - **Recipe detail:** page photos, portions stepper, scaled ingredient list grouped by section, "Add to Reminders", "Share", "Edit", "Add to plan…" (this week or next; shows what each day already has) and the upcoming days it is planned on. Opened from a planned meal, the portions section is that meal's ("Portions for Wednesday 23 Sep"): the stepper, the scaled list and Add to Reminders use the meal's portions and leave the recipe's own "I want" alone; adding stamps the meal too.
 - **Export sheet:** target Reminders list picker (defaults to last used; option to create a list called "Shopping"), ingredient checklist, "Add N items" button, confirmation ("Added 9 items to Shopping").
-- **Week export (Phase 6):** the week's merged list, each row captioned with the meals it covers, staples unticked, same list picker and Share as the recipe export.
+- **Week export (Phase 6):** "Shop" (cart) on the Plan tab, disabled when the week has no meals. The same export sheet as a recipe, headed "3 meals · 21 – 27 Sep", over the week's merged list in one "Shopping list" section; each row captioned with the meals it covers ("BEEF RENDANG (Mon), Chickpea arrabbiata (Wed)"), staples unticked, same list picker and Share.
 - **Settings:** default Reminders list, staples list (unticked by default on export).
 
 ## 5. Data model
@@ -174,11 +174,11 @@ struct RecipeYield: Codable, Equatable {
 - `ShareLink` with plain text: first line the recipe title and portions, then one ticked line per row.
 
 **Shop for the week (v0.3, Phase 6)**
-- Input: every planned meal of the week on screen, in day order then plan order, each at its own portions.
-- Merge rule — combine only where it is simple: two rows merge when the trimmed, case-folded `name`, the `unit` and the `packageSize` all match. Quantities are summed *unrounded* (each meal's quantity × its factor; ranges end-to-end, a missing max counts as the min) and rounded once per §7. Unquantified twins ("salt, to taste") collapse to one row. `optional` survives only if every contributor was optional. Anything else — different unit, different tin size, "onion" vs "onions" — stays a separate row. A row with one contributor is byte-identical to that recipe's own export line.
-- Reminder title = line text. Notes = one line per contributing meal: `Recipe title · for N · Mon 22 Sep`.
-- Share text: "Week of 22 Sep", one line per meal ("Mon · Beef rendang — for 4"), a blank line, then the ticked rows.
-- On success: `exportedAt` on every contributing meal and `lastExportedAt` on every recipe with at least one ticked line, so the Recipes tab shows "Added to Reminders" for them exactly as a single export would.
+- Input: every planned meal of the week on screen whose recipe still exists, in day order then plan order, each at its own portions (factor = portions / base yield, or 1 without a usable base yield, as on the recipe screen).
+- Merge rule — combine only where it is simple: rows merge when the trimmed, case-folded `name`, the unit (`each` for a quantified row without one; none for an unquantified row) and the `packageSize` all match — including twins inside one recipe (rendang lists lemongrass in the main list and in the paste: the week shows `Lemongrass stalk — 2`). Quantities are summed *unrounded* (each row's quantity × its meal's factor; unscalable rows contribute as printed; ranges end to end, a missing max counting as the min) and rounded once per §7, so 133.3 g + 133.3 g is 270 g, not 260, and 800 g + 800 g becomes 1.6 kg. Unquantified twins ("salt, to taste") collapse to one row; a quantified "salt — 1 pinch" stays separate. `optional` survives only if every contributor was optional. Anything else — tbsp vs ml, g vs kg, a 400 g tin vs a 227 g tin, "onion" vs "onions" — stays a separate row. A row fed by a single ingredient row is byte-identical to that recipe's own export line.
+- Reminder title = line text. Notes = one line per contributing meal, in week order: `BEEF RENDANG · for 4 · Mon 21 Sep`.
+- Share text: `Week of 21 Sep`, one line per meal (`Mon · BEEF RENDANG — for 4 servings`), a blank line, then the ticked rows; header only when nothing is ticked.
+- On success: `exportedAt` on every meal that contributed to a ticked row (the green tick on the plan) and `lastExportedAt` on that meal's recipe, so the Recipes tab shows "Added to Reminders" for it exactly as a single export would. A recipe whose rows were all unticked is not stamped.
 
 ## 9. Security, privacy, cost
 
@@ -224,7 +224,7 @@ struct RecipeYield: Codable, Equatable {
 
 ## 11. Fixtures
 
-**Planning (`fixtures/planning/`, Phase 5–6):** `weeks.json` pins `PlanWeek` boundaries (Monday-first and Sunday-first, a year boundary, the UK clock changes); Phase 6 adds `week-export-*.json` for the merge rule.
+**Planning (`fixtures/planning/`, Phase 5–6):** `weeks.json` pins `PlanWeek` boundaries (Monday-first and Sunday-first, a year boundary, the UK clock changes). `week-export/` has one case per file for the merge rule — meals from `fixtures/expected/` (rendang + arrabbiata, the same recipe twice, two curries at different factors) or inline, with the expected ids, titles, notes, contributors and staples, plus `01-….txt` for the share text.
 
 ### Scaling and formatting fixtures (Phase 0)
 

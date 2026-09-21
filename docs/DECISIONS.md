@@ -226,6 +226,19 @@ Each of these is a place where SPEC v0.2 was silent, overlapping or contradictor
 
 - The Plan row navigated to the plain recipe screen, whose "I want" stepper edits `Recipe.targetYield` — a different number from the meal's own `PlannedMeal.portions`, so a change there never showed on the plan. Rather than couple the two (portions are per meal by decision), the detail screen now takes the `PlannedMeal` when reached from the plan: the section is titled "Portions for Wednesday 23 Sep" with a footer saying the recipe's own portions stay as they are, the stepper and the scaled list are the meal's, and Add to Reminders exports at the meal's portions and stamps `PlannedMeal.exportedAt` as well as `Recipe.lastExportedAt` (the row's green tick becomes true before Phase 6). From the Recipes tab nothing changes.
 
+## Phase 6 — week export
+
+### 2026-09-21 · Design
+
+- **`WeekShopping` in RecipeCore** merges only on an exact key — trimmed, case-folded name + effective unit + package size — because anything fuzzier (plurals, "red onion" vs "onion", tbsp into ml) is guesswork the cook would have to check anyway, and a duplicate row in Reminders costs nothing (SPEC §1). So g and kg of the same thing are two rows (no unit conversion, rule 6), as are "onion" and "onions". The key is the row's `id`, which keeps ticks stable and the list free of duplicates by construction.
+- **Sum unrounded, round once.** Each contribution is quantity × its meal's factor, unrounded; the total goes through the same `Rounding.roundRange` that `Ingredient.scaled(by:)` now uses (extracted from it so there is one rounding path). Unscalable rows ("for frying") contribute as printed — not scaling with portions still means buying that much. A row fed by one ingredient row goes through `scaled(by:)` itself, so it is byte-identical to the recipe's own export line (tested).
+- **Twins inside one recipe merge too** (rendang's lemongrass in the main list and in the paste → one row for 2). Same rule, and the shopping list wants the total; the recipe's own export still lists both rows.
+- **Day text is supplied by the app** (`PlannedMealExport.dayText` / `weekdayText`), formatted with the user's locale as the planner already does. RecipeCore stays locale-free and the fixtures are literal strings.
+- **One export sheet, two builders.** Instead of a separate `WeekExportSheet`, `ExportContent` carries rows (stable string ids), heading, subject, section title, share text and the stamps; `ExportModel`/`ExportSheet` don't know whether it is a recipe or a week, so the access flow, list picker, "Create Shopping", All/None and Share are shared as they are. `RemindersStoring.add` takes `ReminderItem` (title + notes) — it never needed ingredient ids.
+- **Stamps:** adding sets `exportedAt` on every meal that contributed to a ticked row and `lastExportedAt` on its recipe (the same field the Recipes tab already reads), so the Recipes tab updates exactly as after a single export; a recipe whose rows were all unticked is left alone. The single-recipe export from the plan (previous fix) stamps the meal the same way.
+- The meals `@Query` moved from `WeekView` to `PlannerView` so the Shop button and the sheet see the week on screen; `WeekView` is now a plain view of its rows.
+- Checked in the simulator: four rendang meals at ×¼, ×¾, ×¼ and ×1 gave `Beef shin — 1.8 kg` with four note lines in the Reminders app; green ticks on the plan rows; "Added to Reminders 21 Sep 2026" on both recipes; Shop disabled on an empty week.
+
 ### Open: device acceptance (SPEC §10 Phase 4)
 
 Awaiting the user's device pass: document camera, export at 1 portion, titles/notes, staples unticked, duplicate export, denied permission + Share, and the Grocery-list section behaviour.
