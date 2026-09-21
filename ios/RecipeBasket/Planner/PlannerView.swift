@@ -7,14 +7,28 @@ struct PlannerView: View {
     var remindersStore: any RemindersStoring = EventKitRemindersStore()
 
     @Environment(\.modelContext) private var modelContext
+    @Environment(ExportSettings.self) private var exportSettings
+    /// Every planned meal: a `@Query` predicate is fixed at init, and recreating the view per week made the
+    /// navigation title vanish and reappear on each ‹ › tap. A few rows per week, never many.
+    @Query(sort: [SortDescriptor(\PlannedMeal.dayKey), SortDescriptor(\PlannedMeal.order)]) private var allMeals: [PlannedMeal]
     @State private var week = PlanWeek(containing: PlanDay(.now))
     @State private var addingTo: PlanDay?
+    @State private var isShopping = false
     @State private var isShowingSettings = false
     @State private var isConfirmingClear = false
 
+    private var weekMeals: [PlannedMeal] {
+        allMeals.filter { !$0.isDeleted && week.contains($0.day) }
+    }
+
+    /// What Shop exports: the week's meals whose recipe is still here.
+    private var shoppable: [PlannedMeal] {
+        weekMeals.filter { $0.recipe.map { !$0.isDeleted } ?? false }
+    }
+
     var body: some View {
         NavigationStack {
-            WeekView(week: week, remindersStore: remindersStore, onAdd: { addingTo = $0 }, onDeleteRecipe: deleteRecipe)
+            WeekView(week: week, meals: weekMeals, remindersStore: remindersStore, onAdd: { addingTo = $0 }, onDeleteRecipe: deleteRecipe)
                 .navigationTitle(week.title)
                 .toolbar {
                     ToolbarItemGroup(placement: .topBarLeading) {
@@ -23,6 +37,10 @@ struct PlannerView: View {
                         if !week.contains(PlanDay(.now)) {
                             Button("Today") { week = PlanWeek(containing: PlanDay(.now)) }
                         }
+                    }
+                    ToolbarItem(placement: .primaryAction) {
+                        Button("Shop", systemImage: "cart") { isShopping = true }
+                            .disabled(shoppable.isEmpty)
                     }
                     ToolbarItem(placement: .secondaryAction) {
                         Button("Clear week…", systemImage: "calendar.badge.minus", role: .destructive) { isConfirmingClear = true }
@@ -33,6 +51,9 @@ struct PlannerView: View {
                 }
                 .sheet(item: $addingTo) { day in
                     AddMealSheet(day: day)
+                }
+                .sheet(isPresented: $isShopping) {
+                    ExportSheet(week: week, meals: shoppable, store: remindersStore, settings: exportSettings)
                 }
                 .sheet(isPresented: $isShowingSettings) {
                     SettingsView(store: remindersStore)
@@ -59,16 +80,14 @@ extension PlanDay: @retroactive Identifiable {
     public var id: String { isoString }
 }
 
-/// One week as a list of days. The view keeps its identity across weeks (a `@Query` predicate is fixed at init,
-/// so it fetches every planned meal and filters — a few rows per week, never many) — recreating it per week made
-/// the navigation title vanish and reappear on each ‹ › tap.
+/// One week as a list of days, over the week's meals in day-then-order.
 struct WeekView: View {
     let week: PlanWeek
+    let meals: [PlannedMeal]
     let remindersStore: any RemindersStoring
     let onAdd: (PlanDay) -> Void
     let onDeleteRecipe: (Recipe) -> Void
 
-    @Query(sort: [SortDescriptor(\PlannedMeal.dayKey), SortDescriptor(\PlannedMeal.order)]) private var meals: [PlannedMeal]
     @Environment(\.modelContext) private var modelContext
     @State private var movingMeal: PlannedMeal?
 
@@ -77,7 +96,7 @@ struct WeekView: View {
     }
 
     private var byDay: [PlanDay: [PlannedMeal]] {
-        PlanOrdering.byDay(meals.filter { !$0.isDeleted && week.contains($0.day) })
+        PlanOrdering.byDay(meals)
     }
 
     var body: some View {

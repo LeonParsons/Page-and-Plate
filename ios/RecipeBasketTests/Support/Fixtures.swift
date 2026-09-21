@@ -27,5 +27,10 @@ enum Fixtures {
         try Data(contentsOf: repoRoot().appendingPathComponent("fixtures/photos/\(stem).jpg"))
     }
 
+    /// A file under `fixtures/planning/week-export/`, as text.
+    static func weekExport(_ name: String) throws -> String {
+        try String(contentsOf: repoRoot().appendingPathComponent("fixtures/planning/week-export/\(name)"), encoding: .utf8)
+    }
+
     enum FixtureError: Error { case repoNotFound }
 }
