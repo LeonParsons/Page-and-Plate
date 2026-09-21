@@ -20,7 +20,8 @@ struct SplashView: View {
                 Text("Recipe Basket")
                     .font(.system(.largeTitle, design: .rounded, weight: .bold))
                     .foregroundStyle(.white)
-                Text("From cookbook page to shopping list.")
+                Text("From cookbook page to weekly plan and shopping list.")
+                    .multilineTextAlignment(.center)
                     .font(.title3)
                     .foregroundStyle(.white.opacity(0.9))
                 ProgressView()
@@ -28,6 +29,7 @@ struct SplashView: View {
                     .controlSize(.large)
                     .padding(.top, 32)
             }
+            .padding(.horizontal, 28)
         }
     }
 }

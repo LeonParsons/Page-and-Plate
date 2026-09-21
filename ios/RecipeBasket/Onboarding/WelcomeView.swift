@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// First-launch landing page: what the app is for, in three lines, then straight to the recipes.
+/// First-launch landing page: what the app is for, in four lines, then straight to the plan.
 /// Shown once (`WelcomeView.hasSeenKey`), and again from Settings on request.
 struct WelcomeView: View {
     static let hasSeenKey = "welcome.hasSeen"
@@ -50,7 +50,8 @@ struct WelcomeView: View {
                     Text("Recipe Basket")
                         .font(.system(.largeTitle, design: .rounded, weight: .bold))
                         .foregroundStyle(.white)
-                    Text("From cookbook page to shopping list.")
+                    Text("From cookbook page to weekly plan and shopping list.")
+                        .multilineTextAlignment(.center)
                         .font(.title3)
                         .foregroundStyle(.white.opacity(0.9))
                 }
@@ -73,9 +74,14 @@ struct WelcomeView: View {
                     "Cooking for one from a recipe that serves four? Every quantity is scaled and rounded the way a cook would — ¼ tin, ¾ tsp — in the book's own units."
                 )
                 feature(
+                    "calendar",
+                    "Plan the week",
+                    "Put recipes on the days you'll cook them, move them around, and set the portions for each meal."
+                )
+                feature(
                     "checklist",
                     "Add it to Reminders",
-                    "One tap sends the ingredients to a Reminders list, staples left out. Or share the list as text."
+                    "One tap sends a recipe's ingredients — or the whole week's — to a Reminders list, staples left out. Or share the list as text."
                 )
             }
     }
