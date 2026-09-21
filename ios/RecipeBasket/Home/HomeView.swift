@@ -12,6 +12,7 @@ struct HomeView: View {
     @State private var selection: Recipe.ID?
     @State private var isAdding = false
     @State private var isShowingSettings = false
+    @AppStorage(WelcomeView.hasSeenKey) private var hasSeenWelcome = false
 
     var body: some View {
         NavigationSplitView {
@@ -48,6 +49,9 @@ struct HomeView: View {
             }
             .sheet(isPresented: $isShowingSettings) {
                 SettingsView(store: remindersStore)
+            }
+            .fullScreenCover(isPresented: Binding(get: { !hasSeenWelcome }, set: { if !$0 { hasSeenWelcome = true } })) {
+                WelcomeView { hasSeenWelcome = true }
             }
         } detail: {
             if let id = selection, let recipe = recipes.first(where: { $0.id == id }) {

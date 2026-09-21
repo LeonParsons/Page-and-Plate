@@ -10,6 +10,7 @@ struct SettingsView: View {
     @State private var lists: [ReminderList] = []
     @State private var access: RemindersAccess = .notDetermined
     @State private var newStaple = ""
+    @AppStorage(WelcomeView.hasSeenKey) private var hasSeenWelcome = false
 
     var body: some View {
         @Bindable var settings = settings
@@ -56,7 +57,11 @@ struct SettingsView: View {
                     Button("Restore default staples") { settings.restoreDefaultStaples() }
                 }
 
-                Section("Server") {
+                Section("About") {
+                    Button("Show welcome screen") {
+                        hasSeenWelcome = false
+                        dismiss()
+                    }
                     LabeledContent("Extraction API", value: serverDescription)
                 }
             }
