@@ -1,0 +1,210 @@
+import RecipeCore
+import SwiftData
+import SwiftUI
+
+/// The Plan tab: one week at a time, any number of meals per day (SPEC §4 Plan).
+struct PlannerView: View {
+    var remindersStore: any RemindersStoring = EventKitRemindersStore()
+
+    @Environment(\.modelContext) private var modelContext
+    @State private var week = PlanWeek(containing: PlanDay(.now))
+    @State private var addingTo: PlanDay?
+    @State private var isShowingSettings = false
+    @State private var isConfirmingClear = false
+
+    var body: some View {
+        NavigationStack {
+            WeekView(week: week, remindersStore: remindersStore, onAdd: { addingTo = $0 }, onDeleteRecipe: deleteRecipe)
+                .id(week.start)
+                .navigationTitle(week.title)
+                .toolbar {
+                    ToolbarItemGroup(placement: .topBarLeading) {
+                        Button("Previous week", systemImage: "chevron.left") { withAnimation { week = week.previous() } }
+                        Button("Next week", systemImage: "chevron.right") { withAnimation { week = week.next() } }
+                        if !week.contains(PlanDay(.now)) {
+                            Button("Today") { withAnimation { week = PlanWeek(containing: PlanDay(.now)) } }
+                        }
+                    }
+                    ToolbarItem(placement: .secondaryAction) {
+                        Button("Clear week…", systemImage: "calendar.badge.minus", role: .destructive) { isConfirmingClear = true }
+                    }
+                    ToolbarItem(placement: .secondaryAction) {
+                        Button("Settings", systemImage: "gearshape") { isShowingSettings = true }
+                    }
+                }
+                .sheet(item: $addingTo) { day in
+                    AddMealSheet(day: day)
+                }
+                .sheet(isPresented: $isShowingSettings) {
+                    SettingsView(store: remindersStore)
+                }
+                .confirmationDialog("Clear \(week.title.lowercased())?", isPresented: $isConfirmingClear, titleVisibility: .visible) {
+                    Button("Clear \(week.rangeText)", role: .destructive) { try? PlanEditor(context: modelContext).clear(week) }
+                } message: {
+                    Text("Removes every meal from this week's plan. The recipes stay in your library.")
+                }
+        }
+    }
+
+    /// Deleting a recipe from a detail screen reached through the plan (same rule as Recipes: the owner deletes,
+    /// the save waits a turn so no row is still rendering it).
+    private func deleteRecipe(_ recipe: Recipe) {
+        modelContext.delete(recipe)
+        Task { @MainActor in
+            try? modelContext.save()
+        }
+    }
+}
+
+extension PlanDay: @retroactive Identifiable {
+    public var id: String { isoString }
+}
+
+/// One week as a list of days. Recreated per week (`.id(week.start)`) so the query's predicate is fixed at init.
+struct WeekView: View {
+    let week: PlanWeek
+    let remindersStore: any RemindersStoring
+    let onAdd: (PlanDay) -> Void
+    let onDeleteRecipe: (Recipe) -> Void
+
+    @Query private var meals: [PlannedMeal]
+    @Environment(\.modelContext) private var modelContext
+    @State private var movingMeal: PlannedMeal?
+
+    init(week: PlanWeek, remindersStore: any RemindersStoring, onAdd: @escaping (PlanDay) -> Void, onDeleteRecipe: @escaping (Recipe) -> Void) {
+        self.week = week
+        self.remindersStore = remindersStore
+        self.onAdd = onAdd
+        self.onDeleteRecipe = onDeleteRecipe
+        let start = week.start.isoString
+        let end = week.end.isoString
+        _meals = Query(
+            filter: #Predicate<PlannedMeal> { $0.dayKey >= start && $0.dayKey <= end },
+            sort: [SortDescriptor(\PlannedMeal.dayKey), SortDescriptor(\PlannedMeal.order)]
+        )
+    }
+
+    private var editor: PlanEditor {
+        PlanEditor(context: modelContext)
+    }
+
+    private var byDay: [PlanDay: [PlannedMeal]] {
+        PlanOrdering.byDay(meals.filter { !$0.isDeleted })
+    }
+
+    var body: some View {
+        List {
+            ForEach(week.days) { day in
+                let dayMeals = byDay[day] ?? []
+                Section {
+                    if dayMeals.isEmpty {
+                        Text("Nothing planned")
+                            .foregroundStyle(.tertiary)
+                    }
+                    ForEach(dayMeals) { meal in
+                        if let recipe = meal.recipe, !recipe.isDeleted {
+                            NavigationLink {
+                                RecipeDetailView(recipe: recipe, remindersStore: remindersStore) { onDeleteRecipe(recipe) }
+                            } label: {
+                                PlannedMealRow(meal: meal, recipe: recipe) { editor.setPortions(meal, $0) }
+                            }
+                            .swipeActions(edge: .trailing) {
+                                Button("Remove", systemImage: "trash", role: .destructive) { try? editor.remove(meal) }
+                            }
+                            .swipeActions(edge: .leading) {
+                                Button("Move", systemImage: "arrow.turn.down.right") { movingMeal = meal }
+                                    .tint(.indigo)
+                            }
+                            .contextMenu {
+                                Menu("Move to", systemImage: "arrow.turn.down.right") {
+                                    ForEach(week.days.filter { $0 != day }) { target in
+                                        Button(target.longText) { try? editor.move(meal, to: target) }
+                                    }
+                                }
+                                Button("Remove from plan", systemImage: "trash", role: .destructive) { try? editor.remove(meal) }
+                            }
+                        }
+                    }
+                    .onMove { source, destination in try? editor.reorder(on: day, from: source, to: destination) }
+                    Button { onAdd(day) } label: {
+                        Label("Add meal", systemImage: "plus.circle")
+                    }
+                } header: {
+                    DayHeader(day: day)
+                }
+            }
+        }
+        .confirmationDialog("Move to", isPresented: Binding(get: { movingMeal != nil }, set: { if !$0 { movingMeal = nil } }), titleVisibility: .visible) {
+            if let meal = movingMeal {
+                ForEach(week.days.filter { $0 != meal.day }) { target in
+                    Button(target.longText) { try? editor.move(meal, to: target) }
+                }
+            }
+        }
+    }
+}
+
+private struct DayHeader: View {
+    let day: PlanDay
+
+    var body: some View {
+        HStack(spacing: 6) {
+            if day.isToday {
+                Text("Today")
+                    .font(.caption.weight(.bold))
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Color.accentColor, in: Capsule())
+                    .foregroundStyle(.white)
+                    .textCase(nil)
+            }
+            Text(day.longText)
+                .foregroundStyle(day.isToday ? Color.accentColor : .secondary)
+        }
+    }
+}
+
+/// Thumbnail, title, the meal's own portions (with a stepper), and where the recipe lives.
+struct PlannedMealRow: View {
+    let meal: PlannedMeal
+    let recipe: Recipe
+    let onPortions: (Int) -> Void
+
+    var body: some View {
+        HStack(spacing: 12) {
+            if let first = recipe.orderedPages.first, !first.isDeleted {
+                PageThumbnail(data: first.imageData)
+                    .frame(width: 44, height: 56)
+            } else {
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(Color.secondary.opacity(0.2))
+                    .frame(width: 44, height: 56)
+            }
+            VStack(alignment: .leading, spacing: 3) {
+                Text(recipe.title)
+                    .font(.headline)
+                    .lineLimit(2)
+                HStack(spacing: 4) {
+                    Text("for \(ShoppingExport.portionsText(targetYield: meal.portions, yieldUnit: recipe.yield.unit))")
+                    if meal.exportedAt != nil {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundStyle(.green)
+                            .accessibilityLabel("Added to Reminders")
+                    }
+                }
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                if let source = recipe.sourceText {
+                    Text(source)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+            }
+            Spacer(minLength: 4)
+            Stepper("Portions", value: Binding(get: { meal.portions }, set: { onPortions($0) }), in: Portions.range)
+                .labelsHidden()
+                .fixedSize()
+        }
+    }
+}

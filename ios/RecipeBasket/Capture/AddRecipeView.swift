@@ -6,8 +6,12 @@ struct AddRecipeView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(ExportSettings.self) private var settings
 
-    init(lastBook: String?) {
+    /// Called with the saved recipe before the sheet closes — the planner uses it to put the recipe on a day.
+    private let onSaved: (Recipe) -> Void
+
+    init(lastBook: String?, onSaved: @escaping (Recipe) -> Void = { _ in }) {
         _flow = State(initialValue: AddRecipeFlow(book: lastBook ?? ""))
+        self.onSaved = onSaved
     }
 
     var body: some View {
@@ -23,8 +27,9 @@ struct AddRecipeView: View {
                     case .extracting:
                         ExtractingView(flow: flow)
                     case .review:
-                        ReviewView(flow: flow) {
+                        ReviewView(flow: flow) { recipe in
                             settings.rememberBook(flow.book)
+                            onSaved(recipe)
                             dismiss()
                         }
                     case let .editIngredient(id):

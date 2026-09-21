@@ -4,7 +4,7 @@ import SwiftUI
 /// The review step of the add-recipe flow: the shared form over the flow's draft, Save inserts the recipe.
 struct ReviewView: View {
     @Bindable var flow: AddRecipeFlow
-    let onSaved: () -> Void
+    let onSaved: (Recipe) -> Void
 
     @Environment(\.modelContext) private var modelContext
 
@@ -38,7 +38,7 @@ struct ReviewView: View {
         modelContext.insert(recipe)
         do {
             try modelContext.save()
-            onSaved()
+            onSaved(recipe)
         } catch {
             modelContext.delete(recipe)
             flow.error = .network("Couldn't save the recipe: \(error.localizedDescription)")

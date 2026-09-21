@@ -9,7 +9,7 @@ struct RecipeBasketApp: App {
     var body: some Scene {
         WindowGroup {
             LaunchGate {
-                HomeView(remindersStore: remindersStore)
+                RootView(remindersStore: remindersStore)
             }
             .environment(exportSettings)
         }
