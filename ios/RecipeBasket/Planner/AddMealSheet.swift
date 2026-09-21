@@ -98,6 +98,9 @@ struct RecipeLibraryRow: View {
                 Text(recipe.title)
                     .font(.headline)
                     .lineLimit(2)
+                if let rating = recipe.rating {
+                    RatingStars(rating: rating)
+                }
                 Text(yieldText)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)

@@ -54,20 +54,21 @@ struct RecipeDetailView: View {
 
     private var content: some View {
         List {
-            if !pages.isEmpty || recipe.sourceText != nil || plannedText != nil {
-                Section {
-                    if !pages.isEmpty {
-                        PageThumbnailStrip(pages: pages) { viewingPage = .init(index: $0) }
-                            .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
-                    }
-                    if let source = recipe.sourceText {
-                        Label(source, systemImage: "book")
-                            .foregroundStyle(.secondary)
-                    }
-                    if let planned = plannedText {
-                        Label(planned, systemImage: "calendar")
-                            .foregroundStyle(.secondary)
-                    }
+            Section {
+                if !pages.isEmpty {
+                    PageThumbnailStrip(pages: pages) { viewingPage = .init(index: $0) }
+                        .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                }
+                if let source = recipe.sourceText {
+                    Label(source, systemImage: "book")
+                        .foregroundStyle(.secondary)
+                }
+                if let planned = plannedText {
+                    Label(planned, systemImage: "calendar")
+                        .foregroundStyle(.secondary)
+                }
+                LabeledContent("Rating") {
+                    StarRatingPicker(rating: $recipe.rating)
                 }
             }
 

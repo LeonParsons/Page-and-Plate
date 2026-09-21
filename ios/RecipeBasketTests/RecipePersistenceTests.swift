@@ -79,6 +79,27 @@ struct RecipePersistenceTests {
         #expect(saved.targetYield == 6)
     }
 
+    @Test("A rating is nil until set, persists, and survives an edit")
+    func ratingPersists() throws {
+        let container = try makeContainer()
+        let context = ModelContext(container)
+        let recipe = Recipe(draft: RecipeDraft(response: try Fixtures.expected("chickpea-arrabbiata"), book: "7 a day", page: 40, pages: []))
+        context.insert(recipe)
+        try context.save()
+        #expect(recipe.rating == nil)
+
+        recipe.rating = 4
+        try context.save()
+        let fresh = ModelContext(container)
+        #expect(try #require(try fresh.fetch(FetchDescriptor<Recipe>()).first).rating == 4)
+
+        var draft = RecipeDraft(recipe: recipe)
+        draft.title = "Arrabbiata"
+        recipe.apply(draft)
+        #expect(recipe.rating == 4, "the edit form never touches the rating")
+        #expect(Recipe.ratingRange == 1...5)
+    }
+
     @Test("apply(draft) updates the editable fields and keeps pages and portions")
     func applyDraft() throws {
         let container = try makeContainer()

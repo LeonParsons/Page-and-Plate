@@ -171,7 +171,7 @@ private struct DayHeader: View {
     }
 }
 
-/// Thumbnail, title, the meal's own portions (with a stepper), and where the recipe lives.
+/// Thumbnail, title, rating if any, the meal's own portions (with a stepper), and where the recipe lives.
 struct PlannedMealRow: View {
     let meal: PlannedMeal
     let recipe: Recipe
@@ -191,6 +191,9 @@ struct PlannedMealRow: View {
                 Text(recipe.title)
                     .font(.headline)
                     .lineLimit(2)
+                if let rating = recipe.rating {
+                    RatingStars(rating: rating)
+                }
                 HStack(spacing: 4) {
                     Text("for \(ShoppingExport.portionsText(targetYield: meal.portions, yieldUnit: recipe.yield.unit))")
                     if meal.exportedAt != nil {

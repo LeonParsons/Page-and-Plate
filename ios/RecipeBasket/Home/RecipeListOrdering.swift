@@ -4,7 +4,7 @@ import Foundation
 nonisolated enum RecipeListOrdering {
 
     enum Sort: String, CaseIterable, Identifiable, Sendable {
-        case newest, title, lastExported
+        case newest, title, rating, lastExported
 
         var id: String { rawValue }
 
@@ -12,6 +12,7 @@ nonisolated enum RecipeListOrdering {
             switch self {
             case .newest: "Newest first"
             case .title: "Title"
+            case .rating: "Rating"
             case .lastExported: "Last added to Reminders"
             }
         }
@@ -45,6 +46,15 @@ nonisolated enum RecipeListOrdering {
             return recipes.sorted { $0.createdAt > $1.createdAt }
         case .title:
             return recipes.sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
+        case .rating:
+            return recipes.sorted { a, b in
+                switch (a.rating, b.rating) {
+                case let (x?, y?) where x != y: return x > y
+                case (.some, .none): return true
+                case (.none, .some): return false
+                default: return a.createdAt > b.createdAt
+                }
+            }
         case .lastExported:
             return recipes.sorted { a, b in
                 switch (a.lastExportedAt, b.lastExportedAt) {

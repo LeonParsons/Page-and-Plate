@@ -24,6 +24,10 @@ final class Recipe {
     var createdAt: Date
     var updatedAt: Date
     var lastExportedAt: Date?
+    /// The cook's verdict, 1…5 stars; nil until rated. Set on the recipe screen, never by the edit form.
+    var rating: Int?
+
+    static let ratingRange = 1...5
 
     init(draft: RecipeDraft, now: Date = .now) {
         id = UUID()
@@ -41,6 +45,7 @@ final class Recipe {
         createdAt = now
         updatedAt = now
         lastExportedAt = nil
+        rating = nil
     }
 
     var orderedPages: [RecipePage] {

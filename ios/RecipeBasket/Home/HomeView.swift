@@ -111,7 +111,7 @@ struct HomeView: View {
     }
 }
 
-/// SPEC §4: thumbnail, title, target portions and the last "added to Reminders" date if any.
+/// SPEC §4: thumbnail, title, rating if any, target portions and the last "added to Reminders" date if any.
 /// Tapping the thumbnail opens the page photos; tapping anywhere else opens the recipe.
 private struct RecipeListRow: View {
     let recipe: Recipe
@@ -138,6 +138,9 @@ private struct RecipeListRow: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(recipe.title)
                     .font(.headline)
+                if let rating = recipe.rating {
+                    RatingStars(rating: rating)
+                }
                 Text(portionsLine)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)

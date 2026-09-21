@@ -41,11 +41,11 @@ A **planner** (v0.3) puts recipes on the days of a week, each meal with its own 
 
 ## 4. Screens
 
-- **Plan (first tab):** one week, a section per day (today marked), previous/next/Today, "Clear week". Each planned meal row: thumbnail, title, "for N servings" with a stepper, book and page, a tick once exported. Long-press menu and leading swipe: Move to another day; trailing swipe: Remove; long-press-drag reorders within a day. "Add meal" per day opens the library picker (searchable, with "Scan new recipe").
-- **Recipes (second tab):** list or grid of recipes with thumbnail, title, target portions and "Last added to Reminders" date if any. "Add recipe" button. On iPad, a split view: list on the left, recipe on the right.
+- **Plan (first tab):** one week, a section per day (today marked), previous/next/Today, "Clear week". Each planned meal row: thumbnail, title, the recipe's star rating if any, "for N servings" with a stepper, book and page, a tick once exported. Long-press menu and leading swipe: Move to another day; trailing swipe: Remove; long-press-drag reorders within a day. "Add meal" per day opens the library picker (searchable, with "Scan new recipe").
+- **Recipes (second tab):** list or grid of recipes with thumbnail, title, star rating if any, target portions and "Last added to Reminders" date if any. Sort by newest, title, rating or last added to Reminders; group by book. "Add recipe" button. On iPad, a split view: list on the left, recipe on the right.
 - **Capture:** document camera or photo picker, page thumbnails with reorder/delete, "Extract" button.
 - **Review / Edit recipe:** title, optional source note ("Book name, p.88"), yield fields, warnings banner, ingredient rows. Each row edits structured fields: quantity, max quantity, unit (picker), package size, name, preparation, optional, scalable. The raw printed text is shown read-only under each row.
-- **Recipe detail:** page photos, portions stepper, scaled ingredient list grouped by section, "Add to Reminders", "Share", "Edit", "Add to plan…" (this week or next; shows what each day already has) and the upcoming days it is planned on. Opened from a planned meal, the portions section is that meal's ("Portions for Wednesday 23 Sep"): the stepper, the scaled list and Add to Reminders use the meal's portions and leave the recipe's own "I want" alone; adding stamps the meal too.
+- **Recipe detail:** page photos, a 1–5 star rating (tap a star; tap the current one to clear), portions stepper, scaled ingredient list grouped by section, "Add to Reminders", "Share", "Edit", "Add to plan…" (this week or next; shows what each day already has) and the upcoming days it is planned on. Opened from a planned meal, the portions section is that meal's ("Portions for Wednesday 23 Sep"): the stepper, the scaled list and Add to Reminders use the meal's portions and leave the recipe's own "I want" alone; adding stamps the meal too.
 - **Export sheet:** target Reminders list picker (defaults to last used; option to create a list called "Shopping"), ingredient checklist, "Add N items" button, confirmation ("Added 9 items to Shopping").
 - **Week export (Phase 6):** "Shop" (cart) on the Plan tab, disabled when the week has no meals. The same export sheet as a recipe, headed "3 meals · 21 – 27 Sep", over the week's merged list in one "Shopping list" section; each row captioned with the meals it covers ("BEEF RENDANG (Mon), Chickpea arrabbiata (Wed)"), staples unticked, same list picker and Share.
 - **Settings:** default Reminders list, staples list (unticked by default on export).
@@ -94,7 +94,7 @@ struct RecipeYield: Codable, Equatable {
 }
 ```
 
-**SwiftData `Recipe` model (app target):** id, title, book, page, sourceNote (legacy), pages (downscaled JPEG data, external storage), yield, targetYield (Int ≥ 1, defaults to base yield), ingredients, warnings, plannedMeals (cascade), createdAt, updatedAt, lastExportedAt.
+**SwiftData `Recipe` model (app target):** id, title, book, page, sourceNote (legacy), pages (downscaled JPEG data, external storage), yield, targetYield (Int ≥ 1, defaults to base yield), ingredients, warnings, plannedMeals (cascade), createdAt, updatedAt, lastExportedAt, rating (1–5, nil until rated).
 
 **SwiftData `PlannedMeal` model (v0.3):** id, dayKey (`PlanDay.isoString`, "2026-09-21"), order (position within the day), portions (Int ≥ 1, the meal's own), recipe (inverse of `plannedMeals`; deleting the recipe deletes the meal), createdAt, exportedAt.
 
