@@ -201,6 +201,14 @@ Each of these is a place where SPEC v0.2 was silent, overlapping or contradictor
 - Contract change: `recipe.title` is nullable (a photo of just the list has no title; the prompt forbids inventing one) and the app pre-fills "Book, p. N" as the editable title. Mirrored in `RecipeCore.ExtractedRecipe.title: String?`, the exported JSON Schema, and both contract tests.
 - Cost per extraction, measured: ≈ 2–4¢ on Sonnet 5 (≈ 5.5k fixed input tokens — injected schema + system prompt — plus ≈ 1.5k per photo; output 0.7–2.3k). The 30/day cap bounds a device at ≈ $1.20/day.
 
+### 2026-09-21 · Product changes from using the app
+
+- **Serves / Makes** replaces the bare "Unit" field on the yield (feedback: "what will be here other than serving?"). Serves stores the unit `servings`; Makes exposes the unit ("muffins"). The last Makes unit is kept while toggling so a slip doesn't lose it. Detail reads "Recipe serves" / "Recipe makes".
+- **Welcome page** on first launch (name, tagline, three lines on what the app does) until the user taps Get started; re-showable from Settings → About. Stored as `welcome.hasSeen` in UserDefaults.
+- **Splash** on every cold launch — branded, with a spinner — 1.5 s was the recommendation over the requested 5 s; then set to **0.9 s** on request. One constant, `SplashView.duration`.
+- **Sort and group** on the recipe list (⋯ menu): Newest first / Title / Last added to Reminders, and group by book (books alphabetical, page order inside, "No book" last). Pure logic in `RecipeListOrdering` with tests; choices persist in UserDefaults.
+- **Page photos open full screen** from the list thumbnail (the row's other area still opens the recipe), the recipe's new thumbnail strip, and the review form: swipe between pages, pinch or double-tap to zoom. Zooming is a `UIScrollView` wrapped in `UIViewRepresentable` — SwiftUI on iOS 17 has no zoomable scroll view, and the point is reading the printed list, so a real one was worth the ~80 lines.
+
 ### Open: device acceptance (SPEC §10 Phase 4)
 
 Awaiting the user's device pass: document camera, export at 1 portion, titles/notes, staples unticked, duplicate export, denied permission + Share, and the Grocery-list section behaviour.

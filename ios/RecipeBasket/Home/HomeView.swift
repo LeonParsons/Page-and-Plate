@@ -112,15 +112,24 @@ struct HomeView: View {
 }
 
 /// SPEC §4: thumbnail, title, target portions and the last "added to Reminders" date if any.
+/// Tapping the thumbnail opens the page photos; tapping anywhere else opens the recipe.
 private struct RecipeListRow: View {
     let recipe: Recipe
     var showsBook = true
+    @State private var isViewingPages = false
 
     var body: some View {
         HStack(spacing: 12) {
             if !recipe.isDeleted, let first = recipe.orderedPages.first, !first.isDeleted {
-                PageThumbnail(data: first.imageData)
-                    .frame(width: 56, height: 72)
+                Button { isViewingPages = true } label: {
+                    PageThumbnail(data: first.imageData)
+                        .frame(width: 56, height: 72)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Page photo")
+                .fullScreenCover(isPresented: $isViewingPages) {
+                    PageViewerView(pages: recipe.isDeleted ? [] : recipe.orderedPages.map(\.imageData))
+                }
             } else {
                 RoundedRectangle(cornerRadius: 6)
                     .fill(Color.secondary.opacity(0.2))

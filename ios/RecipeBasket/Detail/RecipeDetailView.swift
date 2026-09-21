@@ -15,6 +15,7 @@ struct RecipeDetailView: View {
     @State private var isEditing = false
     @State private var isExporting = false
     @State private var isConfirmingDelete = false
+    @State private var viewingPage: PageViewerView.Selection?
     @State private var servesInput: Double?
     @FocusState private var servesFocused: Bool
 
@@ -35,12 +36,22 @@ struct RecipeDetailView: View {
         }
     }
 
+    private var pages: [Data] {
+        recipe.orderedPages.map(\.imageData)
+    }
+
     private var content: some View {
         List {
-            if let source = recipe.sourceText {
+            if !pages.isEmpty || recipe.sourceText != nil {
                 Section {
-                    Label(source, systemImage: "book")
-                        .foregroundStyle(.secondary)
+                    if !pages.isEmpty {
+                        PageThumbnailStrip(pages: pages) { viewingPage = .init(index: $0) }
+                            .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                    }
+                    if let source = recipe.sourceText {
+                        Label(source, systemImage: "book")
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
 
@@ -99,6 +110,9 @@ struct RecipeDetailView: View {
                     Label("More", systemImage: "ellipsis.circle")
                 }
             }
+        }
+        .fullScreenCover(item: $viewingPage) { selection in
+            PageViewerView(pages: pages, initialIndex: selection.index)
         }
         .sheet(isPresented: $isEditing) {
             EditRecipeView(recipe: recipe)

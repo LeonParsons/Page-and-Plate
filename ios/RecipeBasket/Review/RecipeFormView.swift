@@ -8,7 +8,7 @@ struct RecipeFormView: View {
     let onEditRow: (Ingredient.ID) -> Void
 
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-    @State private var viewingPage: CapturedPage?
+    @State private var viewingPage: PageViewerView.Selection?
 
     var body: some View {
         Group {
@@ -23,8 +23,8 @@ struct RecipeFormView: View {
                 form(showStrip: true)
             }
         }
-        .sheet(item: $viewingPage) { page in
-            PageViewerView(page: page)
+        .fullScreenCover(item: $viewingPage) { selection in
+            PageViewerView(pages: draft.pages.map(\.jpegData), initialIndex: selection.index)
         }
     }
 
@@ -32,18 +32,8 @@ struct RecipeFormView: View {
         Form {
             if showStrip, !draft.pages.isEmpty {
                 Section {
-                    ScrollView(.horizontal) {
-                        HStack(spacing: 12) {
-                            ForEach(draft.pages) { page in
-                                Button { viewingPage = page } label: {
-                                    PageThumbnail(data: page.jpegData)
-                                        .frame(width: 80, height: 104)
-                                }
-                                .buttonStyle(.plain)
-                            }
-                        }
-                    }
-                    .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                    PageThumbnailStrip(pages: draft.pages.map(\.jpegData)) { viewingPage = .init(index: $0) }
+                        .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
                 }
             }
 
@@ -141,13 +131,13 @@ struct RecipeFormView: View {
     private var pagesColumn: some View {
         ScrollView {
             VStack(spacing: 12) {
-                ForEach(draft.pages) { page in
+                ForEach(Array(draft.pages.enumerated()), id: \.element.id) { index, page in
                     if let image = UIImage(data: page.jpegData) {
                         Image(uiImage: image)
                             .resizable()
                             .scaledToFit()
                             .clipShape(RoundedRectangle(cornerRadius: 8))
-                            .onTapGesture { viewingPage = page }
+                            .onTapGesture { viewingPage = .init(index: index) }
                     }
                 }
             }

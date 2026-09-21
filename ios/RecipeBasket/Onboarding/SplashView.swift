@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Branded splash shown on every cold launch for a moment, then the app. The welcome page (once) follows it.
 struct SplashView: View {
-    static let duration: Duration = .milliseconds(1500)
+    static let duration: Duration = .milliseconds(900)
 
     private static let tomato = Color(red: 0.93, green: 0.36, blue: 0.20)
     private static let amber = Color(red: 0.98, green: 0.66, blue: 0.22)
