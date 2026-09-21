@@ -14,7 +14,8 @@ final class PlannedMeal {
     var portions: Int
     var recipe: Recipe?
     var createdAt: Date
-    /// Set by the week export (Phase 6).
+    /// When this meal's ingredients were last added to Reminders — from its own detail screen, or (Phase 6) the
+    /// week export.
     var exportedAt: Date?
 
     init(recipe: Recipe, day: PlanDay, order: Int, portions: Int, now: Date = .now) {

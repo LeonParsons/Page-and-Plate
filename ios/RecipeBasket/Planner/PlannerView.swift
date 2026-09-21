@@ -92,7 +92,7 @@ struct WeekView: View {
                     ForEach(dayMeals) { meal in
                         if let recipe = meal.recipe, !recipe.isDeleted {
                             NavigationLink {
-                                RecipeDetailView(recipe: recipe, remindersStore: remindersStore) { onDeleteRecipe(recipe) }
+                                RecipeDetailView(recipe: recipe, meal: meal, remindersStore: remindersStore) { onDeleteRecipe(recipe) }
                             } label: {
                                 PlannedMealRow(meal: meal, recipe: recipe) { editor.setPortions(meal, $0) }
                             }

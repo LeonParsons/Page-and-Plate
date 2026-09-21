@@ -11,8 +11,8 @@ struct ExportSheet: View {
     @State private var confirmation: ExportModel.AddResult?
     @State private var errorMessage: String?
 
-    init(recipe: Recipe, store: any RemindersStoring, settings: ExportSettings) {
-        _model = State(initialValue: ExportModel(recipe: recipe, store: store, settings: settings))
+    init(recipe: Recipe, meal: PlannedMeal? = nil, store: any RemindersStoring, settings: ExportSettings) {
+        _model = State(initialValue: ExportModel(recipe: recipe, meal: meal, store: store, settings: settings))
     }
 
     var body: some View {

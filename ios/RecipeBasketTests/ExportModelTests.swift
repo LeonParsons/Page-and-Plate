@@ -100,6 +100,28 @@ struct ExportModelTests {
         #expect(store.added.count == 36)
     }
 
+    @Test("From a planned meal the lines are for the meal's portions, and adding stamps the meal too")
+    func plannedMeal() async throws {
+        let (recipe, container) = try makeRecipe(targetYield: 1)
+        let meal = PlannedMeal(recipe: recipe, day: PlanDay(year: 2026, month: 9, day: 23), order: 0, portions: 2)
+        ModelContext(container).insert(meal)
+        let store = FakeRemindersStore(access: .fullAccess, lists: [.shopping])
+        let model = ExportModel(recipe: recipe, meal: meal, store: store, settings: makeSettings())
+        await model.load()
+
+        #expect(model.portionsText == "2 servings")
+        #expect(model.lines[6].title == "Beef shin — 400 g")
+        #expect(model.lines[6].notes == "BEEF RENDANG · for 2")
+        #expect(model.shareText.hasPrefix("BEEF RENDANG — for 2 servings\n"))
+
+        let before = Date()
+        _ = try model.addToReminders()
+        #expect(store.added.allSatisfy { $0.line.notes == "BEEF RENDANG · for 2" })
+        #expect(try #require(meal.exportedAt) >= before)
+        #expect(try #require(recipe.lastExportedAt) >= before)
+        #expect(recipe.targetYield == 1, "the recipe's own portions are untouched")
+    }
+
     @Test("Denied access leaves the sheet usable for Share only")
     func denied() async throws {
         let (recipe, _) = try makeRecipe()

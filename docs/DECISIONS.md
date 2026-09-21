@@ -222,6 +222,10 @@ Each of these is a place where SPEC v0.2 was silent, overlapping or contradictor
 - **"Add to plan…"** on the recipe opens a two-week day picker showing what each day already has; the recipe detail lists its upcoming planned days. `AddRecipeView` hands back the saved `Recipe` so a scan from a day's "Add meal" lands on that day.
 - Welcome and splash tagline: "From cookbook page to weekly plan and shopping list."; the welcome gains a "Plan the week" row.
 
+### 2026-09-21 · Device feedback: portions changed on the recipe didn't reach the plan
+
+- The Plan row navigated to the plain recipe screen, whose "I want" stepper edits `Recipe.targetYield` — a different number from the meal's own `PlannedMeal.portions`, so a change there never showed on the plan. Rather than couple the two (portions are per meal by decision), the detail screen now takes the `PlannedMeal` when reached from the plan: the section is titled "Portions for Wednesday 23 Sep" with a footer saying the recipe's own portions stay as they are, the stepper and the scaled list are the meal's, and Add to Reminders exports at the meal's portions and stamps `PlannedMeal.exportedAt` as well as `Recipe.lastExportedAt` (the row's green tick becomes true before Phase 6). From the Recipes tab nothing changes.
+
 ### Open: device acceptance (SPEC §10 Phase 4)
 
 Awaiting the user's device pass: document camera, export at 1 portion, titles/notes, staples unticked, duplicate export, denied permission + Share, and the Grocery-list section behaviour.

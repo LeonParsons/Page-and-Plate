@@ -2,10 +2,12 @@ import RecipeCore
 import SwiftData
 import SwiftUI
 
-/// SPEC §4 Recipe detail: portions stepper, live scaled list grouped by section, Edit and Delete.
-/// "Add to Reminders" and "Share" arrive in Phase 4.
+/// SPEC §4 Recipe detail: portions stepper, live scaled list grouped by section, Edit, Delete, Add to Reminders.
+/// Opened from the plan (`meal` set), the stepper, the list and the export are that meal's portions, so a change
+/// made here is the change seen on the Plan tab; the recipe's own "I want" is untouched.
 struct RecipeDetailView: View {
     @Bindable var recipe: Recipe
+    var meal: PlannedMeal? = nil
     var remindersStore: any RemindersStoring = EventKitRemindersStore()
     /// The owner deletes (and clears its selection); this view never mutates a recipe it is still showing.
     let onDelete: () -> Void
@@ -20,12 +22,21 @@ struct RecipeDetailView: View {
     @State private var servesInput: Double?
     @FocusState private var servesFocused: Bool
 
+    /// A meal removed from the plan while this screen is up must not be read.
+    private var liveMeal: PlannedMeal? {
+        meal.flatMap { $0.isDeleted ? nil : $0 }
+    }
+
+    private var targetYield: Int {
+        liveMeal?.portions ?? recipe.targetYield
+    }
+
     private var portions: Portions {
-        Portions(baseYield: recipe.yield.quantity, targetYield: recipe.targetYield)
+        Portions(baseYield: recipe.yield.quantity, targetYield: targetYield)
     }
 
     private var yieldUnit: String {
-        recipe.yield.unit == "servings" ? (recipe.targetYield == 1 ? "serving" : "servings") : recipe.yield.unit
+        recipe.yield.unit == "servings" ? (targetYield == 1 ? "serving" : "servings") : recipe.yield.unit
     }
 
     var body: some View {
@@ -60,7 +71,7 @@ struct RecipeDetailView: View {
                 }
             }
 
-            Section("Portions") {
+            Section {
                 HStack {
                     Text(recipe.yield.unit == RecipeYield.servingsUnit ? "Recipe serves" : "Recipe makes")
                     Spacer()
@@ -77,11 +88,21 @@ struct RecipeDetailView: View {
                     HStack {
                         Text("I want")
                         Spacer()
-                        Text("\(recipe.targetYield) \(yieldUnit)")
+                        Text("\(targetYield) \(yieldUnit)")
                             .foregroundStyle(.secondary)
                     }
                 }
                 LabeledContent("Scaling", value: portions.factorText)
+            } header: {
+                if let meal = liveMeal {
+                    Text("Portions for \(meal.day.longText)")
+                } else {
+                    Text("Portions")
+                }
+            } footer: {
+                if liveMeal != nil {
+                    Text("Sets the portions for this meal on the plan. The recipe's own portions stay as they are.")
+                }
             }
 
             ForEach(Array(portions.lines(for: recipe.ingredients).sectioned.enumerated()), id: \.offset) { _, section in
@@ -128,7 +149,7 @@ struct RecipeDetailView: View {
             EditRecipeView(recipe: recipe)
         }
         .sheet(isPresented: $isExporting) {
-            ExportSheet(recipe: recipe, store: remindersStore, settings: exportSettings)
+            ExportSheet(recipe: recipe, meal: liveMeal, store: remindersStore, settings: exportSettings)
         }
         .confirmationDialog("Delete \"\(recipe.title)\"?", isPresented: $isConfirmingDelete, titleVisibility: .visible) {
             Button("Delete recipe", role: .destructive) { delete() }
@@ -168,7 +189,13 @@ struct RecipeDetailView: View {
     }
 
     private var targetBinding: Binding<Int> {
-        Binding(get: { recipe.targetYield }, set: { recipe.targetYield = Portions.clamp($0) })
+        Binding(get: { targetYield }) { new in
+            if let meal = liveMeal {
+                meal.portions = Portions.clamp(new)
+            } else {
+                recipe.targetYield = Portions.clamp(new)
+            }
+        }
     }
 
     private func delete() {
