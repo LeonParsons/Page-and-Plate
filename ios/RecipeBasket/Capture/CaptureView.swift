@@ -4,6 +4,7 @@ import SwiftUI
 /// SPEC §4 Capture: document camera or photo picker, up to 3 pages, thumbnails with reorder/delete, Extract.
 struct CaptureView: View {
     @Bindable var flow: AddRecipeFlow
+    @Environment(ExportSettings.self) private var settings
     @State private var pickerItems: [PhotosPickerItem] = []
     @State private var isScanning = false
     @State private var isImporting = false
@@ -14,10 +15,30 @@ struct CaptureView: View {
         let pickerTitle = flow.pages.isEmpty ? "Choose photos" : "Add more photos"
         List {
             Section {
-                Text("Photograph the page with the ingredient list. If the list runs over a page turn, add the next page too — up to \(AddRecipeFlow.maxPages) pages.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .listRowBackground(Color.clear)
+                HStack {
+                    TextField("Book", text: $flow.book)
+                        .textInputAutocapitalization(.words)
+                    if !settings.recentBooks.isEmpty {
+                        Menu {
+                            ForEach(settings.recentBooks, id: \.self) { book in
+                                Button(book) { flow.book = book }
+                            }
+                        } label: {
+                            Image(systemName: "book.closed")
+                                .accessibilityLabel("Recent books")
+                        }
+                    }
+                }
+                HStack {
+                    Text("Page")
+                    TextField("optional", value: $flow.pageNumber, format: .number)
+                        .keyboardType(.numberPad)
+                        .multilineTextAlignment(.trailing)
+                }
+            } header: {
+                Text("Where is it?")
+            } footer: {
+                Text("Only the ingredient list needs to be in the photo — the method stays in the book. If the list runs over a page turn, add the next page too, up to \(AddRecipeFlow.maxPages) pages.")
             }
 
             if !flow.pages.isEmpty {

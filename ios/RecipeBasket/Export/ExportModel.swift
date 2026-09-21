@@ -38,7 +38,7 @@ final class ExportModel {
     }
 
     var shareText: String {
-        ShoppingExport.shareText(recipeTitle: recipe.title, targetYield: recipe.targetYield, yieldUnit: recipe.yield.unit, lines: tickedLines)
+        ShoppingExport.shareText(recipeTitle: recipe.title, targetYield: recipe.targetYield, yieldUnit: recipe.yield.unit, source: recipe.sourceText, lines: tickedLines)
     }
 
     var hasAccess: Bool {

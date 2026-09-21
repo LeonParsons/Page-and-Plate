@@ -5,29 +5,41 @@ import RecipeCore
 /// the user taps Save, and going back never loses the pages.
 nonisolated struct RecipeDraft: Equatable, Sendable {
     var title: String
-    var sourceNote: String
+    /// Where the recipe lives: the user keys these on capture so only the ingredient list needs photographing.
+    var book: String
+    var page: Int?
     var yield: RecipeYield
     var ingredients: [Ingredient]
     var warnings: [String]
     var pages: [CapturedPage]
 
-    init(title: String, sourceNote: String = "", yield: RecipeYield, ingredients: [Ingredient], warnings: [String] = [], pages: [CapturedPage]) {
+    init(title: String, book: String = "", page: Int? = nil, yield: RecipeYield, ingredients: [Ingredient], warnings: [String] = [], pages: [CapturedPage]) {
         self.title = title
-        self.sourceNote = sourceNote
+        self.book = book
+        self.page = page
         self.yield = yield
         self.ingredients = ingredients
         self.warnings = warnings
         self.pages = pages
     }
 
-    init(response: ExtractionResponse, pages: [CapturedPage]) {
+    /// The extraction plus the keyed source. A missing title (photo of just the list) defaults to "Book, p. N".
+    init(response: ExtractionResponse, book: String, page: Int?, pages: [CapturedPage]) {
+        let fallback = ShoppingExport.sourceText(book: book, page: page) ?? ""
         self.init(
-            title: response.recipe.title,
+            title: response.recipe.title ?? fallback,
+            book: book,
+            page: page,
             yield: response.recipe.yield,
             ingredients: response.recipe.ingredients,
             warnings: response.warnings,
             pages: pages
         )
+    }
+
+    /// "LEON Happy Curries, p. 131", or nil when neither is set.
+    var sourceText: String? {
+        ShoppingExport.sourceText(book: book, page: page)
     }
 
     // MARK: Validation (SPEC §3: save is blocked until the recipe has a base yield)

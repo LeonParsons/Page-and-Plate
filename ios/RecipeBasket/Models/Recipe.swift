@@ -8,7 +8,11 @@ import SwiftData
 final class Recipe {
     @Attribute(.unique) var id: UUID
     var title: String
+    /// Kept for stores written before book/page existed; no longer edited.
     var sourceNote: String?
+    /// The book (or other source) and page the recipe came from.
+    var book: String?
+    var page: Int?
     var yield: RecipeYield
     /// Portions the user wants; ≥ 1. Defaults to the base yield (Phase 3 makes it editable).
     var targetYield: Int
@@ -22,8 +26,10 @@ final class Recipe {
     init(draft: RecipeDraft, now: Date = .now) {
         id = UUID()
         title = draft.trimmedTitle
-        let note = draft.sourceNote.trimmingCharacters(in: .whitespacesAndNewlines)
-        sourceNote = note.isEmpty ? nil : note
+        sourceNote = nil
+        let book = draft.book.trimmingCharacters(in: .whitespacesAndNewlines)
+        self.book = book.isEmpty ? nil : book
+        page = draft.page
         yield = draft.yield
         targetYield = draft.defaultTargetYield
         ingredients = draft.ingredients
@@ -38,11 +44,18 @@ final class Recipe {
         pages.sorted { $0.index < $1.index }
     }
 
+    /// "LEON Happy Curries, p. 131" — falls back to the old free-text note for recipes saved before book/page existed.
+    var sourceText: String? {
+        ShoppingExport.sourceText(book: book, page: page) ?? sourceNote
+    }
+
     /// Edit (SPEC §4): everything the form edits comes back; pages, portions and creation date stay.
     func apply(_ draft: RecipeDraft, now: Date = .now) {
         title = draft.trimmedTitle
-        let note = draft.sourceNote.trimmingCharacters(in: .whitespacesAndNewlines)
-        sourceNote = note.isEmpty ? nil : note
+        let book = draft.book.trimmingCharacters(in: .whitespacesAndNewlines)
+        self.book = book.isEmpty ? nil : book
+        page = draft.page
+        if self.book != nil || page != nil { sourceNote = nil }
         yield = draft.yield
         ingredients = draft.ingredients
         warnings = draft.warnings
@@ -56,7 +69,8 @@ extension RecipeDraft {
     init(recipe: Recipe) {
         self.init(
             title: recipe.title,
-            sourceNote: recipe.sourceNote ?? "",
+            book: recipe.book ?? recipe.sourceNote ?? "",
+            page: recipe.page,
             yield: recipe.yield,
             ingredients: recipe.ingredients,
             warnings: recipe.warnings,

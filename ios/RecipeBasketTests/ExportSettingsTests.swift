@@ -51,4 +51,21 @@ struct ExportSettingsTests {
         settings.restoreDefaultStaples()
         #expect(settings.staples == Staples.defaultNames)
     }
+
+    @Test("Recent books: most recent first, case-insensitively unique, capped at ten, persisted")
+    func recentBooks() {
+        let defaults = makeDefaults()
+        let settings = ExportSettings(defaults: defaults)
+        #expect(settings.lastBook == nil)
+        settings.rememberBook("LEON Happy Curries")
+        settings.rememberBook(" 7 a day ")
+        settings.rememberBook("leon happy curries")
+        #expect(settings.recentBooks == ["leon happy curries", "7 a day"])
+        #expect(settings.lastBook == "leon happy curries")
+        settings.rememberBook("   ")
+        #expect(settings.recentBooks.count == 2)
+        for i in 1...12 { settings.rememberBook("Book \(i)") }
+        #expect(settings.recentBooks.count == 10)
+        #expect(ExportSettings(defaults: defaults).lastBook == "Book 12")
+    }
 }

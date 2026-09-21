@@ -14,18 +14,31 @@ struct RecipeDraftTests {
     func initFromResponse() throws {
         let response = try Fixtures.expected("chicken-chettinad")
         let pages = [page(1), page(2)]
-        let draft = RecipeDraft(response: response, pages: pages)
+        let draft = RecipeDraft(response: response, book: "LEON Happy Curries", page: 91, pages: pages)
         #expect(draft.title == "CHICKEN CHETTINAD")
-        #expect(draft.sourceNote == "")
+        #expect(draft.book == "LEON Happy Curries")
+        #expect(draft.page == 91)
+        #expect(draft.sourceText == "LEON Happy Curries, p. 91")
         #expect(draft.yield == response.recipe.yield)
         #expect(draft.ingredients == response.recipe.ingredients)
         #expect(draft.warnings == response.warnings)
         #expect(draft.pages == pages)
     }
 
+    @Test("A photo without a title gets 'Book, p. N' as its title")
+    func titleFallback() throws {
+        var response = try Fixtures.expected("chickpea-arrabbiata")
+        response.recipe.title = nil
+        #expect(RecipeDraft(response: response, book: "7 a day", page: 40, pages: []).title == "7 a day, p. 40")
+        #expect(RecipeDraft(response: response, book: "7 a day", page: nil, pages: []).title == "7 a day")
+        let untitled = RecipeDraft(response: response, book: " ", page: nil, pages: [])
+        #expect(untitled.title == "")
+        #expect(!untitled.canSave)
+    }
+
     @Test("Save needs a base yield and a title")
     func canSave() throws {
-        var draft = RecipeDraft(response: try Fixtures.expected("chickpea-arrabbiata"), pages: [page(1)])
+        var draft = RecipeDraft(response: try Fixtures.expected("chickpea-arrabbiata"), book: "7 a day", page: 40, pages: [page(1)])
         #expect(draft.canSave)
         #expect(draft.blockingReason == nil)
 
@@ -45,7 +58,7 @@ struct RecipeDraftTests {
 
     @Test("Default target yield is the base yield, rounded, at least 1", arguments: [(4.0, 4), (4.5, 5), (0.4, 1), (12.0, 12)])
     func defaultTargetYield(quantity: Double, expected: Int) throws {
-        var draft = RecipeDraft(response: try Fixtures.expected("chickpea-arrabbiata"), pages: [])
+        var draft = RecipeDraft(response: try Fixtures.expected("chickpea-arrabbiata"), book: "7 a day", page: nil, pages: [])
         draft.yield.quantity = quantity
         #expect(draft.defaultTargetYield == expected)
         draft.yield.quantity = nil
@@ -54,7 +67,7 @@ struct RecipeDraftTests {
 
     @Test("Sections keep first-appearance order with the main list first")
     func sections() throws {
-        let draft = RecipeDraft(response: try Fixtures.expected("beef-rendang"), pages: [])
+        let draft = RecipeDraft(response: try Fixtures.expected("beef-rendang"), book: "LEON", page: 131, pages: [])
         let sections = draft.sections
         #expect(sections.map(\.name) == [nil, "For the curry paste"])
         #expect(sections[0].rows.count == 14)
@@ -64,7 +77,7 @@ struct RecipeDraftTests {
 
     @Test("Rows can be added (inheriting the section above), updated and removed")
     func editRows() throws {
-        var draft = RecipeDraft(response: try Fixtures.expected("beef-rendang"), pages: [])
+        var draft = RecipeDraft(response: try Fixtures.expected("beef-rendang"), book: "LEON", page: 131, pages: [])
         let lastPasteRow = try #require(draft.ingredients.last)
         let newID = draft.addRow(after: lastPasteRow.id)
         let added = try #require(draft.ingredients.first { $0.id == newID })

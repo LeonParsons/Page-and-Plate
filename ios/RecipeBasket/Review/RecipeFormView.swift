@@ -61,7 +61,14 @@ struct RecipeFormView: View {
 
             Section("Recipe") {
                 TextField("Title", text: $draft.title)
-                TextField("Source, e.g. book and page", text: $draft.sourceNote)
+                TextField("Book", text: $draft.book)
+                    .textInputAutocapitalization(.words)
+                HStack {
+                    Text("Page")
+                    TextField("optional", value: $draft.page, format: .number)
+                        .keyboardType(.numberPad)
+                        .multilineTextAlignment(.trailing)
+                }
             }
 
             Section {

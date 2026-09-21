@@ -10,7 +10,7 @@ struct ExportModelTests {
 
     private func makeRecipe(targetYield: Int = 1) throws -> (Recipe, ModelContainer) {
         let container = try ModelContainer(for: Recipe.self, RecipePage.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
-        let recipe = Recipe(draft: RecipeDraft(response: try Fixtures.expected("beef-rendang"), pages: []))
+        let recipe = Recipe(draft: RecipeDraft(response: try Fixtures.expected("beef-rendang"), book: "LEON Happy Curries", page: 131, pages: []))
         recipe.targetYield = targetYield
         ModelContext(container).insert(recipe)
         return (recipe, container)
@@ -53,10 +53,10 @@ struct ExportModelTests {
         #expect(!model.shareText.contains("Neutral cooking oil"))
         model.selectNone()
         #expect(model.tickedCount == 0)
-        #expect(model.shareText == "BEEF RENDANG — for 1 serving")
+        #expect(model.shareText == "BEEF RENDANG — for 1 serving\nFrom LEON Happy Curries, p. 131")
         model.selectAll()
         #expect(model.tickedCount == 22)
-        #expect(model.shareText.hasPrefix("BEEF RENDANG — for 1 serving\n\nNeutral cooking oil — ¼ tbsp\n"))
+        #expect(model.shareText.hasPrefix("BEEF RENDANG — for 1 serving\nFrom LEON Happy Curries, p. 131\n\nNeutral cooking oil — ¼ tbsp\n"))
         #expect(model.shareText.contains("\nSalt\n"))
     }
 

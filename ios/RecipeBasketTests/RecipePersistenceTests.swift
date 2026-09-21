@@ -20,8 +20,7 @@ struct RecipePersistenceTests {
             CapturedPage(jpegData: Data([1, 2, 3]), pixelSize: CGSize(width: 10, height: 20)),
             CapturedPage(jpegData: Data([4, 5]), pixelSize: CGSize(width: 30, height: 40)),
         ]
-        var draft = RecipeDraft(response: response, pages: pages)
-        draft.sourceNote = "LEON Happy Curries, p.131"
+        let draft = RecipeDraft(response: response, book: "LEON Happy Curries", page: 131, pages: pages)
 
         let context = ModelContext(container)
         let recipe = Recipe(draft: draft)
@@ -34,7 +33,9 @@ struct RecipePersistenceTests {
         #expect(fetched.count == 1)
         #expect(saved.id == recipe.id)
         #expect(saved.title == "BEEF RENDANG")
-        #expect(saved.sourceNote == "LEON Happy Curries, p.131")
+        #expect(saved.book == "LEON Happy Curries")
+        #expect(saved.page == 131)
+        #expect(saved.sourceText == "LEON Happy Curries, p. 131")
         #expect(saved.yield == response.recipe.yield)
         #expect(saved.targetYield == 4)
         #expect(saved.ingredients == response.recipe.ingredients)
@@ -49,7 +50,7 @@ struct RecipePersistenceTests {
     func cascade() throws {
         let container = try makeContainer()
         let context = ModelContext(container)
-        let draft = RecipeDraft(response: try Fixtures.expected("chickpea-arrabbiata"), pages: [CapturedPage(jpegData: Data([9]), pixelSize: .zero)])
+        let draft = RecipeDraft(response: try Fixtures.expected("chickpea-arrabbiata"), book: "7 a day", page: 40, pages: [CapturedPage(jpegData: Data([9]), pixelSize: .zero)])
         let recipe = Recipe(draft: draft)
         context.insert(recipe)
         try context.save()
@@ -65,7 +66,7 @@ struct RecipePersistenceTests {
     func targetYieldPersists() throws {
         let container = try makeContainer()
         let context = ModelContext(container)
-        let recipe = Recipe(draft: RecipeDraft(response: try Fixtures.expected("chickpea-arrabbiata"), pages: []))
+        let recipe = Recipe(draft: RecipeDraft(response: try Fixtures.expected("chickpea-arrabbiata"), book: "7 a day", page: 40, pages: []))
         context.insert(recipe)
         try context.save()
         #expect(recipe.targetYield == 1)
@@ -84,7 +85,7 @@ struct RecipePersistenceTests {
         let context = ModelContext(container)
         let response = try Fixtures.expected("beef-rendang")
         let pages = [CapturedPage(jpegData: Data([1, 2]), pixelSize: CGSize(width: 1, height: 2))]
-        let recipe = Recipe(draft: RecipeDraft(response: response, pages: pages), now: Date(timeIntervalSince1970: 1_000))
+        let recipe = Recipe(draft: RecipeDraft(response: response, book: "LEON Happy Curries", page: 131, pages: pages), now: Date(timeIntervalSince1970: 1_000))
         recipe.targetYield = 2
         context.insert(recipe)
         try context.save()
@@ -94,7 +95,8 @@ struct RecipePersistenceTests {
         #expect(draft.ingredients == response.recipe.ingredients)
         #expect(draft.pages.map(\.jpegData) == pages.map(\.jpegData))
         draft.title = "Beef rendang"
-        draft.sourceNote = "LEON, p.131"
+        draft.book = "LEON"
+        draft.page = 132
         draft.yield.quantity = 8
         draft.removeRow(id: draft.ingredients[0].id)
         draft.warnings = ["Checked by hand"]
@@ -105,7 +107,8 @@ struct RecipePersistenceTests {
         let fresh = ModelContext(container)
         let saved = try #require(try fresh.fetch(FetchDescriptor<Recipe>()).first)
         #expect(saved.title == "Beef rendang")
-        #expect(saved.sourceNote == "LEON, p.131")
+        #expect(saved.book == "LEON")
+        #expect(saved.page == 132)
         #expect(saved.yield.quantity == 8)
         #expect(saved.ingredients.count == 21)
         #expect(saved.warnings == ["Checked by hand"])

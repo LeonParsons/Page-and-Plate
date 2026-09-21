@@ -14,6 +14,9 @@ final class AddRecipeFlow {
     }
 
     var pages: [CapturedPage] = []
+    /// Keyed before extracting (book required, page optional) so the photo only needs the ingredient list.
+    var book: String
+    var pageNumber: Int?
     var path: [Route] = []
     var draft: RecipeDraft?
     var error: ExtractionError?
@@ -23,8 +26,13 @@ final class AddRecipeFlow {
     private var task: Task<Void, Never>?
     private let makeClient: () throws(AppConfiguration.ConfigurationError) -> ExtractionClient
 
-    init(makeClient: @escaping () throws(AppConfiguration.ConfigurationError) -> ExtractionClient = AddRecipeFlow.defaultClient) {
+    init(book: String = "", makeClient: @escaping () throws(AppConfiguration.ConfigurationError) -> ExtractionClient = AddRecipeFlow.defaultClient) {
+        self.book = book
         self.makeClient = makeClient
+    }
+
+    var trimmedBook: String {
+        book.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     nonisolated static func defaultClient() throws(AppConfiguration.ConfigurationError) -> ExtractionClient {
@@ -36,7 +44,7 @@ final class AddRecipeFlow {
     }
 
     var canExtract: Bool {
-        !pages.isEmpty && pages.count <= Self.maxPages && !isExtracting
+        !pages.isEmpty && pages.count <= Self.maxPages && !trimmedBook.isEmpty && !isExtracting
     }
 
     func add(_ newPages: [CapturedPage]) {
@@ -57,7 +65,7 @@ final class AddRecipeFlow {
                 let client = try makeClient()
                 let response = try await client.extract(pages: pages)
                 guard !Task.isCancelled else { return }
-                draft = RecipeDraft(response: response, pages: pages)
+                draft = RecipeDraft(response: response, book: trimmedBook, page: pageNumber, pages: pages)
                 path = [.review]
             } catch let configurationError as AppConfiguration.ConfigurationError {
                 error = .notConfigured(String(describing: configurationError))

@@ -2,8 +2,13 @@ import SwiftUI
 
 /// The add-recipe sheet: one NavigationStack driven by AddRecipeFlow.path.
 struct AddRecipeView: View {
-    @State private var flow = AddRecipeFlow()
+    @State private var flow: AddRecipeFlow
     @Environment(\.dismiss) private var dismiss
+    @Environment(ExportSettings.self) private var settings
+
+    init(lastBook: String?) {
+        _flow = State(initialValue: AddRecipeFlow(book: lastBook ?? ""))
+    }
 
     var body: some View {
         NavigationStack(path: $flow.path) {
@@ -18,7 +23,10 @@ struct AddRecipeView: View {
                     case .extracting:
                         ExtractingView(flow: flow)
                     case .review:
-                        ReviewView(flow: flow) { dismiss() }
+                        ReviewView(flow: flow) {
+                            settings.rememberBook(flow.book)
+                            dismiss()
+                        }
                     case let .editIngredient(id):
                         IngredientEditView(draft: draftBinding, id: id)
                     }

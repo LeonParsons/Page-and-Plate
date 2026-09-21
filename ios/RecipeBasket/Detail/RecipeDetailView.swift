@@ -37,9 +37,9 @@ struct RecipeDetailView: View {
 
     private var content: some View {
         List {
-            if let note = recipe.sourceNote {
+            if let source = recipe.sourceText {
                 Section {
-                    Label(note, systemImage: "book")
+                    Label(source, systemImage: "book")
                         .foregroundStyle(.secondary)
                 }
             }
