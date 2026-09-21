@@ -15,14 +15,13 @@ struct PlannerView: View {
     var body: some View {
         NavigationStack {
             WeekView(week: week, remindersStore: remindersStore, onAdd: { addingTo = $0 }, onDeleteRecipe: deleteRecipe)
-                .id(week.start)
                 .navigationTitle(week.title)
                 .toolbar {
                     ToolbarItemGroup(placement: .topBarLeading) {
-                        Button("Previous week", systemImage: "chevron.left") { withAnimation { week = week.previous() } }
-                        Button("Next week", systemImage: "chevron.right") { withAnimation { week = week.next() } }
+                        Button("Previous week", systemImage: "chevron.left") { week = week.previous() }
+                        Button("Next week", systemImage: "chevron.right") { week = week.next() }
                         if !week.contains(PlanDay(.now)) {
-                            Button("Today") { withAnimation { week = PlanWeek(containing: PlanDay(.now)) } }
+                            Button("Today") { week = PlanWeek(containing: PlanDay(.now)) }
                         }
                     }
                     ToolbarItem(placement: .secondaryAction) {
@@ -60,36 +59,25 @@ extension PlanDay: @retroactive Identifiable {
     public var id: String { isoString }
 }
 
-/// One week as a list of days. Recreated per week (`.id(week.start)`) so the query's predicate is fixed at init.
+/// One week as a list of days. The view keeps its identity across weeks (a `@Query` predicate is fixed at init,
+/// so it fetches every planned meal and filters — a few rows per week, never many) — recreating it per week made
+/// the navigation title vanish and reappear on each ‹ › tap.
 struct WeekView: View {
     let week: PlanWeek
     let remindersStore: any RemindersStoring
     let onAdd: (PlanDay) -> Void
     let onDeleteRecipe: (Recipe) -> Void
 
-    @Query private var meals: [PlannedMeal]
+    @Query(sort: [SortDescriptor(\PlannedMeal.dayKey), SortDescriptor(\PlannedMeal.order)]) private var meals: [PlannedMeal]
     @Environment(\.modelContext) private var modelContext
     @State private var movingMeal: PlannedMeal?
-
-    init(week: PlanWeek, remindersStore: any RemindersStoring, onAdd: @escaping (PlanDay) -> Void, onDeleteRecipe: @escaping (Recipe) -> Void) {
-        self.week = week
-        self.remindersStore = remindersStore
-        self.onAdd = onAdd
-        self.onDeleteRecipe = onDeleteRecipe
-        let start = week.start.isoString
-        let end = week.end.isoString
-        _meals = Query(
-            filter: #Predicate<PlannedMeal> { $0.dayKey >= start && $0.dayKey <= end },
-            sort: [SortDescriptor(\PlannedMeal.dayKey), SortDescriptor(\PlannedMeal.order)]
-        )
-    }
 
     private var editor: PlanEditor {
         PlanEditor(context: modelContext)
     }
 
     private var byDay: [PlanDay: [PlannedMeal]] {
-        PlanOrdering.byDay(meals.filter { !$0.isDeleted })
+        PlanOrdering.byDay(meals.filter { !$0.isDeleted && week.contains($0.day) })
     }
 
     var body: some View {
