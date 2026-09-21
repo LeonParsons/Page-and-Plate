@@ -13,5 +13,5 @@
     "MAX_BODY_BYTES": "8388608"
   },
   // Per-device daily extraction counter (SPEC §9). Replace the id with `wrangler kv namespace create QUOTA` on deploy.
-  "kv_namespaces": [{ "binding": "QUOTA", "id": "local-dev-placeholder" }]
+  "kv_namespaces": [{ "binding": "QUOTA", "id": "a99437ed2a2940b8839ac8a803141076" }]
 }
