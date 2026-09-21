@@ -187,3 +187,20 @@ Each of these is a place where SPEC v0.2 was silent, overlapping or contradictor
 ### 2026-09-20 · Not yet done (device pass)
 
 - Deployment (`wrangler login`, KV namespace, secrets, `npm run deploy`), `RB_API_BASE_URL` → the workers.dev URL, signing team in `Secrets.xcconfig` (`RB_TEAM_ID`), install on the iPhone, and the SPEC §10 device acceptance including the Grocery-list observation.
+
+### 2026-09-21 · Deployment and device build
+
+- Worker deployed to **https://recipe-basket-api.recipe-basket-api.workers.dev** (Cloudflare account leonpaulparsons@gmail.com). KV namespace `QUOTA` id `a99437ed2a2940b8839ac8a803141076` is in `wrangler.jsonc`; secrets `ANTHROPIC_API_KEY` and `APP_KEY` set with `wrangler secret put`. Two lessons: a fresh workers.dev subdomain fails TLS for ~1 minute after the first deploy (wait, don't debug), and a pasted secret can be silently truncated at the prompt — the 401 on the first smoke test was a 31-character `APP_KEY`; piping the value from `.dev.vars` into `wrangler secret put` avoids it.
+- Smoke test through the deployed Worker: 200 in 6.9 s, 7/7 lines.
+- Device build: `ios/Config/Secrets.xcconfig` now points `RB_API_BASE_URL` at the workers.dev URL and carries `RB_TEAM_ID = F6VXT39M7H` (Personal Team; found via the Apple Development certificate's OU, since Xcode's Accounts pane doesn't show the id). `xcodebuild -destination 'platform=iOS,id=<hardware UDID>' -allowProvisioningUpdates` signs and provisions without opening Xcode; the phone needed Developer Mode (Settings → Privacy & Security, restart, confirm) and a one-time profile trust (Settings → General → VPN & Device Management). Installed and launched with `xcrun devicectl`.
+- App icon added (basket glyph, light/dark/tinted), rendered by an AppKit script.
+
+### 2026-09-21 · Product change: book and page per recipe
+
+- Feedback from the first device build: recording the book and page means only the ingredient list needs photographing — the method stays in the book. Capture now asks for **Book** (required, pre-filled with the last one, recent-books menu) and **Page** (optional, number pad). `Recipe.book`/`page` replace the free-text `sourceNote` (kept read-only for older rows). List, detail and share text show "Book, p. N".
+- Contract change: `recipe.title` is nullable (a photo of just the list has no title; the prompt forbids inventing one) and the app pre-fills "Book, p. N" as the editable title. Mirrored in `RecipeCore.ExtractedRecipe.title: String?`, the exported JSON Schema, and both contract tests.
+- Cost per extraction, measured: ≈ 2–4¢ on Sonnet 5 (≈ 5.5k fixed input tokens — injected schema + system prompt — plus ≈ 1.5k per photo; output 0.7–2.3k). The 30/day cap bounds a device at ≈ $1.20/day.
+
+### Open: device acceptance (SPEC §10 Phase 4)
+
+Awaiting the user's device pass: document camera, export at 1 portion, titles/notes, staples unticked, duplicate export, denied permission + Share, and the Grocery-list section behaviour.

@@ -50,6 +50,8 @@ cd api && npm run schema       # regenerate schema/extraction.schema.json from Z
 cd api && npm run eval         # extraction accuracy against fixtures/photos (both models; ≈ $1 per run)
 cd api && npm run deploy       # after `npx wrangler login`, a KV namespace id in wrangler.jsonc and the two secrets (see docs/DECISIONS.md)
 xcrun simctl privacy "iPhone 17 Pro" reset reminders com.leonparsons.RecipeBasket   # re-test the Reminders permission prompt
+xcodebuild build -project ios/RecipeBasket.xcodeproj -scheme RecipeBasket -destination 'platform=iOS,id=00008150-00095D492140401C' -allowProvisioningUpdates   # Leon's iPhone
+xcrun devicectl device install app --device 00008150-00095D492140401C <DerivedData>/Build/Products/Debug-iphoneos/RecipeBasket.app
 ```
 
 `api/.dev.vars` (git-ignored, copy from `.dev.vars.example`) holds `ANTHROPIC_API_KEY` and `APP_KEY` for local dev and the eval.
