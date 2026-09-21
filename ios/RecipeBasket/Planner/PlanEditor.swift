@@ -47,14 +47,17 @@ struct PlanEditor {
         return meal
     }
 
-    /// Moves to the end of another day and closes the gap it left.
-    func move(_ meal: PlannedMeal, to day: PlanDay) throws {
-        guard meal.day != day else { return }
+    /// Moves to another day — at `position` in that day's list, or the end — and closes the gap it left.
+    /// Dropping within the same day is a reorder; a position past the end appends.
+    func move(_ meal: PlannedMeal, to day: PlanDay, at position: Int? = nil) throws {
+        let sameDay = meal.day == day
+        guard !sameDay || position != nil else { return }
         let source = try meals(on: meal.day).filter { $0 !== meal }
-        let target = try meals(on: day)
+        var target = sameDay ? source : try meals(on: day)
+        target.insert(meal, at: min(position ?? target.count, target.count))
         meal.day = day
-        meal.order = target.count
-        PlanOrdering.reindex(source)
+        if !sameDay { PlanOrdering.reindex(source) }
+        PlanOrdering.reindex(target)
         try context.save()
     }
 

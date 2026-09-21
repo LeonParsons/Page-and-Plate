@@ -85,6 +85,31 @@ struct PlanEditorTests {
         #expect(b.order == 1)
     }
 
+    @Test("Dropping at a position inserts there, on the same day or another")
+    func moveToPosition() throws {
+        let world = try makeWorld()
+        let a = try world.editor.add(world.rendang, to: monday)
+        let b = try world.editor.add(world.arrabbiata, to: monday)
+        let c = try world.editor.add(world.rendang, to: monday)
+        let f = try world.editor.add(world.arrabbiata, to: friday)
+
+        try world.editor.move(c, to: monday, at: 0)                 // same day: reorder
+        #expect(try world.editor.meals(on: monday).map(\.id) == [c, a, b].map(\.id))
+
+        try world.editor.move(a, to: friday, at: 0)                 // other day: before f
+        #expect(try world.editor.meals(on: monday).map(\.id) == [c, b].map(\.id))
+        #expect(try world.editor.meals(on: monday).map(\.order) == [0, 1])
+        #expect(try world.editor.meals(on: friday).map(\.id) == [a, f].map(\.id))
+        #expect(try world.editor.meals(on: friday).map(\.order) == [0, 1])
+
+        try world.editor.move(b, to: friday, at: 99)                // past the end appends
+        #expect(try world.editor.meals(on: friday).map(\.id) == [a, f, b].map(\.id))
+        #expect(try world.editor.meals(on: friday).map(\.order) == [0, 1, 2])
+
+        try world.editor.move(b, to: friday, at: 2)                 // same spot: unchanged
+        #expect(try world.editor.meals(on: friday).map(\.id) == [a, f, b].map(\.id))
+    }
+
     @Test("Reordering within a day follows List.onMove")
     func reorder() throws {
         let world = try makeWorld()

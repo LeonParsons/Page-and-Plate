@@ -15,6 +15,7 @@ struct RecipeDetailView: View {
     @State private var isEditing = false
     @State private var isExporting = false
     @State private var isConfirmingDelete = false
+    @State private var isPickingDay = false
     @State private var viewingPage: PageViewerView.Selection?
     @State private var servesInput: Double?
     @FocusState private var servesFocused: Bool
@@ -42,7 +43,7 @@ struct RecipeDetailView: View {
 
     private var content: some View {
         List {
-            if !pages.isEmpty || recipe.sourceText != nil {
+            if !pages.isEmpty || recipe.sourceText != nil || plannedText != nil {
                 Section {
                     if !pages.isEmpty {
                         PageThumbnailStrip(pages: pages) { viewingPage = .init(index: $0) }
@@ -50,6 +51,10 @@ struct RecipeDetailView: View {
                     }
                     if let source = recipe.sourceText {
                         Label(source, systemImage: "book")
+                            .foregroundStyle(.secondary)
+                    }
+                    if let planned = plannedText {
+                        Label(planned, systemImage: "calendar")
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -105,6 +110,8 @@ struct RecipeDetailView: View {
                 Button("Add to Reminders", systemImage: "checklist") { isExporting = true }
                 Button("Edit") { isEditing = true }
                 Menu {
+                    Button("Add to plan…", systemImage: "calendar.badge.plus") { isPickingDay = true }
+                    Divider()
                     Button("Delete recipe…", systemImage: "trash", role: .destructive) { isConfirmingDelete = true }
                 } label: {
                     Label("More", systemImage: "ellipsis.circle")
@@ -113,6 +120,9 @@ struct RecipeDetailView: View {
         }
         .fullScreenCover(item: $viewingPage) { selection in
             PageViewerView(pages: pages, initialIndex: selection.index)
+        }
+        .sheet(isPresented: $isPickingDay) {
+            DayPickerSheet(recipe: recipe)
         }
         .sheet(isPresented: $isEditing) {
             EditRecipeView(recipe: recipe)
@@ -123,7 +133,7 @@ struct RecipeDetailView: View {
         .confirmationDialog("Delete \"\(recipe.title)\"?", isPresented: $isConfirmingDelete, titleVisibility: .visible) {
             Button("Delete recipe", role: .destructive) { delete() }
         } message: {
-            Text("The recipe and its page photos are removed from this device. Reminders already added are not affected.")
+            Text(deleteMessage)
         }
         .onAppear { servesInput = recipe.yield.quantity }
         .onChange(of: recipe.yield.quantity) { _, new in
@@ -138,6 +148,23 @@ struct RecipeDetailView: View {
         .onChange(of: servesFocused) { _, focused in
             if !focused { servesInput = recipe.yield.quantity }
         }
+    }
+
+    /// "Planned: Fri 25 Sep, Mon 28 Sep" — today and later, so the recipe screen answers "when am I cooking this?".
+    private var plannedText: String? {
+        let today = PlanDay(.now)
+        let upcoming = recipe.plannedMeals.filter { !$0.isDeleted && $0.day >= today }.sorted { ($0.day, $0.order) < ($1.day, $1.order) }
+        guard !upcoming.isEmpty else { return nil }
+        return "Planned: " + upcoming.map(\.day.shortText).joined(separator: ", ")
+    }
+
+    private var deleteMessage: String {
+        var text = "The recipe and its page photos are removed from this device. Reminders already added are not affected."
+        let planned = recipe.plannedMeals.filter { !$0.isDeleted }.count
+        if planned > 0 {
+            text += planned == 1 ? " It also comes off the plan." : " It also comes off the plan (\(planned) meals)."
+        }
+        return text
     }
 
     private var targetBinding: Binding<Int> {
