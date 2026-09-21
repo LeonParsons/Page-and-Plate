@@ -218,7 +218,7 @@ struct RecipeYield: Codable, Equatable {
 
 **Phase 6 — Shop for the week (v0.3)**
 - `WeekShopping` in `RecipeCore` with fixtures for the merge rule; the export sheet generalised over recipe or week content; "Shop" on the Plan tab.
-- ✅ On a device: a week with two recipes sharing onion, garlic and oil exports one merged row for each, notes list both meals, staples arrive unticked, the Recipes tab shows "Added to Reminders" for both recipes, and a single recipe's "Add to Reminders" is unchanged.
+- ✅ On a device: a week with two recipes sharing onion, garlic and oil exports one merged row for each, notes list both meals, staples arrive unticked, the Recipes tab shows "Added to Reminders" for both recipes, and a single recipe's "Add to Reminders" is unchanged. **Accepted on the device 2026-09-21.**
 
 **Later:** iCloud sync between iPhone and iPad (SwiftData + CloudKit), on-device extraction with Apple's Foundation Models framework to remove the API cost, storing method text, public release with real auth.
 

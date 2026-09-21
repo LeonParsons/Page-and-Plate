@@ -239,6 +239,10 @@ Each of these is a place where SPEC v0.2 was silent, overlapping or contradictor
 - The meals `@Query` moved from `WeekView` to `PlannerView` so the Shop button and the sheet see the week on screen; `WeekView` is now a plain view of its rows.
 - Checked in the simulator: four rendang meals at ×¼, ×¾, ×¼ and ×1 gave `Beef shin — 1.8 kg` with four note lines in the Reminders app; green ticks on the plan rows; "Added to Reminders 21 Sep 2026" on both recipes; Shop disabled on an empty week.
 
+### 2026-09-21 · Accepted
+
+Phases 5 and 6 accepted by the user on the device ("Phase 5 is good", "Looks good"). v0.3 is complete: SPEC §10 Phase 5–6 criteria met; the "Later" list (iCloud sync, on-device extraction, method text, public release) is the next conversation.
+
 ### Open: device acceptance (SPEC §10 Phase 4)
 
 Awaiting the user's device pass: document camera, export at 1 portion, titles/notes, staples unticked, duplicate export, denied permission + Share, and the Grocery-list section behaviour.
