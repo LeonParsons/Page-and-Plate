@@ -9,9 +9,16 @@
       "type": "object",
       "properties": {
         "title": {
-          "type": "string",
-          "minLength": 1,
-          "description": "The recipe title as printed, in its original capitalisation."
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The recipe title as printed, in its original capitalisation. null when no title is visible (e.g. a photo of just the ingredient list)."
         },
         "yield": {
           "type": "object",

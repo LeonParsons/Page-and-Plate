@@ -82,7 +82,7 @@ export const RecipeYieldSchema = z.strictObject({
 });
 
 export const RecipeSchema = z.strictObject({
-  title: z.string().min(1).describe("The recipe title as printed, in its original capitalisation."),
+  title: z.string().min(1).nullable().describe("The recipe title as printed, in its original capitalisation. null when no title is visible (e.g. a photo of just the ingredient list)."),
   yield: RecipeYieldSchema,
   ingredients: z.array(IngredientSchema).describe("Every printed ingredient line, in page order."),
 });

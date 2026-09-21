@@ -13,7 +13,7 @@ export const SYSTEM_PROMPT = `You extract the ingredient list and the stated yie
 
 # Recipe
 
-- \`title\`: the recipe title as printed, in its capitalisation. No subtitles, straplines or descriptions.
+- \`title\`: the recipe title as printed, in its capitalisation. No subtitles, straplines or descriptions. The photo may show only the ingredient list: if no title is visible, set null — never invent one from the ingredients.
 - \`yield\`: "SERVES 4" → quantity 4, quantityMax null, unit "servings", rawText "SERVES 4". "Serves 4–6" → 4 and 6. "Makes 12 muffins" → 12, unit "muffins". "Feeds 6" → 6 servings. Nothing printed → quantity null, unit "servings", rawText null.
 
 # Ingredient lines

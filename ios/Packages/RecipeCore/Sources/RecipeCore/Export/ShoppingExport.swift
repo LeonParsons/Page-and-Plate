@@ -46,10 +46,24 @@ public enum ShoppingExport {
         return "\(targetYield) \(yieldUnit)"
     }
 
-    /// SPEC §8 Share: the title and portions, then one ticked line per row.
-    public static func shareText(recipeTitle: String, targetYield: Int, yieldUnit: String, lines: [ExportLine]) -> String {
-        let header = "\(recipeTitle) — for \(portionsText(targetYield: targetYield, yieldUnit: yieldUnit))"
+    /// SPEC §8 Share: the title and portions (and where the recipe lives, when known), then one ticked line per row.
+    public static func shareText(recipeTitle: String, targetYield: Int, yieldUnit: String, source: String? = nil, lines: [ExportLine]) -> String {
+        var header = "\(recipeTitle) — for \(portionsText(targetYield: targetYield, yieldUnit: yieldUnit))"
+        if let source, !source.isEmpty {
+            header += "\nFrom \(source)"
+        }
         guard !lines.isEmpty else { return header }
         return header + "\n\n" + lines.map(\.title).joined(separator: "\n")
+    }
+
+    /// "LEON Happy Curries, p. 131" / "LEON Happy Curries" — the source line shown in lists and share text.
+    public static func sourceText(book: String?, page: Int?) -> String? {
+        let trimmed = book?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        switch (trimmed.isEmpty, page) {
+        case (true, nil): return nil
+        case (true, let page?): return "p. \(page)"
+        case (false, nil): return trimmed
+        case (false, let page?): return "\(trimmed), p. \(page)"
+        }
     }
 }

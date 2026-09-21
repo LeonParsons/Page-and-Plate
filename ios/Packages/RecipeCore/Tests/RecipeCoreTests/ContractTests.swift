@@ -33,7 +33,7 @@ struct ContractTests {
     @Test("Every fixtures/expected file decodes as ExtractionResponse", arguments: try ContractTests.expectedFiles())
     func decodes(_ url: URL) throws {
         let response = try JSONDecoder().decode(ExtractionResponse.self, from: Data(contentsOf: url))
-        #expect(!response.recipe.title.isEmpty)
+        #expect(response.recipe.title?.isEmpty == false, "every fixture page has a printed title")
         #expect(!response.recipe.ingredients.isEmpty)
         #expect(response.recipe.yield.scaleFactor(targetYield: 1) != nil, "every fixture page states a yield")
         for ingredient in response.recipe.ingredients {
@@ -60,6 +60,15 @@ struct ContractTests {
 
         let confidenceEnum = try #require((properties["confidence"] as? [String: Any])?["enum"] as? [String])
         #expect(confidenceEnum == ["high", "low"])
+
+        // A null title is part of the contract (photo of just the ingredient list).
+        let recipeProps = try #require((((schema["properties"] as? [String: Any])?["recipe"] as? [String: Any])?["properties"]) as? [String: Any])
+        let titleAlternatives = try #require((recipeProps["title"] as? [String: Any])?["anyOf"] as? [[String: Any]])
+        #expect(titleAlternatives.contains { $0["type"] as? String == "null" })
+        let nullTitle = """
+        {"recipe": {"title": null, "yield": {"quantity": 2, "quantityMax": null, "unit": "servings", "rawText": null}, "ingredients": []}, "warnings": []}
+        """
+        #expect(try JSONDecoder().decode(ExtractionResponse.self, from: Data(nullTitle.utf8)).recipe.title == nil)
 
         let required = try #require(ingredient["required"] as? [String])
         #expect(required == ["rawText", "section", "quantity", "quantityMax", "unit", "packageSize", "name", "preparation", "optional", "scalable", "confidence"])

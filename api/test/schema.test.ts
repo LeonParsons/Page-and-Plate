@@ -6,6 +6,7 @@ import {
   IngredientSchema,
   ModelOutputSchema,
   PackageSizeSchema,
+  RecipeSchema,
   RecipeYieldSchema,
   UNITS,
   buildExtractionJSONSchema,
@@ -98,6 +99,16 @@ describe("IngredientSchema refinements", () => {
     expect(PackageSizeSchema.safeParse({ quantity: 400, unit: "ml" }).success).toBe(true);
     expect(PackageSizeSchema.safeParse({ quantity: 1, unit: "each" }).success).toBe(false);
     expect(PackageSizeSchema.safeParse({ quantity: 0, unit: "g" }).success).toBe(false);
+  });
+});
+
+describe("RecipeSchema title", () => {
+  const yieldOK = { quantity: 4, quantityMax: null, unit: "servings", rawText: null };
+
+  it("accepts null when no title is visible, but not an empty string", () => {
+    expect(RecipeSchema.safeParse({ title: null, yield: yieldOK, ingredients: [] }).success).toBe(true);
+    expect(RecipeSchema.safeParse({ title: "", yield: yieldOK, ingredients: [] }).success).toBe(false);
+    expect(RecipeSchema.safeParse({ title: "Toast", yield: yieldOK, ingredients: [] }).success).toBe(true);
   });
 });
 
