@@ -1,4 +1,4 @@
-# Recipe Basket — Product Spec (v0.2 draft)
+# Recipe Basket — Product Spec (v0.3 draft)
 
 Working name. Place this file at `docs/SPEC.md`.
 
@@ -6,7 +6,7 @@ Working name. Place this file at `docs/SPEC.md`.
 
 The user photographs a recipe page from a cookbook. The app extracts the ingredient list and the stated yield ("Serves 4", "Makes 12"), the user confirms or corrects it, and sets how many portions they want. Every quantity scales by the same factor. The user then adds that recipe's ingredients to a list in Apple Reminders, or shares them as text.
 
-Each recipe is exported independently. Exporting a second recipe simply adds more items to the same Reminders list. Duplicate items ("Onion — 1" twice) are acceptable.
+A **planner** (v0.3) puts recipes on the days of a week, each meal with its own portions, and exports the whole week in one go. Within a week export, lines whose ingredient name, unit and package size match exactly are merged (quantities added, then rounded once); nothing fuzzier is merged. A single recipe can still be exported on its own exactly as before. Exporting again adds more items to the same Reminders list; duplicates are acceptable.
 
 ## 2. Scope
 
@@ -18,13 +18,17 @@ Each recipe is exported independently. Exporting a second recipe simply adds mor
 - Per-recipe export to Apple Reminders, with share-as-text as a fallback.
 - Single user, single device, no accounts.
 
-**Non-goals for MVP**
+**v0.3 goals (Phases 5–6)**
+- A week planner: any number of meals per day, each with its own portions; move, reorder and remove; navigate weeks; add from the library or by scanning straight onto a day.
+- One export for a planned week, merging only exact matches (name + unit + package size).
+
+**Non-goals**
 - Android or any non-Apple platform.
-- Combining or merging ingredients across recipes.
+- Fuzzy merging across recipes (plurals, "red onion" vs "onion", tbsp into ml).
 - De-duplicating, updating or deleting reminders.
 - Unit conversion (beyond g→kg and ml→l display promotion) and rounding up to whole purchasable items.
 - Storing or displaying method text.
-- iCloud sync between devices, nutrition, prices, meal planning, multiple recipes from one photo.
+- iCloud sync between devices, nutrition, prices, meal slots (breakfast/lunch/dinner), copying whole weeks, marking meals cooked, multiple recipes from one photo.
 
 ## 3. Core flow
 
@@ -33,14 +37,17 @@ Each recipe is exported independently. Exporting a second recipe simply adds mor
 3. **Review:** page images alongside extracted title, yield and ingredient rows. The user edits, adds or deletes rows, then saves. Low-confidence rows and model warnings are highlighted. Save is blocked until the recipe has a base yield.
 4. **Portions:** on the recipe screen, "Recipe serves [4]" (from the book, editable) and "I want [1]" stepper, with the factor shown (×¼). Ingredient quantities update live.
 5. **Export:** "Add to Reminders" opens a sheet with every ingredient ticked except staples. The user adjusts ticks, confirms the target list, and taps "Add N items". "Share" sends the same ticked lines as plain text.
+6. **Plan:** the Plan tab shows one week. "Add meal" on a day picks a recipe from the library (or scans a new one, which lands on that day); each meal has its own portions. Meals move between days by long press → Move to, by swiping, or by "Add to plan…" from a recipe. "Shop" exports the whole week (Phase 6).
 
 ## 4. Screens
 
-- **Recipes (home):** list or grid of recipes with thumbnail, title, target portions and "Last added to Reminders" date if any. "Add recipe" button. On iPad, a split view: list on the left, recipe on the right.
+- **Plan (first tab):** one week, a section per day (today marked), previous/next/Today, "Clear week". Each planned meal row: thumbnail, title, "for N servings" with a stepper, book and page, a tick once exported. Long-press menu and leading swipe: Move to another day; trailing swipe: Remove; long-press-drag reorders within a day. "Add meal" per day opens the library picker (searchable, with "Scan new recipe").
+- **Recipes (second tab):** list or grid of recipes with thumbnail, title, target portions and "Last added to Reminders" date if any. "Add recipe" button. On iPad, a split view: list on the left, recipe on the right.
 - **Capture:** document camera or photo picker, page thumbnails with reorder/delete, "Extract" button.
 - **Review / Edit recipe:** title, optional source note ("Book name, p.88"), yield fields, warnings banner, ingredient rows. Each row edits structured fields: quantity, max quantity, unit (picker), package size, name, preparation, optional, scalable. The raw printed text is shown read-only under each row.
-- **Recipe detail:** portions stepper, scaled ingredient list grouped by section, "Add to Reminders", "Share", "Edit".
+- **Recipe detail:** page photos, portions stepper, scaled ingredient list grouped by section, "Add to Reminders", "Share", "Edit", "Add to plan…" (this week or next; shows what each day already has) and the upcoming days it is planned on.
 - **Export sheet:** target Reminders list picker (defaults to last used; option to create a list called "Shopping"), ingredient checklist, "Add N items" button, confirmation ("Added 9 items to Shopping").
+- **Week export (Phase 6):** the week's merged list, each row captioned with the meals it covers, staples unticked, same list picker and Share as the recipe export.
 - **Settings:** default Reminders list, staples list (unticked by default on export).
 
 ## 5. Data model
@@ -87,7 +94,11 @@ struct RecipeYield: Codable, Equatable {
 }
 ```
 
-**SwiftData `Recipe` model (app target):** id, title, sourceNote, pageImages (downscaled JPEG data, external storage), yield, targetYield (Int ≥ 1, defaults to base yield), ingredients, createdAt, updatedAt, lastExportedAt.
+**SwiftData `Recipe` model (app target):** id, title, book, page, sourceNote (legacy), pages (downscaled JPEG data, external storage), yield, targetYield (Int ≥ 1, defaults to base yield), ingredients, warnings, plannedMeals (cascade), createdAt, updatedAt, lastExportedAt.
+
+**SwiftData `PlannedMeal` model (v0.3):** id, dayKey (`PlanDay.isoString`, "2026-09-21"), order (position within the day), portions (Int ≥ 1, the meal's own), recipe (inverse of `plannedMeals`; deleting the recipe deletes the meal), createdAt, exportedAt.
+
+**`RecipeCore` planning types:** `PlanDay` (a calendar day with no time zone; Codable as its ISO string; calendar arithmetic) and `PlanWeek` (seven days from the calendar's first weekday — Monday in en_GB). Fixtures in `fixtures/planning/`.
 
 **Settings:** defaultRemindersListID, staples (default: salt, black pepper, olive oil, vegetable oil, water; matched case-insensitively against `name`).
 
@@ -162,6 +173,13 @@ struct RecipeYield: Codable, Equatable {
 **Share**
 - `ShareLink` with plain text: first line the recipe title and portions, then one ticked line per row.
 
+**Shop for the week (v0.3, Phase 6)**
+- Input: every planned meal of the week on screen, in day order then plan order, each at its own portions.
+- Merge rule — combine only where it is simple: two rows merge when the trimmed, case-folded `name`, the `unit` and the `packageSize` all match. Quantities are summed *unrounded* (each meal's quantity × its factor; ranges end-to-end, a missing max counts as the min) and rounded once per §7. Unquantified twins ("salt, to taste") collapse to one row. `optional` survives only if every contributor was optional. Anything else — different unit, different tin size, "onion" vs "onions" — stays a separate row. A row with one contributor is byte-identical to that recipe's own export line.
+- Reminder title = line text. Notes = one line per contributing meal: `Recipe title · for N · Mon 22 Sep`.
+- Share text: "Week of 22 Sep", one line per meal ("Mon · Beef rendang — for 4"), a blank line, then the ticked rows.
+- On success: `exportedAt` on every contributing meal and `lastExportedAt` on every recipe with at least one ticked line, so the Recipes tab shows "Added to Reminders" for them exactly as a single export would.
+
 ## 9. Security, privacy, cost
 
 - The Worker checks `x-app-key`, enforces a per-device rate limit (default 30 extractions/day) and a max body size.
@@ -194,9 +212,21 @@ struct RecipeYield: Codable, Equatable {
 - Export sheet, Reminders permission flow, list picker, create "Shopping" list, add reminders, share text, settings screen.
 - ✅ On a physical iPhone: export a recipe at 1 portion; titles and notes match the formatting rules; staples arrive unticked; exporting again adds duplicates without error; denied permission shows guidance and Share still works. Grocery-list section behaviour noted in `docs/DECISIONS.md`.
 
-**Later (not MVP):** combined shopping list across recipes, iCloud sync between iPhone and iPad (SwiftData + CloudKit), on-device extraction with Apple's Foundation Models framework to remove the API cost, storing method text, public release with real auth.
+**Phase 5 — Planner (v0.3)**
+- `PlanDay`/`PlanWeek` in `RecipeCore`; `PlannedMeal` model with a lightweight migration of existing stores; `PlanEditor`; Plan tab (week view, add from library or scan, portions per meal, move/reorder/remove, week navigation, clear week); "Add to plan…" on the recipe; welcome and splash copy.
+- ✅ Existing recipes survive the schema change on a device. A meal added on Monday can be moved to Friday and back, reordered, given its own portions, and is still there after a relaunch. Deleting a recipe removes it from the plan. Weeks start on the locale's first weekday (Monday in the UK).
 
-## 11. Scaling and formatting fixtures (Phase 0)
+**Phase 6 — Shop for the week (v0.3)**
+- `WeekShopping` in `RecipeCore` with fixtures for the merge rule; the export sheet generalised over recipe or week content; "Shop" on the Plan tab.
+- ✅ On a device: a week with two recipes sharing onion, garlic and oil exports one merged row for each, notes list both meals, staples arrive unticked, the Recipes tab shows "Added to Reminders" for both recipes, and a single recipe's "Add to Reminders" is unchanged.
+
+**Later:** iCloud sync between iPhone and iPad (SwiftData + CloudKit), on-device extraction with Apple's Foundation Models framework to remove the API cost, storing method text, public release with real auth.
+
+## 11. Fixtures
+
+**Planning (`fixtures/planning/`, Phase 5–6):** `weeks.json` pins `PlanWeek` boundaries (Monday-first and Sunday-first, a year boundary, the UK clock changes); Phase 6 adds `week-export-*.json` for the merge rule.
+
+### Scaling and formatting fixtures (Phase 0)
 
 Each case: ingredient + base yield + target yield → expected line text.
 
@@ -229,3 +259,4 @@ Each case: ingredient + base yield + target yield → expected line text.
 1. Personal use and TestFlight only, or eventual App Store release? (Drives authentication, cost controls and a privacy policy.)
 2. Should recipes sync between iPhone and iPad from day one, or is that "Later"?
 3. Should method text be stored in future? (Affects the data model and the copyright position of keeping book content.)
+4. Should the week export offer "since last shop" (only meals not yet exported) once the weekly rhythm settles?

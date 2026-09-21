@@ -1,8 +1,8 @@
 # CLAUDE.md — Recipe Basket (working name)
 
-Native iPhone and iPad app: photograph a recipe page → extract ingredients and yield → user confirms → scale to the portions wanted → add that recipe's ingredients to Apple Reminders (or share as text).
+Native iPhone and iPad app: photograph a recipe page → extract ingredients and yield → user confirms → scale to the portions wanted → add that recipe's ingredients to Apple Reminders (or share as text). A week planner puts recipes on days, each meal with its own portions, and exports the whole week at once.
 
-Each recipe is exported on its own. There is no combined shopping list and no merging of ingredients across recipes. Duplicate items in Reminders are acceptable by design.
+Each recipe can be exported on its own, or a planned week in one go. The week export merges only lines whose ingredient name, unit and package size match exactly (quantities summed by code, rounded once) — nothing fuzzier. Duplicate items in Reminders are acceptable by design.
 
 **Full product spec: `docs/SPEC.md`.** Read it before starting any phase. Build phases in order; don't start the next phase until the current one's acceptance criteria pass.
 
@@ -21,11 +21,12 @@ Each recipe is exported on its own. There is no combined shopping list and no me
 
 ```
 ios/project.yml               XcodeGen spec
-ios/RecipeBasket/             App target: SwiftUI views, SwiftData models, VisionKit, EventKit, API client
+ios/RecipeBasket/             App target: SwiftUI views, SwiftData models, VisionKit, EventKit, API client (Planner/ is the week view)
 ios/Packages/RecipeCore/      Pure Swift: Codable models, scaling, rounding, formatting (no SwiftUI/UIKit/EventKit/networking)
 api/                          Cloudflare Worker: POST /extract, eval script, JSON Schema export
 schema/extraction.schema.json Generated from the Worker's Zod schema; the contract between API and app
 fixtures/scaling/             Scaling and formatting cases (JSON)
+fixtures/planning/            Week boundaries and (Phase 6) week-export merge cases
 fixtures/photos/              Real cookbook page photos for evals
 fixtures/expected/            Hand-checked expected extractions for those photos
 docs/SPEC.md                  Product spec and phases

@@ -209,6 +209,19 @@ Each of these is a place where SPEC v0.2 was silent, overlapping or contradictor
 - **Sort and group** on the recipe list (⋯ menu): Newest first / Title / Last added to Reminders, and group by book (books alphabetical, page order inside, "No book" last). Pure logic in `RecipeListOrdering` with tests; choices persist in UserDefaults.
 - **Page photos open full screen** from the list thumbnail (the row's other area still opens the recipe), the recipe's new thumbnail strip, and the review form: swipe between pages, pinch or double-tap to zoom. Zooming is a `UIScrollView` wrapped in `UIViewRepresentable` — SwiftUI on iOS 17 has no zoomable scroll view, and the point is reading the printed list, so a real one was worth the ~80 lines.
 
+## Phase 5 — planner
+
+### 2026-09-21 · Design
+
+- **Why:** the weekly routine still had a manual half — choosing days, shuffling, reusing recipes, compiling the week's shop. Decisions with the user: any number of meals per day (no slots); portions per planned meal, starting from the recipe's "I want"; Plan is the first tab; the week export (Phase 6) merges exact matches only and the per-recipe export stays untouched.
+- **`PlanDay` / `PlanWeek` in RecipeCore.** A day is stored as its ISO string (`dayKey`), so `#Predicate` compares strings, sorting is chronological, and a time-zone change can never shift a meal. Week boundaries come from the calendar's `firstWeekday` (Monday in en_GB); `fixtures/planning/weeks.json` pins Monday- and Sunday-first weeks, the year boundary and both UK clock changes.
+- **`PlannedMeal`** with a cascade from `Recipe.plannedMeals`: deleting a recipe removes it from the plan (the dialog says so). **Lightweight migration verified**: the simulator's store, written by the Phase 4 schema, opened with the new `ZPLANNEDMEAL` table and both recipes intact; no `VersionedSchema` needed. Apple's SwiftData migration pages are JS-rendered and couldn't be fetched, so this was checked empirically rather than from the docs.
+- **`PlanEditor`** is the only writer of planned meals and keeps each day's `order` dense; `PlanOrdering` holds the pure grouping/reindexing. `AppSchema.models` lists every model for the app and the tests, so a model missing from the schema fails in tests before a device.
+- **Screens:** `RootView` tabs; `PlannerView` (title "This week" / "Next week" / "Last week" / "Week of 21 Sep", ‹ › and Today, Clear week, Settings) over `WeekView`, which is recreated per week (`.id(week.start)`) because a `@Query` predicate is fixed at init. Rows navigate to the recipe; the portions stepper sits inline; Remove is a trailing swipe; **Move to** is a leading swipe and the long-press menu; long-press-drag reorders within a day (`.onMove` works without edit mode on iOS 17+).
+- **Drag between days was tried and dropped.** `.draggable`/`.onDrag` + `.dropDestination` on List rows never started a drag session in the simulator (three variants, with and without the context menu), and it would have replaced the native in-day reorder. The long-press menu is the way across days; `PlanEditor.move(_:to:at:)` keeps the drop position for a later attempt on a device.
+- **"Add to plan…"** on the recipe opens a two-week day picker showing what each day already has; the recipe detail lists its upcoming planned days. `AddRecipeView` hands back the saved `Recipe` so a scan from a day's "Add meal" lands on that day.
+- Welcome and splash tagline: "From cookbook page to weekly plan and shopping list."; the welcome gains a "Plan the week" row.
+
 ### Open: device acceptance (SPEC §10 Phase 4)
 
 Awaiting the user's device pass: document camera, export at 1 portion, titles/notes, staples unticked, duplicate export, denied permission + Share, and the Grocery-list section behaviour.
