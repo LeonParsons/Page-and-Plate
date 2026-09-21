@@ -1,0 +1,71 @@
+{
+  "id": 11,
+  "title": "Two portions of 0.125 g (each alone would floor to 0.5 g) sum to 0.25 g and round once to 0.5 g",
+  "weekTitle": "Week of 21 Sep",
+  "meals": [
+    {
+      "recipeTitle": "Risotto",
+      "yield": {
+        "quantity": 4,
+        "unit": "servings"
+      },
+      "portions": 1,
+      "dayText": "Mon 21 Sep",
+      "weekdayText": "Mon",
+      "ingredients": [
+        {
+          "rawText": "saffron",
+          "section": null,
+          "quantity": 0.5,
+          "quantityMax": null,
+          "unit": "g",
+          "packageSize": null,
+          "name": "saffron",
+          "preparation": null,
+          "optional": false,
+          "scalable": true,
+          "confidence": "high"
+        }
+      ]
+    },
+    {
+      "recipeTitle": "Risotto",
+      "yield": {
+        "quantity": 4,
+        "unit": "servings"
+      },
+      "portions": 1,
+      "dayText": "Thu 24 Sep",
+      "weekdayText": "Thu",
+      "ingredients": [
+        {
+          "rawText": "saffron",
+          "section": null,
+          "quantity": 0.5,
+          "quantityMax": null,
+          "unit": "g",
+          "packageSize": null,
+          "name": "saffron",
+          "preparation": null,
+          "optional": false,
+          "scalable": true,
+          "confidence": "high"
+        }
+      ]
+    }
+  ],
+  "expected": {
+    "lines": [
+      {
+        "id": "saffron|g|",
+        "title": "Saffron — 0.5 g",
+        "notes": "Risotto · for 1 · Mon 21 Sep\nRisotto · for 1 · Thu 24 Sep",
+        "contributors": [
+          0,
+          1
+        ],
+        "isStaple": false
+      }
+    ]
+  }
+}

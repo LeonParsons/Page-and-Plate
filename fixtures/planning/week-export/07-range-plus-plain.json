@@ -1,0 +1,71 @@
+{
+  "id": 7,
+  "title": "A range and a plain amount sum end to end: 2–3 cloves + 1 clove → 3–4 cloves",
+  "weekTitle": "Week of 21 Sep",
+  "meals": [
+    {
+      "recipeTitle": "Curry",
+      "yield": {
+        "quantity": 4,
+        "unit": "servings"
+      },
+      "portions": 4,
+      "dayText": "Mon 21 Sep",
+      "weekdayText": "Mon",
+      "ingredients": [
+        {
+          "rawText": "garlic",
+          "section": null,
+          "quantity": 2,
+          "quantityMax": 3,
+          "unit": "clove",
+          "packageSize": null,
+          "name": "garlic",
+          "preparation": null,
+          "optional": false,
+          "scalable": true,
+          "confidence": "high"
+        }
+      ]
+    },
+    {
+      "recipeTitle": "Bruschetta",
+      "yield": {
+        "quantity": 2,
+        "unit": "servings"
+      },
+      "portions": 2,
+      "dayText": "Tue 22 Sep",
+      "weekdayText": "Tue",
+      "ingredients": [
+        {
+          "rawText": "garlic",
+          "section": null,
+          "quantity": 1,
+          "quantityMax": null,
+          "unit": "clove",
+          "packageSize": null,
+          "name": "garlic",
+          "preparation": null,
+          "optional": false,
+          "scalable": true,
+          "confidence": "high"
+        }
+      ]
+    }
+  ],
+  "expected": {
+    "lines": [
+      {
+        "id": "garlic|clove|",
+        "title": "Garlic — 3–4 cloves",
+        "notes": "Curry · for 4 · Mon 21 Sep\nBruschetta · for 2 · Tue 22 Sep",
+        "contributors": [
+          0,
+          1
+        ],
+        "isStaple": false
+      }
+    ]
+  }
+}

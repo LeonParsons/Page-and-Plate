@@ -1,0 +1,107 @@
+{
+  "id": 9,
+  "title": "A merged row is optional only when every contributor was",
+  "weekTitle": "Week of 21 Sep",
+  "meals": [
+    {
+      "recipeTitle": "Ragu",
+      "yield": {
+        "quantity": 4,
+        "unit": "servings"
+      },
+      "portions": 4,
+      "dayText": "Mon 21 Sep",
+      "weekdayText": "Mon",
+      "ingredients": [
+        {
+          "rawText": "bay leaf",
+          "section": null,
+          "quantity": 1,
+          "quantityMax": null,
+          "unit": "each",
+          "packageSize": null,
+          "name": "bay leaf",
+          "preparation": null,
+          "optional": true,
+          "scalable": true,
+          "confidence": "high"
+        },
+        {
+          "rawText": "chilli flakes",
+          "section": null,
+          "quantity": 1,
+          "quantityMax": null,
+          "unit": "tsp",
+          "packageSize": null,
+          "name": "chilli flakes",
+          "preparation": null,
+          "optional": true,
+          "scalable": true,
+          "confidence": "high"
+        }
+      ]
+    },
+    {
+      "recipeTitle": "Soup",
+      "yield": {
+        "quantity": 4,
+        "unit": "servings"
+      },
+      "portions": 4,
+      "dayText": "Tue 22 Sep",
+      "weekdayText": "Tue",
+      "ingredients": [
+        {
+          "rawText": "bay leaf",
+          "section": null,
+          "quantity": 1,
+          "quantityMax": null,
+          "unit": "each",
+          "packageSize": null,
+          "name": "bay leaf",
+          "preparation": null,
+          "optional": true,
+          "scalable": true,
+          "confidence": "high"
+        },
+        {
+          "rawText": "chilli flakes",
+          "section": null,
+          "quantity": 1,
+          "quantityMax": null,
+          "unit": "tsp",
+          "packageSize": null,
+          "name": "chilli flakes",
+          "preparation": null,
+          "optional": false,
+          "scalable": true,
+          "confidence": "high"
+        }
+      ]
+    }
+  ],
+  "expected": {
+    "lines": [
+      {
+        "id": "bay leaf|each|",
+        "title": "Bay leaf — 2 (optional)",
+        "notes": "Ragu · for 4 · Mon 21 Sep\nSoup · for 4 · Tue 22 Sep",
+        "contributors": [
+          0,
+          1
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "chilli flakes|tsp|",
+        "title": "Chilli flakes — 2 tsp",
+        "notes": "Ragu · for 4 · Mon 21 Sep\nSoup · for 4 · Tue 22 Sep",
+        "contributors": [
+          0,
+          1
+        ],
+        "isStaple": false
+      }
+    ]
+  }
+}

@@ -43,6 +43,16 @@ public enum Rounding {
         }
     }
 
+    /// Rounds a scaled amount or range in `unit`, once. The upper value decides the display unit (so both ends of a
+    /// range share it, kg/l promotion included); a range whose ends round to the same value collapses to one.
+    /// Used by `Ingredient.scaled(by:)` and by the week export's merged rows.
+    static func roundRange(_ min: Double, max: Double?, unit: Unit) -> (value: Double, max: Double?, unit: Unit) {
+        let upper = round(max ?? min, unit: unit)
+        let roundedMin = max == nil ? upper.value : round(min, from: unit, to: upper.unit)
+        let roundedMax: Double? = max == nil || abs(upper.value - roundedMin) < 1e-9 ? nil : upper.value
+        return (roundedMin, roundedMax, upper.unit)
+    }
+
     /// Rounds `value` (in `unit`) for display in `displayUnit`, which is either `unit` itself or its promotion.
     /// Used for the lower end of a range once the upper end has fixed the display unit.
     static func round(_ value: Double, from unit: Unit, to displayUnit: Unit) -> Double {

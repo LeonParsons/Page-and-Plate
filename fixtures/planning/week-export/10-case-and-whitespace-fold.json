@@ -1,0 +1,71 @@
+{
+  "id": 10,
+  "title": "Names match trimmed and case-folded; the title uses the first contributor's name, trimmed",
+  "weekTitle": "Week of 21 Sep",
+  "meals": [
+    {
+      "recipeTitle": "Aioli",
+      "yield": {
+        "quantity": 4,
+        "unit": "servings"
+      },
+      "portions": 4,
+      "dayText": "Mon 21 Sep",
+      "weekdayText": "Mon",
+      "ingredients": [
+        {
+          "rawText": "garlic",
+          "section": null,
+          "quantity": 2,
+          "quantityMax": null,
+          "unit": "clove",
+          "packageSize": null,
+          "name": "garlic",
+          "preparation": null,
+          "optional": false,
+          "scalable": true,
+          "confidence": "high"
+        }
+      ]
+    },
+    {
+      "recipeTitle": "Prawns",
+      "yield": {
+        "quantity": 2,
+        "unit": "servings"
+      },
+      "portions": 2,
+      "dayText": "Tue 22 Sep",
+      "weekdayText": "Tue",
+      "ingredients": [
+        {
+          "rawText": "1 Garlic clove",
+          "section": null,
+          "quantity": 1,
+          "quantityMax": null,
+          "unit": "clove",
+          "packageSize": null,
+          "name": " Garlic",
+          "preparation": null,
+          "optional": false,
+          "scalable": true,
+          "confidence": "high"
+        }
+      ]
+    }
+  ],
+  "expected": {
+    "lines": [
+      {
+        "id": "garlic|clove|",
+        "title": "Garlic — 3 cloves",
+        "notes": "Aioli · for 4 · Mon 21 Sep\nPrawns · for 2 · Tue 22 Sep",
+        "contributors": [
+          0,
+          1
+        ],
+        "isStaple": false
+      }
+    ]
+  }
+}

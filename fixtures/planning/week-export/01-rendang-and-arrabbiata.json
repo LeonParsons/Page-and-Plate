@@ -1,0 +1,259 @@
+{
+  "id": 1,
+  "title": "Rendang for 4 on Monday and arrabbiata for 2 on Wednesday: garlic and chilli merge across recipes, lemongrass within one, the rest stay",
+  "weekTitle": "Week of 21 Sep",
+  "meals": [
+    {
+      "source": "fixtures/expected/beef-rendang.json",
+      "portions": 4,
+      "dayText": "Mon 21 Sep",
+      "weekdayText": "Mon"
+    },
+    {
+      "source": "fixtures/expected/chickpea-arrabbiata.json",
+      "portions": 2,
+      "dayText": "Wed 23 Sep",
+      "weekdayText": "Wed"
+    }
+  ],
+  "expected": {
+    "lines": [
+      {
+        "id": "neutral cooking oil|tbsp|",
+        "title": "Neutral cooking oil — 1 tbsp",
+        "notes": "BEEF RENDANG · for 4 · Mon 21 Sep",
+        "contributors": [
+          0
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "tamarind paste|tbsp|",
+        "title": "Tamarind paste — 1½ tbsp",
+        "notes": "BEEF RENDANG · for 4 · Mon 21 Sep",
+        "contributors": [
+          0
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "cloves|each|",
+        "title": "Cloves — 2",
+        "notes": "BEEF RENDANG · for 4 · Mon 21 Sep",
+        "contributors": [
+          0
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "green cardamom pods|each|",
+        "title": "Green cardamom pods — 3",
+        "notes": "BEEF RENDANG · for 4 · Mon 21 Sep",
+        "contributors": [
+          0
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "cinnamon|stick|",
+        "title": "Cinnamon — 1 stick",
+        "notes": "BEEF RENDANG · for 4 · Mon 21 Sep",
+        "contributors": [
+          0
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "sugar|tsp|",
+        "title": "Sugar — 1 tsp",
+        "notes": "BEEF RENDANG · for 4 · Mon 21 Sep",
+        "contributors": [
+          0
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "beef shin|g|",
+        "title": "Beef shin — 800 g",
+        "notes": "BEEF RENDANG · for 4 · Mon 21 Sep",
+        "contributors": [
+          0
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "full-fat coconut milk|ml|",
+        "title": "Full-fat coconut milk — 400 ml",
+        "notes": "BEEF RENDANG · for 4 · Mon 21 Sep",
+        "contributors": [
+          0
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "water|ml|",
+        "title": "Water — 100 ml",
+        "notes": "BEEF RENDANG · for 4 · Mon 21 Sep",
+        "contributors": [
+          0
+        ],
+        "isStaple": true
+      },
+      {
+        "id": "lemongrass stalk|each|",
+        "title": "Lemongrass stalk — 2",
+        "notes": "BEEF RENDANG · for 4 · Mon 21 Sep",
+        "contributors": [
+          0
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "lime leaves|each|",
+        "title": "Lime leaves — 5",
+        "notes": "BEEF RENDANG · for 4 · Mon 21 Sep",
+        "contributors": [
+          0
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "desiccated coconut|tbsp|",
+        "title": "Desiccated coconut — 4½ tbsp",
+        "notes": "BEEF RENDANG · for 4 · Mon 21 Sep",
+        "contributors": [
+          0
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "dried red chilli flakes||",
+        "title": "Dried red chilli flakes",
+        "notes": "BEEF RENDANG · for 4 · Mon 21 Sep",
+        "contributors": [
+          0
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "salt||",
+        "title": "Salt",
+        "notes": "BEEF RENDANG · for 4 · Mon 21 Sep",
+        "contributors": [
+          0
+        ],
+        "isStaple": true
+      },
+      {
+        "id": "large onion|each|",
+        "title": "Large onion — 1",
+        "notes": "BEEF RENDANG · for 4 · Mon 21 Sep",
+        "contributors": [
+          0
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "garlic|clove|",
+        "title": "Garlic — 6 cloves",
+        "notes": "BEEF RENDANG · for 4 · Mon 21 Sep\nChickpea arrabbiata · for 2 · Wed 23 Sep",
+        "contributors": [
+          0,
+          1
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "ginger|each|",
+        "title": "Ginger — 1",
+        "notes": "BEEF RENDANG · for 4 · Mon 21 Sep",
+        "contributors": [
+          0
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "galangal paste|tsp|",
+        "title": "Galangal paste — 1 tsp",
+        "notes": "BEEF RENDANG · for 4 · Mon 21 Sep",
+        "contributors": [
+          0
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "small dried red chillies|each|",
+        "title": "Small dried red chillies — 2–3",
+        "notes": "BEEF RENDANG · for 4 · Mon 21 Sep",
+        "contributors": [
+          0
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "fresh red chilli|each|",
+        "title": "Fresh red chilli — 3",
+        "notes": "BEEF RENDANG · for 4 · Mon 21 Sep\nChickpea arrabbiata · for 2 · Wed 23 Sep",
+        "contributors": [
+          0,
+          1
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "salt|pinch|",
+        "title": "Salt — 1 pinch",
+        "notes": "BEEF RENDANG · for 4 · Mon 21 Sep",
+        "contributors": [
+          0
+        ],
+        "isStaple": true
+      },
+      {
+        "id": "passata|g|",
+        "title": "Passata — 400 g",
+        "notes": "Chickpea arrabbiata · for 2 · Wed 23 Sep",
+        "contributors": [
+          1
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "chickpeas|tin|400g",
+        "title": "Chickpeas — 1 tin (400 g)",
+        "notes": "Chickpea arrabbiata · for 2 · Wed 23 Sep",
+        "contributors": [
+          1
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "fresh lasagne sheets|g|",
+        "title": "Fresh lasagne sheets — 250 g",
+        "notes": "Chickpea arrabbiata · for 2 · Wed 23 Sep",
+        "contributors": [
+          1
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "rocket|g|",
+        "title": "Rocket — 60 g",
+        "notes": "Chickpea arrabbiata · for 2 · Wed 23 Sep",
+        "contributors": [
+          1
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "parmesan cheese|g|",
+        "title": "Parmesan cheese — 40 g",
+        "notes": "Chickpea arrabbiata · for 2 · Wed 23 Sep",
+        "contributors": [
+          1
+        ],
+        "isStaple": false
+      }
+    ]
+  }
+}

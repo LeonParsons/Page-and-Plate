@@ -1,0 +1,79 @@
+{
+  "id": 6,
+  "title": "g and kg are different units, so 500 g and 1 kg of potatoes stay two rows (no unit conversion, SPEC rule 6)",
+  "weekTitle": "Week of 21 Sep",
+  "meals": [
+    {
+      "recipeTitle": "Gratin",
+      "yield": {
+        "quantity": 4,
+        "unit": "servings"
+      },
+      "portions": 4,
+      "dayText": "Mon 21 Sep",
+      "weekdayText": "Mon",
+      "ingredients": [
+        {
+          "rawText": "potatoes",
+          "section": null,
+          "quantity": 500,
+          "quantityMax": null,
+          "unit": "g",
+          "packageSize": null,
+          "name": "potatoes",
+          "preparation": null,
+          "optional": false,
+          "scalable": true,
+          "confidence": "high"
+        }
+      ]
+    },
+    {
+      "recipeTitle": "Roast",
+      "yield": {
+        "quantity": 6,
+        "unit": "servings"
+      },
+      "portions": 6,
+      "dayText": "Sun 27 Sep",
+      "weekdayText": "Sun",
+      "ingredients": [
+        {
+          "rawText": "potatoes",
+          "section": null,
+          "quantity": 1,
+          "quantityMax": null,
+          "unit": "kg",
+          "packageSize": null,
+          "name": "potatoes",
+          "preparation": null,
+          "optional": false,
+          "scalable": true,
+          "confidence": "high"
+        }
+      ]
+    }
+  ],
+  "expected": {
+    "lines": [
+      {
+        "id": "potatoes|g|",
+        "title": "Potatoes — 500 g",
+        "notes": "Gratin · for 4 · Mon 21 Sep",
+        "contributors": [
+          0
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "potatoes|kg|",
+        "title": "Potatoes — 1 kg",
+        "notes": "Roast · for 6 · Sun 27 Sep",
+        "contributors": [
+          1
+        ],
+        "isStaple": false
+      }
+    ]
+  }
+}

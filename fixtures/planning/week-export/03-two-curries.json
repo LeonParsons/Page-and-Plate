@@ -1,0 +1,283 @@
+{
+  "id": 3,
+  "title": "Two curries sharing seven ingredients at different factors; 'onion' and 'onions' stay apart; an unscalable handful contributes as printed",
+  "weekTitle": "Week of 21 Sep",
+  "meals": [
+    {
+      "source": "fixtures/expected/gym-bunny-curry.json",
+      "portions": 4,
+      "dayText": "Mon 21 Sep",
+      "weekdayText": "Mon"
+    },
+    {
+      "source": "fixtures/expected/nilgiri-curry.json",
+      "portions": 2,
+      "dayText": "Thu 24 Sep",
+      "weekdayText": "Thu"
+    }
+  ],
+  "expected": {
+    "lines": [
+      {
+        "id": "eggs|each|",
+        "title": "Eggs — 4",
+        "notes": "GYM BUNNY CURRY · for 4 · Mon 21 Sep",
+        "contributors": [
+          0
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "neutral cooking oil|tbsp|",
+        "title": "Neutral cooking oil — 1½ tbsp",
+        "notes": "GYM BUNNY CURRY · for 4 · Mon 21 Sep\nNILGIRI CURRY · for 2 · Thu 24 Sep",
+        "contributors": [
+          0,
+          1
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "curry leaves|each|",
+        "title": "Curry leaves — 8",
+        "notes": "GYM BUNNY CURRY · for 4 · Mon 21 Sep\nNILGIRI CURRY · for 2 · Thu 24 Sep",
+        "contributors": [
+          0,
+          1
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "cumin seeds|tsp|",
+        "title": "Cumin seeds — ½ tsp",
+        "notes": "GYM BUNNY CURRY · for 4 · Mon 21 Sep",
+        "contributors": [
+          0
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "onion|each|",
+        "title": "Onion — 1",
+        "notes": "GYM BUNNY CURRY · for 4 · Mon 21 Sep",
+        "contributors": [
+          0
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "ginger|each|",
+        "title": "Ginger — 1½",
+        "notes": "GYM BUNNY CURRY · for 4 · Mon 21 Sep\nNILGIRI CURRY · for 2 · Thu 24 Sep",
+        "contributors": [
+          0,
+          1
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "garlic|clove|",
+        "title": "Garlic — 2½ cloves",
+        "notes": "GYM BUNNY CURRY · for 4 · Mon 21 Sep\nNILGIRI CURRY · for 2 · Thu 24 Sep",
+        "contributors": [
+          0,
+          1
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "red chilli|each|",
+        "title": "Red chilli — 1",
+        "notes": "GYM BUNNY CURRY · for 4 · Mon 21 Sep",
+        "contributors": [
+          0
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "green cardamom pods|each|",
+        "title": "Green cardamom pods — 9½",
+        "notes": "GYM BUNNY CURRY · for 4 · Mon 21 Sep\nNILGIRI CURRY · for 2 · Thu 24 Sep",
+        "contributors": [
+          0,
+          1
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "ground turmeric|tsp|",
+        "title": "Ground turmeric — 1½ tsp",
+        "notes": "GYM BUNNY CURRY · for 4 · Mon 21 Sep\nNILGIRI CURRY · for 2 · Thu 24 Sep",
+        "contributors": [
+          0,
+          1
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "ground coriander|tsp|",
+        "title": "Ground coriander — 1 tsp",
+        "notes": "GYM BUNNY CURRY · for 4 · Mon 21 Sep",
+        "contributors": [
+          0
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "canned chopped tomatoes|g|",
+        "title": "Canned chopped tomatoes — 400 g",
+        "notes": "GYM BUNNY CURRY · for 4 · Mon 21 Sep",
+        "contributors": [
+          0
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "full-fat coconut milk|tbsp|",
+        "title": "Full-fat coconut milk — 7 tbsp",
+        "notes": "GYM BUNNY CURRY · for 4 · Mon 21 Sep\nNILGIRI CURRY · for 2 · Thu 24 Sep",
+        "contributors": [
+          0,
+          1
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "fresh coriander|handful|",
+        "title": "Fresh coriander — 1½ handfuls",
+        "notes": "GYM BUNNY CURRY · for 4 · Mon 21 Sep\nNILGIRI CURRY · for 2 · Thu 24 Sep",
+        "contributors": [
+          0,
+          1
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "rice or indian flatbreads||",
+        "title": "Rice or Indian flatbreads",
+        "notes": "GYM BUNNY CURRY · for 4 · Mon 21 Sep",
+        "contributors": [
+          0
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "skinless, boneless chicken thighs or breasts|g|",
+        "title": "Skinless, boneless chicken thighs or breasts — 400 g",
+        "notes": "NILGIRI CURRY · for 2 · Thu 24 Sep",
+        "contributors": [
+          1
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "full-fat plain yoghurt|tbsp|",
+        "title": "Full-fat plain yoghurt — 3 tbsp",
+        "notes": "NILGIRI CURRY · for 2 · Thu 24 Sep",
+        "contributors": [
+          1
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "onions|each|",
+        "title": "Onions — 1",
+        "notes": "NILGIRI CURRY · for 2 · Thu 24 Sep",
+        "contributors": [
+          1
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "cloves|each|",
+        "title": "Cloves — 2",
+        "notes": "NILGIRI CURRY · for 2 · Thu 24 Sep",
+        "contributors": [
+          1
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "mint|sprig|",
+        "title": "Mint — 3 sprigs",
+        "notes": "NILGIRI CURRY · for 2 · Thu 24 Sep",
+        "contributors": [
+          1
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "medium hot green chillies|each|",
+        "title": "Medium hot green chillies — 1",
+        "notes": "NILGIRI CURRY · for 2 · Thu 24 Sep",
+        "contributors": [
+          1
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "cold water|ml|",
+        "title": "Cold water — 130 ml",
+        "notes": "NILGIRI CURRY · for 2 · Thu 24 Sep",
+        "contributors": [
+          1
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "fennel seeds|pinch|",
+        "title": "Fennel seeds — ½ pinch",
+        "notes": "NILGIRI CURRY · for 2 · Thu 24 Sep",
+        "contributors": [
+          1
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "ground cinnamon|tsp|",
+        "title": "Ground cinnamon — ¼ tsp",
+        "notes": "NILGIRI CURRY · for 2 · Thu 24 Sep",
+        "contributors": [
+          1
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "bay leaf|each|",
+        "title": "Bay leaf — ½",
+        "notes": "NILGIRI CURRY · for 2 · Thu 24 Sep",
+        "contributors": [
+          1
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "unroasted cashew nuts|g|",
+        "title": "Unroasted cashew nuts — 15 g",
+        "notes": "NILGIRI CURRY · for 2 · Thu 24 Sep",
+        "contributors": [
+          1
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "salt||",
+        "title": "Salt",
+        "notes": "NILGIRI CURRY · for 2 · Thu 24 Sep",
+        "contributors": [
+          1
+        ],
+        "isStaple": true
+      },
+      {
+        "id": "rice or chapati||",
+        "title": "Rice or Chapati",
+        "notes": "NILGIRI CURRY · for 2 · Thu 24 Sep",
+        "contributors": [
+          1
+        ],
+        "isStaple": false
+      }
+    ]
+  }
+}

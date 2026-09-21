@@ -1,0 +1,233 @@
+{
+  "id": 2,
+  "title": "The same recipe on two days doubles every amount, promotes 1600 g to 1.6 kg, and lists unquantified rows once",
+  "weekTitle": "Week of 21 Sep",
+  "meals": [
+    {
+      "source": "fixtures/expected/beef-rendang.json",
+      "portions": 4,
+      "dayText": "Tue 22 Sep",
+      "weekdayText": "Tue"
+    },
+    {
+      "source": "fixtures/expected/beef-rendang.json",
+      "portions": 4,
+      "dayText": "Thu 24 Sep",
+      "weekdayText": "Thu"
+    }
+  ],
+  "expected": {
+    "lines": [
+      {
+        "id": "neutral cooking oil|tbsp|",
+        "title": "Neutral cooking oil — 2 tbsp",
+        "notes": "BEEF RENDANG · for 4 · Tue 22 Sep\nBEEF RENDANG · for 4 · Thu 24 Sep",
+        "contributors": [
+          0,
+          1
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "tamarind paste|tbsp|",
+        "title": "Tamarind paste — 3 tbsp",
+        "notes": "BEEF RENDANG · for 4 · Tue 22 Sep\nBEEF RENDANG · for 4 · Thu 24 Sep",
+        "contributors": [
+          0,
+          1
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "cloves|each|",
+        "title": "Cloves — 4",
+        "notes": "BEEF RENDANG · for 4 · Tue 22 Sep\nBEEF RENDANG · for 4 · Thu 24 Sep",
+        "contributors": [
+          0,
+          1
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "green cardamom pods|each|",
+        "title": "Green cardamom pods — 6",
+        "notes": "BEEF RENDANG · for 4 · Tue 22 Sep\nBEEF RENDANG · for 4 · Thu 24 Sep",
+        "contributors": [
+          0,
+          1
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "cinnamon|stick|",
+        "title": "Cinnamon — 2 sticks",
+        "notes": "BEEF RENDANG · for 4 · Tue 22 Sep\nBEEF RENDANG · for 4 · Thu 24 Sep",
+        "contributors": [
+          0,
+          1
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "sugar|tsp|",
+        "title": "Sugar — 2 tsp",
+        "notes": "BEEF RENDANG · for 4 · Tue 22 Sep\nBEEF RENDANG · for 4 · Thu 24 Sep",
+        "contributors": [
+          0,
+          1
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "beef shin|g|",
+        "title": "Beef shin — 1.6 kg",
+        "notes": "BEEF RENDANG · for 4 · Tue 22 Sep\nBEEF RENDANG · for 4 · Thu 24 Sep",
+        "contributors": [
+          0,
+          1
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "full-fat coconut milk|ml|",
+        "title": "Full-fat coconut milk — 800 ml",
+        "notes": "BEEF RENDANG · for 4 · Tue 22 Sep\nBEEF RENDANG · for 4 · Thu 24 Sep",
+        "contributors": [
+          0,
+          1
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "water|ml|",
+        "title": "Water — 200 ml",
+        "notes": "BEEF RENDANG · for 4 · Tue 22 Sep\nBEEF RENDANG · for 4 · Thu 24 Sep",
+        "contributors": [
+          0,
+          1
+        ],
+        "isStaple": true
+      },
+      {
+        "id": "lemongrass stalk|each|",
+        "title": "Lemongrass stalk — 4",
+        "notes": "BEEF RENDANG · for 4 · Tue 22 Sep\nBEEF RENDANG · for 4 · Thu 24 Sep",
+        "contributors": [
+          0,
+          1
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "lime leaves|each|",
+        "title": "Lime leaves — 10",
+        "notes": "BEEF RENDANG · for 4 · Tue 22 Sep\nBEEF RENDANG · for 4 · Thu 24 Sep",
+        "contributors": [
+          0,
+          1
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "desiccated coconut|tbsp|",
+        "title": "Desiccated coconut — 9 tbsp",
+        "notes": "BEEF RENDANG · for 4 · Tue 22 Sep\nBEEF RENDANG · for 4 · Thu 24 Sep",
+        "contributors": [
+          0,
+          1
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "dried red chilli flakes||",
+        "title": "Dried red chilli flakes",
+        "notes": "BEEF RENDANG · for 4 · Tue 22 Sep\nBEEF RENDANG · for 4 · Thu 24 Sep",
+        "contributors": [
+          0,
+          1
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "salt||",
+        "title": "Salt",
+        "notes": "BEEF RENDANG · for 4 · Tue 22 Sep\nBEEF RENDANG · for 4 · Thu 24 Sep",
+        "contributors": [
+          0,
+          1
+        ],
+        "isStaple": true
+      },
+      {
+        "id": "large onion|each|",
+        "title": "Large onion — 2",
+        "notes": "BEEF RENDANG · for 4 · Tue 22 Sep\nBEEF RENDANG · for 4 · Thu 24 Sep",
+        "contributors": [
+          0,
+          1
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "garlic|clove|",
+        "title": "Garlic — 8 cloves",
+        "notes": "BEEF RENDANG · for 4 · Tue 22 Sep\nBEEF RENDANG · for 4 · Thu 24 Sep",
+        "contributors": [
+          0,
+          1
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "ginger|each|",
+        "title": "Ginger — 2",
+        "notes": "BEEF RENDANG · for 4 · Tue 22 Sep\nBEEF RENDANG · for 4 · Thu 24 Sep",
+        "contributors": [
+          0,
+          1
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "galangal paste|tsp|",
+        "title": "Galangal paste — 2 tsp",
+        "notes": "BEEF RENDANG · for 4 · Tue 22 Sep\nBEEF RENDANG · for 4 · Thu 24 Sep",
+        "contributors": [
+          0,
+          1
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "small dried red chillies|each|",
+        "title": "Small dried red chillies — 4–6",
+        "notes": "BEEF RENDANG · for 4 · Tue 22 Sep\nBEEF RENDANG · for 4 · Thu 24 Sep",
+        "contributors": [
+          0,
+          1
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "fresh red chilli|each|",
+        "title": "Fresh red chilli — 2",
+        "notes": "BEEF RENDANG · for 4 · Tue 22 Sep\nBEEF RENDANG · for 4 · Thu 24 Sep",
+        "contributors": [
+          0,
+          1
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "salt|pinch|",
+        "title": "Salt — 2 pinches",
+        "notes": "BEEF RENDANG · for 4 · Tue 22 Sep\nBEEF RENDANG · for 4 · Thu 24 Sep",
+        "contributors": [
+          0,
+          1
+        ],
+        "isStaple": true
+      }
+    ]
+  }
+}

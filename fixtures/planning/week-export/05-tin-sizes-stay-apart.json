@@ -1,0 +1,114 @@
+{
+  "id": 5,
+  "title": "Package sizes are part of the key: 400 g tins merge with 400 g tins, not with a 227 g tin",
+  "weekTitle": "Week of 21 Sep",
+  "meals": [
+    {
+      "recipeTitle": "Pasta",
+      "yield": {
+        "quantity": 4,
+        "unit": "servings"
+      },
+      "portions": 4,
+      "dayText": "Mon 21 Sep",
+      "weekdayText": "Mon",
+      "ingredients": [
+        {
+          "rawText": "chopped tomatoes",
+          "section": null,
+          "quantity": 1,
+          "quantityMax": null,
+          "unit": "tin",
+          "packageSize": {
+            "quantity": 400,
+            "unit": "g"
+          },
+          "name": "chopped tomatoes",
+          "preparation": null,
+          "optional": false,
+          "scalable": true,
+          "confidence": "high"
+        }
+      ]
+    },
+    {
+      "recipeTitle": "Chilli",
+      "yield": {
+        "quantity": 4,
+        "unit": "servings"
+      },
+      "portions": 4,
+      "dayText": "Tue 22 Sep",
+      "weekdayText": "Tue",
+      "ingredients": [
+        {
+          "rawText": "chopped tomatoes",
+          "section": null,
+          "quantity": 1,
+          "quantityMax": null,
+          "unit": "tin",
+          "packageSize": {
+            "quantity": 227,
+            "unit": "g"
+          },
+          "name": "chopped tomatoes",
+          "preparation": null,
+          "optional": false,
+          "scalable": true,
+          "confidence": "high"
+        }
+      ]
+    },
+    {
+      "recipeTitle": "Stew",
+      "yield": {
+        "quantity": 4,
+        "unit": "servings"
+      },
+      "portions": 4,
+      "dayText": "Wed 23 Sep",
+      "weekdayText": "Wed",
+      "ingredients": [
+        {
+          "rawText": "chopped tomatoes",
+          "section": null,
+          "quantity": 2,
+          "quantityMax": null,
+          "unit": "tin",
+          "packageSize": {
+            "quantity": 400,
+            "unit": "g"
+          },
+          "name": "chopped tomatoes",
+          "preparation": null,
+          "optional": false,
+          "scalable": true,
+          "confidence": "high"
+        }
+      ]
+    }
+  ],
+  "expected": {
+    "lines": [
+      {
+        "id": "chopped tomatoes|tin|400g",
+        "title": "Chopped tomatoes — 3 tins (400 g)",
+        "notes": "Pasta · for 4 · Mon 21 Sep\nStew · for 4 · Wed 23 Sep",
+        "contributors": [
+          0,
+          2
+        ],
+        "isStaple": false
+      },
+      {
+        "id": "chopped tomatoes|tin|227g",
+        "title": "Chopped tomatoes — 1 tin (227 g)",
+        "notes": "Chilli · for 4 · Tue 22 Sep",
+        "contributors": [
+          1
+        ],
+        "isStaple": false
+      }
+    ]
+  }
+}

@@ -1,0 +1,105 @@
+{
+  "id": 12,
+  "title": "Unquantified twins collapse to one row with both meals in the notes; a quantified 'salt' is a separate row",
+  "weekTitle": "Week of 21 Sep",
+  "meals": [
+    {
+      "recipeTitle": "Dal",
+      "yield": {
+        "quantity": 4,
+        "unit": "servings"
+      },
+      "portions": 4,
+      "dayText": "Mon 21 Sep",
+      "weekdayText": "Mon",
+      "ingredients": [
+        {
+          "rawText": "salt, to taste",
+          "section": null,
+          "quantity": null,
+          "quantityMax": null,
+          "unit": null,
+          "packageSize": null,
+          "name": "salt",
+          "preparation": null,
+          "optional": false,
+          "scalable": true,
+          "confidence": "high"
+        }
+      ]
+    },
+    {
+      "recipeTitle": "Rice",
+      "yield": {
+        "quantity": 4,
+        "unit": "servings"
+      },
+      "portions": 4,
+      "dayText": "Tue 22 Sep",
+      "weekdayText": "Tue",
+      "ingredients": [
+        {
+          "rawText": "salt",
+          "section": null,
+          "quantity": null,
+          "quantityMax": null,
+          "unit": null,
+          "packageSize": null,
+          "name": "salt",
+          "preparation": null,
+          "optional": false,
+          "scalable": true,
+          "confidence": "high"
+        }
+      ]
+    },
+    {
+      "recipeTitle": "Bread",
+      "yield": {
+        "quantity": 4,
+        "unit": "servings"
+      },
+      "portions": 4,
+      "dayText": "Wed 23 Sep",
+      "weekdayText": "Wed",
+      "ingredients": [
+        {
+          "rawText": "1 tsp salt",
+          "section": null,
+          "quantity": 1,
+          "quantityMax": null,
+          "unit": "tsp",
+          "packageSize": null,
+          "name": "salt",
+          "preparation": null,
+          "optional": false,
+          "scalable": true,
+          "confidence": "high"
+        }
+      ]
+    }
+  ],
+  "expected": {
+    "lines": [
+      {
+        "id": "salt||",
+        "title": "Salt",
+        "notes": "Dal · for 4 · Mon 21 Sep\nRice · for 4 · Tue 22 Sep",
+        "contributors": [
+          0,
+          1
+        ],
+        "isStaple": true
+      },
+      {
+        "id": "salt|tsp|",
+        "title": "Salt — 1 tsp",
+        "notes": "Bread · for 4 · Wed 23 Sep",
+        "contributors": [
+          2
+        ],
+        "isStaple": true
+      }
+    ]
+  }
+}

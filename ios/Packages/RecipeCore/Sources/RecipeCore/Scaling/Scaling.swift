@@ -29,18 +29,10 @@ extension Ingredient {
                 unit: quantity == nil ? nil : (unit ?? .each)
             )
         }
-        let unit = self.unit ?? .each
-        let scaledMin = quantity * factor
-        let scaledMax = quantityMax.map { $0 * factor }
-
-        // The upper value decides the display unit so both ends of a range share it.
-        let upper = Rounding.round(scaledMax ?? scaledMin, unit: unit)
-        let roundedMin = scaledMax == nil ? upper.value : Rounding.round(scaledMin, from: unit, to: upper.unit)
-        let roundedMax: Double? = scaledMax == nil || abs(upper.value - roundedMin) < 1e-9 ? nil : upper.value
-
+        let rounded = Rounding.roundRange(quantity * factor, max: quantityMax.map { $0 * factor }, unit: self.unit ?? .each)
         return ScaledIngredient(
             source: self, factor: factor, isScaled: true,
-            quantity: roundedMin, quantityMax: roundedMax, unit: upper.unit
+            quantity: rounded.value, quantityMax: rounded.max, unit: rounded.unit
         )
     }
 }

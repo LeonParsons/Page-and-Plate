@@ -1,0 +1,79 @@
+{
+  "id": 4,
+  "title": "Different units never merge: tbsp and ml of olive oil are two rows (both staples)",
+  "weekTitle": "Week of 21 Sep",
+  "meals": [
+    {
+      "recipeTitle": "Salad",
+      "yield": {
+        "quantity": 2,
+        "unit": "servings"
+      },
+      "portions": 2,
+      "dayText": "Mon 21 Sep",
+      "weekdayText": "Mon",
+      "ingredients": [
+        {
+          "rawText": "olive oil",
+          "section": null,
+          "quantity": 2,
+          "quantityMax": null,
+          "unit": "tbsp",
+          "packageSize": null,
+          "name": "olive oil",
+          "preparation": null,
+          "optional": false,
+          "scalable": true,
+          "confidence": "high"
+        }
+      ]
+    },
+    {
+      "recipeTitle": "Soup",
+      "yield": {
+        "quantity": 4,
+        "unit": "servings"
+      },
+      "portions": 4,
+      "dayText": "Tue 22 Sep",
+      "weekdayText": "Tue",
+      "ingredients": [
+        {
+          "rawText": "olive oil",
+          "section": null,
+          "quantity": 100,
+          "quantityMax": null,
+          "unit": "ml",
+          "packageSize": null,
+          "name": "olive oil",
+          "preparation": null,
+          "optional": false,
+          "scalable": true,
+          "confidence": "high"
+        }
+      ]
+    }
+  ],
+  "expected": {
+    "lines": [
+      {
+        "id": "olive oil|tbsp|",
+        "title": "Olive oil — 2 tbsp",
+        "notes": "Salad · for 2 · Mon 21 Sep",
+        "contributors": [
+          0
+        ],
+        "isStaple": true
+      },
+      {
+        "id": "olive oil|ml|",
+        "title": "Olive oil — 100 ml",
+        "notes": "Soup · for 4 · Tue 22 Sep",
+        "contributors": [
+          1
+        ],
+        "isStaple": true
+      }
+    ]
+  }
+}

@@ -1,0 +1,71 @@
+{
+  "id": 8,
+  "title": "Unrounded contributions are summed, then rounded once: 133.3 g + 133.3 g → 270 g (rounding each first would give 260)",
+  "weekTitle": "Week of 21 Sep",
+  "meals": [
+    {
+      "recipeTitle": "Shortbread",
+      "yield": {
+        "quantity": 3,
+        "unit": "servings"
+      },
+      "portions": 2,
+      "dayText": "Mon 21 Sep",
+      "weekdayText": "Mon",
+      "ingredients": [
+        {
+          "rawText": "butter",
+          "section": null,
+          "quantity": 200,
+          "quantityMax": null,
+          "unit": "g",
+          "packageSize": null,
+          "name": "butter",
+          "preparation": null,
+          "optional": false,
+          "scalable": true,
+          "confidence": "high"
+        }
+      ]
+    },
+    {
+      "recipeTitle": "Shortbread",
+      "yield": {
+        "quantity": 3,
+        "unit": "servings"
+      },
+      "portions": 2,
+      "dayText": "Fri 25 Sep",
+      "weekdayText": "Fri",
+      "ingredients": [
+        {
+          "rawText": "butter",
+          "section": null,
+          "quantity": 200,
+          "quantityMax": null,
+          "unit": "g",
+          "packageSize": null,
+          "name": "butter",
+          "preparation": null,
+          "optional": false,
+          "scalable": true,
+          "confidence": "high"
+        }
+      ]
+    }
+  ],
+  "expected": {
+    "lines": [
+      {
+        "id": "butter|g|",
+        "title": "Butter — 270 g",
+        "notes": "Shortbread · for 2 · Mon 21 Sep\nShortbread · for 2 · Fri 25 Sep",
+        "contributors": [
+          0,
+          1
+        ],
+        "isStaple": false
+      }
+    ]
+  }
+}
