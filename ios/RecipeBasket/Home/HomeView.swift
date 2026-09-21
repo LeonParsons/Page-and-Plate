@@ -12,7 +12,8 @@ struct HomeView: View {
     @State private var selection: Recipe.ID?
     @State private var isAdding = false
     @State private var isShowingSettings = false
-    @AppStorage(WelcomeView.hasSeenKey) private var hasSeenWelcome = false
+    @AppStorage("list.sort") private var sortRaw = RecipeListOrdering.Sort.newest.rawValue
+    @AppStorage("list.grouping") private var groupingRaw = RecipeListOrdering.Grouping.none.rawValue
 
     var body: some View {
         NavigationSplitView {
@@ -28,10 +29,20 @@ struct HomeView: View {
                     }
                 } else {
                     List(selection: $selection) {
-                        ForEach(recipes) { recipe in
-                            RecipeListRow(recipe: recipe)
+                        ForEach(groups) { group in
+                            Section {
+                                ForEach(group.recipes) { recipe in
+                                    RecipeListRow(recipe: recipe, showsBook: grouping == .none)
+                                }
+                                .onDelete { offsets in delete(offsets.map { group.recipes[$0] }) }
+                            } header: {
+                                if let name = group.name {
+                                    Label(name, systemImage: "book.closed")
+                                } else if grouping == .book {
+                                    Text("No book")
+                                }
+                            }
                         }
-                        .onDelete(perform: delete)
                     }
                 }
             }
@@ -39,6 +50,18 @@ struct HomeView: View {
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button("Add recipe", systemImage: "plus") { isAdding = true }
+                }
+                ToolbarItem(placement: .secondaryAction) {
+                    Picker("Sort by", systemImage: "arrow.up.arrow.down", selection: $sortRaw) {
+                        ForEach(RecipeListOrdering.Sort.allCases) { Text($0.label).tag($0.rawValue) }
+                    }
+                    .pickerStyle(.menu)
+                }
+                ToolbarItem(placement: .secondaryAction) {
+                    Picker("Group", systemImage: "rectangle.3.group", selection: $groupingRaw) {
+                        ForEach(RecipeListOrdering.Grouping.allCases) { Text($0.label).tag($0.rawValue) }
+                    }
+                    .pickerStyle(.menu)
                 }
                 ToolbarItem(placement: .secondaryAction) {
                     Button("Settings", systemImage: "gearshape") { isShowingSettings = true }
@@ -50,9 +73,6 @@ struct HomeView: View {
             .sheet(isPresented: $isShowingSettings) {
                 SettingsView(store: remindersStore)
             }
-            .fullScreenCover(isPresented: Binding(get: { !hasSeenWelcome }, set: { if !$0 { hasSeenWelcome = true } })) {
-                WelcomeView { hasSeenWelcome = true }
-            }
         } detail: {
             if let id = selection, let recipe = recipes.first(where: { $0.id == id }) {
                 RecipeDetailView(recipe: recipe, remindersStore: remindersStore) { delete(recipe) }
@@ -62,9 +82,21 @@ struct HomeView: View {
         }
     }
 
-    private func delete(at offsets: IndexSet) {
-        for offset in offsets {
-            delete(recipes[offset])
+    private var sort: RecipeListOrdering.Sort {
+        RecipeListOrdering.Sort(rawValue: sortRaw) ?? .newest
+    }
+
+    private var grouping: RecipeListOrdering.Grouping {
+        RecipeListOrdering.Grouping(rawValue: groupingRaw) ?? .none
+    }
+
+    private var groups: [RecipeListOrdering.Group] {
+        RecipeListOrdering.group(recipes, by: grouping, sort: sort)
+    }
+
+    private func delete(_ toDelete: [Recipe]) {
+        for recipe in toDelete {
+            delete(recipe)
         }
     }
 
@@ -82,6 +114,7 @@ struct HomeView: View {
 /// SPEC §4: thumbnail, title, target portions and the last "added to Reminders" date if any.
 private struct RecipeListRow: View {
     let recipe: Recipe
+    var showsBook = true
 
     var body: some View {
         HStack(spacing: 12) {
@@ -99,6 +132,11 @@ private struct RecipeListRow: View {
                 Text(portionsLine)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
+                if let source = showsBook ? recipe.sourceText : recipe.page.map({ "p. \($0)" }) {
+                    Text(source)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
                 if let exported = recipe.lastExportedAt {
                     Text("Added to Reminders \(exported.formatted(date: .abbreviated, time: .omitted))")
                         .font(.caption)
