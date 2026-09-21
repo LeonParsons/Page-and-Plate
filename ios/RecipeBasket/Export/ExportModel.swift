@@ -3,51 +3,57 @@ import Observation
 import RecipeCore
 
 /// State of the export sheet (SPEC §3 step 5 / §8): access, the target list, the ticked rows, and the two outputs.
+/// The rows come from an `ExportContent` — one recipe or a planned week.
 @Observable
 final class ExportModel {
-    let recipe: Recipe
-    /// Set when the sheet was opened from a planned meal: the lines are for that meal's portions, and adding
-    /// stamps the meal as well as the recipe.
-    let meal: PlannedMeal?
+    let content: ExportContent
     private let store: any RemindersStoring
     private let settings: ExportSettings
 
     private(set) var access: RemindersAccess = .notDetermined
     private(set) var lists: [ReminderList] = []
     var selectedList: ReminderList?
-    private(set) var lines: [ExportLine] = []
-    private(set) var ticked: Set<Ingredient.ID> = []
+    private(set) var ticked: Set<String>
     private(set) var isLoading = true
 
-    init(recipe: Recipe, meal: PlannedMeal? = nil, store: any RemindersStoring, settings: ExportSettings) {
-        self.recipe = recipe
-        self.meal = meal
+    init(content: ExportContent, store: any RemindersStoring, settings: ExportSettings) {
+        self.content = content
         self.store = store
         self.settings = settings
-        rebuildLines()
+        // Staples start unticked (SPEC §8).
+        ticked = Set(content.rows.filter { !$0.isStaple }.map(\.id))
+    }
+
+    /// One recipe at its "I want" portions, or — from the plan — at that meal's portions.
+    convenience init(recipe: Recipe, meal: PlannedMeal? = nil, store: any RemindersStoring, settings: ExportSettings) {
+        self.init(content: .recipe(recipe, meal: meal, staples: settings.staples), store: store, settings: settings)
+    }
+
+    /// The whole week on screen.
+    convenience init(week: PlanWeek, meals: [PlannedMeal], store: any RemindersStoring, settings: ExportSettings) {
+        self.init(content: .week(week, meals: meals, staples: settings.staples), store: store, settings: settings)
     }
 
     // MARK: Derived
 
-    /// The meal's own portions when exporting from the plan, otherwise the recipe's "I want".
-    var targetYield: Int {
-        meal?.portions ?? recipe.targetYield
+    var rows: [ExportContent.Row] {
+        content.rows
     }
 
-    var portionsText: String {
-        ShoppingExport.portionsText(targetYield: targetYield, yieldUnit: recipe.yield.unit)
+    var sections: [IngredientSection<ExportContent.Row>] {
+        content.sections
     }
 
     var tickedCount: Int {
-        lines.filter { ticked.contains($0.ingredientID) }.count
+        tickedRows.count
     }
 
-    var tickedLines: [ExportLine] {
-        lines.filter { ticked.contains($0.ingredientID) }
+    var tickedRows: [ExportContent.Row] {
+        rows.filter { ticked.contains($0.id) }
     }
 
     var shareText: String {
-        ShoppingExport.shareText(recipeTitle: recipe.title, targetYield: targetYield, yieldUnit: recipe.yield.unit, source: recipe.sourceText, lines: tickedLines)
+        content.shareText(tickedRows)
     }
 
     var hasAccess: Bool {
@@ -65,11 +71,6 @@ final class ExportModel {
 
     var hasShoppingList: Bool {
         lists.contains { $0.title == EventKitRemindersStore.shoppingListTitle }
-    }
-
-    var sections: [IngredientSection<ExportLine>] {
-        let sectionByID = Dictionary(uniqueKeysWithValues: recipe.ingredients.map { ($0.id, $0.section) })
-        return lines.sectioned { sectionByID[$0.ingredientID] ?? nil }
     }
 
     // MARK: Loading
@@ -91,24 +92,18 @@ final class ExportModel {
         selectedList = remembered ?? store.defaultList()
     }
 
-    private func rebuildLines() {
-        let portions = Portions(baseYield: recipe.yield.quantity, targetYield: targetYield)
-        lines = ShoppingExport.lines(for: portions.lines(for: recipe.ingredients), recipeTitle: recipe.title, targetYield: targetYield, staples: settings.staples)
-        ticked = Set(lines.filter { !$0.isStaple }.map(\.ingredientID))
-    }
-
     // MARK: Ticks
 
-    func toggle(_ id: Ingredient.ID) {
+    func toggle(_ id: String) {
         if ticked.contains(id) { ticked.remove(id) } else { ticked.insert(id) }
     }
 
-    func isTicked(_ id: Ingredient.ID) -> Bool {
+    func isTicked(_ id: String) -> Bool {
         ticked.contains(id)
     }
 
     func selectAll() {
-        ticked = Set(lines.map(\.ingredientID))
+        ticked = Set(rows.map(\.id))
     }
 
     func selectNone() {
@@ -130,15 +125,13 @@ final class ExportModel {
         let listTitle: String
     }
 
-    /// One reminder per ticked row (SPEC §8). Records the export on the recipe (and the planned meal, if any)
-    /// and remembers the list.
+    /// One reminder per ticked row (SPEC §8). Then the content's stamps, and the list is remembered.
     func addToReminders() throws -> AddResult {
         guard hasAccess else { throw RemindersError.accessDenied }
         guard let list = selectedList else { throw RemindersError.listNotFound }
-        let count = try store.add(tickedLines, to: list.id)
-        let now = Date.now
-        recipe.lastExportedAt = now
-        meal?.exportedAt = now
+        let ticked = tickedRows
+        let count = try store.add(ticked.map(\.item), to: list.id)
+        content.onAdded(ticked)
         settings.defaultListID = list.id
         return AddResult(count: count, listTitle: list.title)
     }

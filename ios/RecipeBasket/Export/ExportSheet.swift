@@ -2,7 +2,8 @@ import RecipeCore
 import SwiftData
 import SwiftUI
 
-/// SPEC §4 Export sheet: target list, ingredient checklist (staples unticked), "Add N items", and Share.
+/// SPEC §4 Export sheet: target list, checklist (staples unticked), "Add N items", and Share — for one recipe or
+/// a planned week (`ExportContent`).
 struct ExportSheet: View {
     @State private var model: ExportModel
     @Environment(\.dismiss) private var dismiss
@@ -13,6 +14,10 @@ struct ExportSheet: View {
 
     init(recipe: Recipe, meal: PlannedMeal? = nil, store: any RemindersStoring, settings: ExportSettings) {
         _model = State(initialValue: ExportModel(recipe: recipe, meal: meal, store: store, settings: settings))
+    }
+
+    init(week: PlanWeek, meals: [PlannedMeal], store: any RemindersStoring, settings: ExportSettings) {
+        _model = State(initialValue: ExportModel(week: week, meals: meals, store: store, settings: settings))
     }
 
     var body: some View {
@@ -34,7 +39,7 @@ struct ExportSheet: View {
                 }
                 ToolbarItem(placement: .primaryAction) {
                     // Share sends the same ticked lines as plain text (SPEC §8), and works without Reminders access.
-                    ShareLink(item: model.shareText, subject: Text(model.recipe.title)) {
+                    ShareLink(item: model.shareText, subject: Text(model.content.subject)) {
                         Label("Share", systemImage: "square.and.arrow.up")
                     }
                     .disabled(model.isLoading)
@@ -93,7 +98,7 @@ struct ExportSheet: View {
                     LabeledContent("List", value: model.selectedList?.title ?? "Default list")
                 }
             } header: {
-                Text("For \(model.portionsText)")
+                Text(model.content.heading)
             } footer: {
                 if !model.canChooseList {
                     Text("Recipe Basket has add-only access, so items go to your default Reminders list. Allow full access in Settings to choose a list.")
@@ -102,17 +107,24 @@ struct ExportSheet: View {
 
             ForEach(Array(model.sections.enumerated()), id: \.offset) { _, section in
                 Section {
-                    ForEach(section.rows, id: \.ingredientID) { line in
+                    ForEach(section.rows) { row in
                         Button {
-                            model.toggle(line.ingredientID)
+                            model.toggle(row.id)
                         } label: {
                             HStack {
-                                Image(systemName: model.isTicked(line.ingredientID) ? "checkmark.circle.fill" : "circle")
-                                    .foregroundStyle(model.isTicked(line.ingredientID) ? Color.accentColor : Color.secondary)
+                                Image(systemName: model.isTicked(row.id) ? "checkmark.circle.fill" : "circle")
+                                    .foregroundStyle(model.isTicked(row.id) ? Color.accentColor : Color.secondary)
                                     .imageScale(.large)
-                                Text(line.title)
-                                    .foregroundStyle(.primary)
-                                if line.isStaple {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(row.title)
+                                        .foregroundStyle(.primary)
+                                    if let caption = row.caption {
+                                        Text(caption)
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+                                if row.isStaple {
                                     Spacer()
                                     Text("staple")
                                         .font(.caption)
@@ -124,7 +136,7 @@ struct ExportSheet: View {
                 } header: {
                     if section.name == nil {
                         HStack {
-                            Text("Ingredients")
+                            Text(model.content.unnamedSectionTitle)
                             Spacer()
                             Button("All") { model.selectAll() }
                             Button("None") { model.selectNone() }
@@ -151,7 +163,7 @@ struct ExportSheet: View {
                 Link("Open Settings", destination: url)
                     .buttonStyle(.borderedProminent)
             }
-            ShareLink(item: model.shareText, subject: Text(model.recipe.title)) {
+            ShareLink(item: model.shareText, subject: Text(model.content.subject)) {
                 Label("Share as text", systemImage: "square.and.arrow.up")
             }
         }

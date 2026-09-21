@@ -31,6 +31,12 @@ nonisolated enum RemindersError: Error, Equatable {
     }
 }
 
+/// One reminder to add: the title and the notes. All the store ever needs to know about a row.
+nonisolated struct ReminderItem: Equatable, Hashable, Sendable {
+    let title: String
+    let notes: String
+}
+
 /// Everything the export needs from Reminders. Adds only — never reads back, updates or deletes reminders
 /// (CLAUDE.md rule 9).
 nonisolated protocol RemindersStoring: Sendable {
@@ -40,8 +46,8 @@ nonisolated protocol RemindersStoring: Sendable {
     func defaultList() -> ReminderList?
     /// Returns an existing list called "Shopping" in the default source, or creates one there.
     func createShoppingList() throws -> ReminderList
-    /// One reminder per line, saved in one commit. Returns the number added.
-    func add(_ lines: [ExportLine], to listID: String) throws -> Int
+    /// One reminder per item, saved in one commit. Returns the number added.
+    func add(_ items: [ReminderItem], to listID: String) throws -> Int
 }
 
 /// The real thing, over one `EKEventStore`.
@@ -92,14 +98,14 @@ nonisolated final class EventKitRemindersStore: RemindersStoring, @unchecked Sen
         return Self.list(from: calendar)
     }
 
-    func add(_ lines: [ExportLine], to listID: String) throws -> Int {
+    func add(_ items: [ReminderItem], to listID: String) throws -> Int {
         guard let calendar = store.calendar(withIdentifier: listID) else { throw RemindersError.listNotFound }
         guard calendar.allowsContentModifications else { throw RemindersError.listReadOnly }
         do {
-            for line in lines {
+            for item in items {
                 let reminder = EKReminder(eventStore: store)
-                reminder.title = line.title
-                reminder.notes = line.notes
+                reminder.title = item.title
+                reminder.notes = item.notes
                 reminder.calendar = calendar
                 try store.save(reminder, commit: false)
             }
@@ -108,7 +114,7 @@ nonisolated final class EventKitRemindersStore: RemindersStoring, @unchecked Sen
             store.reset()
             throw RemindersError.saveFailed(error.localizedDescription)
         }
-        return lines.count
+        return items.count
     }
 
     private static func map(_ status: EKAuthorizationStatus) -> RemindersAccess {
@@ -142,7 +148,7 @@ extension ReminderList {
 final class FakeRemindersStore: RemindersStoring, @unchecked Sendable {
 
     struct Added: Equatable {
-        let line: ExportLine
+        let item: ReminderItem
         let listID: String
     }
 
@@ -182,13 +188,13 @@ final class FakeRemindersStore: RemindersStoring, @unchecked Sendable {
         return list
     }
 
-    func add(_ lines: [ExportLine], to listID: String) throws -> Int {
+    func add(_ items: [ReminderItem], to listID: String) throws -> Int {
         if let error = failNextAdd {
             failNextAdd = nil
             throw error
         }
         guard storedLists.contains(where: { $0.id == listID }) else { throw RemindersError.listNotFound }
-        added.append(contentsOf: lines.map { Added(line: $0, listID: listID) })
-        return lines.count
+        added.append(contentsOf: items.map { Added(item: $0, listID: listID) })
+        return items.count
     }
 }

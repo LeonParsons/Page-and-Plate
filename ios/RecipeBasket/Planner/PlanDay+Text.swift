@@ -17,6 +17,11 @@ extension PlanDay {
         date().formatted(Date.FormatStyle().weekday(.wide))
     }
 
+    /// "Mon" — the week export's captions and share text.
+    var weekdayShortText: String {
+        date().formatted(Date.FormatStyle().weekday(.abbreviated))
+    }
+
     var isToday: Bool {
         self == PlanDay(.now)
     }
@@ -29,7 +34,12 @@ extension PlanWeek {
         if contains(today) { return "This week" }
         if next().contains(today) { return "Last week" }
         if previous().contains(today) { return "Next week" }
-        return "Week of " + start.date().formatted(Date.FormatStyle().day().month(.abbreviated))
+        return weekOfText
+    }
+
+    /// "Week of 21 Sep" — the week export's subject and share header, where "This week" would say nothing.
+    var weekOfText: String {
+        "Week of " + start.date().formatted(Date.FormatStyle().day().month(.abbreviated))
     }
 
     /// "21–27 Sep" / "28 Sep – 4 Oct".
