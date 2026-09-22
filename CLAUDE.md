@@ -36,6 +36,7 @@ fixtures/planning/            Week boundaries (weeks.json) and week-export/ merg
 fixtures/photos/              Real cookbook page photos for evals
 fixtures/expected/            Hand-checked expected extractions for those photos
 docs/SPEC.md                  Product spec and phases
+docs/APPSTORE.md              App Store listing copy and the featuring nomination (limits checked by appstore-counts.py)
 docs/DECISIONS.md             Running log: date, decision, reason
 ```
 
@@ -55,6 +56,7 @@ cd api && npm run dev          # wrangler dev on http://localhost:8787 (secrets 
 cd api && npm run smoke -- ../fixtures/photos/chickpea-arrabbiata.jpg   # POST a real page to the dev server
 cd api && npm run schema       # regenerate schema/extraction.schema.json from Zod
 swift ios/Tools/RenderAppIcon.swift   # re-render the three 1024 app-icon PNGs after a change to the mark
+python3 docs/appstore-counts.py       # check every App Store field against Apple's character limits
 cd api && npm run eval         # extraction accuracy against fixtures/photos (both models; ≈ $1 per run)
 cd api && npm run deploy       # after `npx wrangler login`, a KV namespace id in wrangler.jsonc and the two secrets (see docs/DECISIONS.md)
 # StoreKit: only Xcode's own launch path syncs RecipeBasket.storekit to the simulator, so under `xcodebuild test`
