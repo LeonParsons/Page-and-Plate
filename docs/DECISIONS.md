@@ -302,3 +302,14 @@ Still open: the **phone leg** of Phase 7 (the free tier counts and gates on the 
 - Welcome rows cut from 25–40 words each to a title plus one short sentence. The paywall leads with "Scan as many pages as you cook" instead of opening on our API costs; the free-scan count and the cancel note follow.
 - The review screen was titled "Review" and the capture screen "Add recipe"; both are now "New recipe". Leon's note on the store frames applies to the app itself: the app is meant to make life easier, so the screen where the model has just done the work shouldn't read like marking homework.
 - Verified on the simulator in light and dark: splash, welcome, Settings → Scans, and the tint across the Plan tab.
+
+### 2026-09-22 · A shared week — the shape it will take
+
+Not built, and not next; recorded so it is not re-argued from scratch. Leon's calls, in SPEC §10 "Later — a shared week":
+
+- **Invite by link, no accounts of ours.** CloudKit sharing (`CKShare` over the SwiftData store) — Apple IDs carry the identity and nothing lands on our side. Our own backend is explicitly off the table, which keeps the privacy story and the running cost where they are.
+- **The guest plans; the owner curates.** The share is the week plus *read* access to the owner's library, so a guest filling in Thursday picks from recipes the owner already has. Same picker, minus "Scan new recipe".
+- **A guest cannot scan or edit recipes.** This was the question left open yesterday — who pays when a guest scans — and the answer is that they can't, so it never arises. A shared week can never spend an extraction the owner did not ask for, and the free tier and the Worker's metering stay exactly as they are. SPEC §12 question 6 is struck as answered.
+- **Last-writer-wins per meal**, because portions, order and the set of meals are small independent values and a merge UI would cost more than the conflicts it resolves.
+- **The export stays personal** — whoever taps Shop gets the list in their own Reminders.
+- **Two edits deferred to implementation time:** §2 and §9 currently say "single user, single device, no accounts", which reads as forbidding this; they become "no accounts of ours". And iCloud sync has to land first — a shared week is a synced week plus permissions.
