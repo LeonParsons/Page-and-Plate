@@ -3,7 +3,10 @@ import Foundation
 /// The free tier (SPEC §9): `freeScans` successful scans in any rolling `window`. A scan is one extraction that
 /// returned a recipe. Pure arithmetic over dates — the app keeps the dates, the Worker keeps its own copy.
 public struct ScanAllowance: Hashable, Sendable {
-    public static let freeScans = 20
+    /// Temporarily 100 while the app is in private use (2026-09-22); the release value is `releaseFreeScans`.
+    /// The Worker's `FREE_SCANS` in api/wrangler.jsonc must say the same.
+    public static let freeScans = 100
+    public static let releaseFreeScans = 20
     public static let window: TimeInterval = 30 * 24 * 60 * 60
 
     /// Successful scans, any order. Ones older than the window are ignored (and dropped by `pruned(at:)`).

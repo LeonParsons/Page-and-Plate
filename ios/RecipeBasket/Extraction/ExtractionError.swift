@@ -10,6 +10,8 @@ nonisolated enum ExtractionError: Error, Equatable, Sendable {
     case noRecipeFound(String?)
     case unreadable(String?)
     case rateLimited(retryAfterSeconds: Int?)
+    /// The Worker's own count of this device's free scans is used up (402). The app's gate normally catches this first.
+    case freeQuotaExhausted(retryAfterSeconds: Int?)
     case modelInvalidOutput
     case upstreamUnavailable
     case offline
@@ -27,6 +29,7 @@ nonisolated enum ExtractionError: Error, Equatable, Sendable {
         case .noRecipeFound: "No recipe found"
         case .unreadable: "Couldn't read the page"
         case .rateLimited: "Daily limit reached"
+        case .freeQuotaExhausted: "Free scans used up"
         case .modelInvalidOutput: "Extraction failed"
         case .upstreamUnavailable: "Service busy"
         case .offline: "No connection"
@@ -53,6 +56,9 @@ nonisolated enum ExtractionError: Error, Equatable, Sendable {
             [reason, "Retake the photo in better light, holding the phone flat over the page."].compactMap { $0 }.joined(separator: " ")
         case let .rateLimited(seconds):
             "You've used today's extractions." + (seconds.map { " Try again in about \(Self.approximateDuration($0))." } ?? "")
+        case let .freeQuotaExhausted(seconds):
+            "You've used your free scans for the last 30 days. Subscribe to Unlimited to keep scanning"
+                + (seconds.map { ", or wait about \(Self.approximateDuration($0))." } ?? ".")
         case .modelInvalidOutput:
             "The server couldn't turn the page into a recipe. Try again."
         case .upstreamUnavailable:
@@ -79,6 +85,9 @@ nonisolated enum ExtractionError: Error, Equatable, Sendable {
     }
 
     private static func approximateDuration(_ seconds: Int) -> String {
+        if seconds >= 2 * 86_400 {
+            return "\(Int((Double(seconds) / 86_400).rounded())) days"
+        }
         if seconds >= 3600 {
             let hours = Int((Double(seconds) / 3600).rounded())
             return hours == 1 ? "1 hour" : "\(hours) hours"

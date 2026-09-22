@@ -4,18 +4,45 @@ import SwiftUI
 /// SPEC §4 Settings: default Reminders list and the staples list.
 struct SettingsView: View {
     @Environment(ExportSettings.self) private var settings
+    @Environment(SubscriptionStore.self) private var subscriptions
+    @Environment(ScanQuota.self) private var quota
     @Environment(\.dismiss) private var dismiss
     let store: any RemindersStoring
 
     @State private var lists: [ReminderList] = []
     @State private var access: RemindersAccess = .notDetermined
     @State private var newStaple = ""
+    @State private var isShowingPaywall = false
+    @State private var isManagingSubscription = false
     @AppStorage(WelcomeView.hasSeenKey) private var hasSeenWelcome = false
 
     var body: some View {
         @Bindable var settings = settings
         NavigationStack {
             Form {
+                Section {
+                    LabeledContent("Scans", value: quota.statusText)
+                    if subscriptions.isSubscribed {
+                        if let ends = subscriptions.expirationDate {
+                            LabeledContent("Unlimited", value: "until \(ends.formatted(date: .abbreviated, time: .omitted))")
+                        }
+                        Button("Manage subscription") { isManagingSubscription = true }
+                    } else {
+                        Button("Get Unlimited…") { isShowingPaywall = true }
+                    }
+                    Button("Restore purchases") {
+                        Task { await subscriptions.restore() }
+                    }
+                    #if DEBUG
+                    Button("Use up free scans (debug)") { quota.useUpFreeScans() }
+                    Button("Reset free scans (debug)") { quota.resetFreeScans() }
+                    #endif
+                } header: {
+                    Text("Scans")
+                } footer: {
+                    Text("A scan is one photographed recipe. \(ScanAllowance.freeScans) are free every 30 days; Unlimited removes the limit.")
+                }
+
                 Section {
                     if access == .fullAccess {
                         Picker("Default list", selection: $settings.defaultListID) {
@@ -76,6 +103,10 @@ struct SettingsView: View {
                 access = store.authorizationStatus()
                 lists = access == .fullAccess ? store.lists() : []
             }
+            .sheet(isPresented: $isShowingPaywall) {
+                PaywallView()
+            }
+            .manageSubscriptionsSheet(isPresented: $isManagingSubscription)
         }
     }
 

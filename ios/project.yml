@@ -76,9 +76,15 @@ targets:
     platform: iOS
     sources:
       - RecipeBasketTests
+      - path: RecipeBasket.storekit      # SKTestSession(configurationFileNamed:) reads it from the test bundle
+        buildPhase: resources
     dependencies:
       - target: RecipeBasket   # XcodeGen sets TEST_HOST / BUNDLE_LOADER
       - package: RecipeCore
+    settings:
+      base:
+        # Xcode 26's StoreKitTest headers use a StoreKit 1 type deprecated in iOS 18; the warning is Apple's, not ours.
+        OTHER_SWIFT_FLAGS: -Xcc -Wno-deprecated-declarations
 
 schemes:
   RecipeBasket:
@@ -88,6 +94,7 @@ schemes:
         RecipeBasketTests: [test]
     run:
       config: Debug
+      storeKitConfiguration: RecipeBasket.storekit   # local products for the simulator; App Store Connect later
     test:
       config: Debug
       targets:

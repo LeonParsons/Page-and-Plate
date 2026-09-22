@@ -9,8 +9,9 @@ struct AddRecipeView: View {
     /// Called with the saved recipe before the sheet closes — the planner uses it to put the recipe on a day.
     private let onSaved: (Recipe) -> Void
 
-    init(lastBook: String?, onSaved: @escaping (Recipe) -> Void = { _ in }) {
-        _flow = State(initialValue: AddRecipeFlow(book: lastBook ?? ""))
+    /// `quota` is the scan gate (SPEC §9); the presenting view hands it over from the environment.
+    init(lastBook: String?, quota: ScanQuota, onSaved: @escaping (Recipe) -> Void = { _ in }) {
+        _flow = State(initialValue: AddRecipeFlow(book: lastBook ?? "", quota: quota))
         self.onSaved = onSaved
     }
 
@@ -38,6 +39,9 @@ struct AddRecipeView: View {
                 }
         }
         .interactiveDismissDisabled(!flow.pages.isEmpty)
+        .sheet(isPresented: $flow.needsSubscription) {
+            PaywallView()
+        }
     }
 
     /// The flow's draft as a non-optional binding; the edit route only exists once a draft does.

@@ -176,9 +176,13 @@ describe("POST /extract", () => {
       expect((await post(app, { env: freeEnv, device, ...bad })).status).toBe(402);
     });
 
-    it("the defaults from wrangler.jsonc are 20 scans in 30 days", () => {
-      expect(baseEnv.FREE_SCANS).toBe("20");
+    it("wrangler.jsonc says 100 scans in 30 days for now (the release value is 20); the code default is 20", async () => {
+      expect(baseEnv.FREE_SCANS).toBe("100");
       expect(baseEnv.FREE_WINDOW_DAYS).toBe("30");
+      const noVar = { ...testEnv, FREE_SCANS: undefined, DAILY_LIMIT: "30" };
+      const device = crypto.randomUUID();
+      for (let i = 0; i < 20; i++) expect((await post(app, { env: noVar, device })).status).toBe(200);
+      expect((await post(app, { env: noVar, device })).status).toBe(402);
     });
   });
 

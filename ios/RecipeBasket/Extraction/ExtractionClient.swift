@@ -5,12 +5,15 @@ import RecipeCore
 nonisolated final class ExtractionClient: Sendable {
     private let configuration: AppConfiguration
     private let deviceID: UUID
+    /// The signed subscription transaction, when subscribed (SPEC §6 `x-entitlement`).
+    private let entitlement: String?
     private let session: URLSession
     private let timeout: TimeInterval
 
-    init(configuration: AppConfiguration, deviceID: UUID, session: URLSession = .shared, timeout: TimeInterval = 120) {
+    init(configuration: AppConfiguration, deviceID: UUID, entitlement: String? = nil, session: URLSession = .shared, timeout: TimeInterval = 120) {
         self.configuration = configuration
         self.deviceID = deviceID
+        self.entitlement = entitlement
         self.session = session
         self.timeout = timeout
     }
@@ -36,6 +39,9 @@ nonisolated final class ExtractionClient: Sendable {
         request.setValue("application/json", forHTTPHeaderField: "content-type")
         request.setValue(configuration.appKey, forHTTPHeaderField: "x-app-key")
         request.setValue(deviceID.uuidString.lowercased(), forHTTPHeaderField: "x-device-id")
+        if let entitlement, !entitlement.isEmpty {
+            request.setValue(entitlement, forHTTPHeaderField: "x-entitlement")
+        }
         let body = RequestBody(images: pages.map { .init(mediaType: "image/jpeg", data: $0.jpegData.base64EncodedString()) })
         request.httpBody = try? JSONEncoder().encode(body)
         return request
@@ -71,6 +77,7 @@ nonisolated final class ExtractionClient: Sendable {
         switch http.statusCode {
         case 400: throw .badRequest(body?.message)
         case 401: throw .unauthorized
+        case 402: throw .freeQuotaExhausted(retryAfterSeconds: retryAfter)
         case 413: throw .payloadTooLarge
         case 422: throw body?.error == "unreadable" ? .unreadable(body?.message) : .noRecipeFound(body?.message)
         case 429: throw .rateLimited(retryAfterSeconds: retryAfter)

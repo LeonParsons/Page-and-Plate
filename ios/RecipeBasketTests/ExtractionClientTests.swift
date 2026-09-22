@@ -17,6 +17,24 @@ struct ExtractionClientTests {
         ExtractionClient(configuration: configuration, deviceID: deviceID, session: StubURLProtocol.makeSession())
     }
 
+    @Test("Sends x-entitlement only when subscribed; 402 is the free quota")
+    func entitlement() async throws {
+        let expected = try Fixtures.expectedJSON("chickpea-arrabbiata")
+        StubURLProtocol.install { _, _ in .response(status: 200, body: expected) }
+        _ = try await makeClient().extract(pages: pages)
+        #expect(try #require(StubURLProtocol.recordedRequests().first).request.value(forHTTPHeaderField: "x-entitlement") == nil)
+
+        let entitled = ExtractionClient(configuration: configuration, deviceID: deviceID, entitlement: "a.b.c", session: StubURLProtocol.makeSession())
+        _ = try await entitled.extract(pages: pages)
+        #expect(try #require(StubURLProtocol.recordedRequests().last).request.value(forHTTPHeaderField: "x-entitlement") == "a.b.c")
+
+        StubURLProtocol.install { _, _ in .response(status: 402, body: Data(#"{"error":"free_quota_exhausted","limit":20,"retryAfterSeconds":864000}"#.utf8)) }
+        await #expect(throws: ExtractionError.freeQuotaExhausted(retryAfterSeconds: 864_000)) {
+            try await makeClient().extract(pages: pages)
+        }
+        #expect(ExtractionError.freeQuotaExhausted(retryAfterSeconds: 864_000).message.contains("10 days"))
+    }
+
     @Test("Sends a POST with both headers and the pages as base64 JPEG in order")
     func requestShape() async throws {
         let expected = try Fixtures.expectedJSON("chickpea-arrabbiata")

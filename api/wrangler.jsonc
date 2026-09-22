@@ -10,7 +10,7 @@
   "vars": {
     "ANTHROPIC_MODEL": "claude-sonnet-5",
     "DAILY_LIMIT": "30",
-    "FREE_SCANS": "20",
+    "FREE_SCANS": "100",        // temporarily raised from 20 while the app is in private use (2026-09-22); see ScanAllowance.freeScans
     "FREE_WINDOW_DAYS": "30",
     "MAX_BODY_BYTES": "8388608"
   },

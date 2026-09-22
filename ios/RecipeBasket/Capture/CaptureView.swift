@@ -5,6 +5,7 @@ import SwiftUI
 struct CaptureView: View {
     @Bindable var flow: AddRecipeFlow
     @Environment(ExportSettings.self) private var settings
+    @Environment(ScanQuota.self) private var quota
     @State private var pickerItems: [PhotosPickerItem] = []
     @State private var isScanning = false
     @State private var isImporting = false
@@ -78,15 +79,31 @@ struct CaptureView: View {
             }
         }
         .safeAreaInset(edge: .bottom) {
-            Button {
-                flow.extract()
-            } label: {
-                Text(flow.pages.isEmpty ? "Extract" : "Extract \(flow.pages.count == 1 ? "1 page" : "\(flow.pages.count) pages")")
-                    .frame(maxWidth: .infinity)
+            VStack(spacing: 8) {
+                if quota.canScan {
+                    Button {
+                        flow.extract()
+                    } label: {
+                        Text(flow.pages.isEmpty ? "Extract" : "Extract \(flow.pages.count == 1 ? "1 page" : "\(flow.pages.count) pages")")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
+                    .disabled(!flow.canExtract || isImporting)
+                } else {
+                    Button {
+                        flow.needsSubscription = true
+                    } label: {
+                        Text("Subscribe to keep scanning")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
+                }
+                Text(quota.statusText)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
             }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
-            .disabled(!flow.canExtract || isImporting)
             .padding()
             .background(.bar)
         }

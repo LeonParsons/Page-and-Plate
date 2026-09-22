@@ -10,6 +10,7 @@ struct AddMealSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(ExportSettings.self) private var settings
+    @Environment(ScanQuota.self) private var quota
     @State private var search = ""
     @State private var isScanning = false
     @State private var errorMessage: String?
@@ -60,7 +61,7 @@ struct AddMealSheet: View {
                 }
             }
             .sheet(isPresented: $isScanning) {
-                AddRecipeView(lastBook: settings.lastBook) { recipe in add(recipe) }
+                AddRecipeView(lastBook: settings.lastBook, quota: quota) { recipe in add(recipe) }
             }
             .alert("Couldn't add the meal", isPresented: Binding(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })) {
                 Button("OK") {}

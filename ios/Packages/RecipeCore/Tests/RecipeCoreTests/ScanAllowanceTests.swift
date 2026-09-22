@@ -12,27 +12,28 @@ struct ScanAllowanceTests {
         daysAgo.map { now.addingTimeInterval(-$0 * day) }
     }
 
-    @Test("Nothing scanned: 20 left, not exhausted, no next-free date")
+    @Test("Nothing scanned: the whole allowance is left, not exhausted, no next-free date")
     func empty() {
         let allowance = ScanAllowance(scans: [])
         #expect(allowance.used(at: now) == 0)
-        #expect(allowance.remaining(at: now) == 20)
+        #expect(allowance.remaining(at: now) == ScanAllowance.freeScans)
         #expect(!allowance.isExhausted(at: now))
         #expect(allowance.nextFreeAt(at: now) == nil)
-        #expect(ScanAllowance.freeScans == 20)
+        #expect(ScanAllowance.freeScans == 100, "temporarily raised while in private use")
+        #expect(ScanAllowance.releaseFreeScans == 20)
         #expect(ScanAllowance.window == 30 * 24 * 60 * 60)
     }
 
     @Test("Only scans inside the window count; the edge is exclusive")
     func window() {
-        let allowance = ScanAllowance(scans: scans(daysAgo: [0, 1, 29.9, 30, 30.5, 45]))
+        let allowance = ScanAllowance(scans: scans(daysAgo: [0, 1, 29.9, 30, 30.5, 45]), freeScans: 20)
         #expect(allowance.used(at: now) == 3, "30 days ago exactly has left the window")
         #expect(allowance.remaining(at: now) == 17)
     }
 
-    @Test("Twenty scans in the window exhaust it; the next one frees when the oldest leaves the window")
+    @Test("Twenty scans in the window exhaust the release allowance; the next one frees when the oldest leaves the window")
     func exhausted() {
-        let allowance = ScanAllowance(scans: scans(daysAgo: Array(stride(from: 1.0, through: 20.0, by: 1.0))))
+        let allowance = ScanAllowance(scans: scans(daysAgo: Array(stride(from: 1.0, through: 20.0, by: 1.0))), freeScans: ScanAllowance.releaseFreeScans)
         #expect(allowance.used(at: now) == 20)
         #expect(allowance.remaining(at: now) == 0)
         #expect(allowance.isExhausted(at: now))
@@ -45,7 +46,7 @@ struct ScanAllowanceTests {
 
     @Test("More than the allowance (e.g. a Worker count) never goes negative")
     func overflow() {
-        let allowance = ScanAllowance(scans: scans(daysAgo: Array(repeating: 1, count: 25)))
+        let allowance = ScanAllowance(scans: scans(daysAgo: Array(repeating: 1, count: 25)), freeScans: 20)
         #expect(allowance.remaining(at: now) == 0)
         #expect(allowance.isExhausted(at: now))
     }

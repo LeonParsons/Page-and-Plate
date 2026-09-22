@@ -9,6 +9,7 @@ struct HomeView: View {
     @Query(sort: \Recipe.createdAt, order: .reverse) private var recipes: [Recipe]
     @Environment(\.modelContext) private var modelContext
     @Environment(ExportSettings.self) private var settings
+    @Environment(ScanQuota.self) private var quota
     @State private var selection: Recipe.ID?
     @State private var isAdding = false
     @State private var isShowingSettings = false
@@ -68,7 +69,7 @@ struct HomeView: View {
                 }
             }
             .sheet(isPresented: $isAdding) {
-                AddRecipeView(lastBook: settings.lastBook)
+                AddRecipeView(lastBook: settings.lastBook, quota: quota)
             }
             .sheet(isPresented: $isShowingSettings) {
                 SettingsView(store: remindersStore)

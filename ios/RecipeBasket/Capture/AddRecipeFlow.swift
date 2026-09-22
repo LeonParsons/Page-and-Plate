@@ -21,13 +21,19 @@ final class AddRecipeFlow {
     var draft: RecipeDraft?
     var error: ExtractionError?
     var isExtracting = false
+    /// The scan gate said no (or the Worker did): show the paywall. The pages stay.
+    var needsSubscription = false
 
     static let maxPages = 3
     private var task: Task<Void, Never>?
-    private let makeClient: () throws(AppConfiguration.ConfigurationError) -> ExtractionClient
+    private let quota: ScanQuota?
+    private let makeClient: (String?) throws(AppConfiguration.ConfigurationError) -> ExtractionClient
 
-    init(book: String = "", makeClient: @escaping () throws(AppConfiguration.ConfigurationError) -> ExtractionClient = AddRecipeFlow.defaultClient) {
+    /// `quota` nil means no gate (previews and older tests); the app always passes one.
+    init(book: String = "", quota: ScanQuota? = nil,
+         makeClient: @escaping (String?) throws(AppConfiguration.ConfigurationError) -> ExtractionClient = AddRecipeFlow.defaultClient) {
         self.book = book
+        self.quota = quota
         self.makeClient = makeClient
     }
 
@@ -35,8 +41,8 @@ final class AddRecipeFlow {
         book.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    nonisolated static func defaultClient() throws(AppConfiguration.ConfigurationError) -> ExtractionClient {
-        ExtractionClient(configuration: try AppConfiguration.loadFromMainBundle(), deviceID: DeviceIdentity.id())
+    nonisolated static func defaultClient(entitlement: String?) throws(AppConfiguration.ConfigurationError) -> ExtractionClient {
+        ExtractionClient(configuration: try AppConfiguration.loadFromMainBundle(), deviceID: DeviceIdentity.id(), entitlement: entitlement)
     }
 
     var remainingSlots: Int {
@@ -53,24 +59,34 @@ final class AddRecipeFlow {
 
     func extract() {
         guard canExtract else { return }
+        if let quota, !quota.canScan {
+            needsSubscription = true
+            return
+        }
         error = nil
         isExtracting = true
         if !path.contains(.extracting) {
             path = [.extracting]
         }
         let pages = self.pages
+        let entitlement = quota?.entitlementJWS
         task = Task {
             defer { isExtracting = false }
             do {
-                let client = try makeClient()
+                let client = try makeClient(entitlement)
                 let response = try await client.extract(pages: pages)
                 guard !Task.isCancelled else { return }
+                quota?.recordScan()
                 draft = RecipeDraft(response: response, book: trimmedBook, page: pageNumber, pages: pages)
                 path = [.review]
             } catch let configurationError as AppConfiguration.ConfigurationError {
                 error = .notConfigured(String(describing: configurationError))
             } catch let extractionError as ExtractionError {
-                if extractionError != .cancelled {
+                if case .freeQuotaExhausted = extractionError {
+                    // The Worker's count disagrees with ours (a wiped device, say): back to the pages and the paywall.
+                    path = []
+                    needsSubscription = true
+                } else if extractionError != .cancelled {
                     error = extractionError
                 }
             } catch {
