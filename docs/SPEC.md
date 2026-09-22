@@ -234,7 +234,21 @@ struct RecipeYield: Codable, Equatable {
 **Phase 8 — Verified entitlements (before public release)**
 - The Worker verifies `x-entitlement` (JWS signature chain to Apple's root, bundle id, product id, expiry, not revoked) and App Attest proves the device; products created in App Store Connect with the same ids; real terms and privacy pages.
 
-**Later:** iCloud sync between iPhone and iPad (SwiftData + CloudKit), on-device extraction with Apple's Foundation Models framework to remove the API cost, storing method text.
+**Later:** iCloud sync between iPhone and iPad (SwiftData + CloudKit), on-device extraction with Apple's Foundation Models framework to remove the API cost, storing method text, and a **shared week** (below).
+
+### Later — a shared week
+
+Invite someone else to a week's plan. Both people see the same days, and both can add meals, change portions, move meals between days and add recipes to the shared library. The household cooks from one plan instead of one person keeping it and telling everyone else what is happening.
+
+Sketch, not a spec:
+
+- **Invite by link**, accepted in the app, with no account to create — this is the whole design problem. CloudKit sharing (`CKShare` over the SwiftData store) gives exactly this: Apple IDs do the identity, the invite is a system share sheet, and nothing new is stored on our side. The alternative — our own accounts and backend — is a different product with a different privacy story and running cost, and should not be taken on lightly.
+- **Sharing is per week, not per library.** A guest gets the week they were invited to and the recipes it references, not everything the host has ever scanned. Simpler to reason about, and it keeps someone's whole cookbook collection out of an invite they sent for one Tuesday.
+- **Editing is last-writer-wins per meal.** Two people rarely touch the same meal at the same second, and a merge UI for "Anna set Wednesday to 4 while you set it to 2" costs far more than it is worth. Portions, order and the set of meals are all small independent values.
+- **The export stays personal.** Whoever taps Shop gets the week's list in *their* Reminders. Reminders lists are already shareable by the user if they want that; we should not try to own it.
+- **Who pays for a guest's scans?** A guest scanning a new recipe into a shared week spends an extraction. The free tier is metered per device, so today a guest simply spends their own allowance — probably right, but it wants confirming before this is built.
+
+This depends on iCloud sync landing first: a shared week is the same problem as a synced week, plus permissions. It also contradicts two MVP goals as written — "single user, single device, no accounts" (§2) and "no accounts" (§9) — which should be restated as "no accounts of ours" if this goes ahead.
 
 ## 11. Fixtures
 
@@ -275,3 +289,4 @@ Each case: ingredient + base yield + target yield → expected line text.
 3. Should method text be stored in future? (Affects the data model and the copyright position of keeping book content.)
 4. Should the week export offer "since last shop" (only meals not yet exported) once the weekly rhythm settles?
 5. Unlimited prices (placeholders in `RecipeBasket.storekit`: £1.99 / month, £14.99 / year) and the terms and privacy URLs (`Legal` in `Subscription/Products.swift` points at example.com until real pages exist).
+6. For a shared week (§10 Later): CloudKit sharing, which keeps identity with Apple and costs us nothing, or our own accounts? The first is a smaller product and a better privacy story; the second is the only option if this ever needs to work off Apple platforms.
