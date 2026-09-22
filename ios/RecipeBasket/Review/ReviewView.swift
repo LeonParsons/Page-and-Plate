@@ -18,7 +18,7 @@ struct ReviewView: View {
                 ContentUnavailableView("Nothing to review", systemImage: "doc.text")
             }
         }
-        .navigationTitle("Review")
+        .navigationTitle("New recipe")
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(true)
         .toolbar {

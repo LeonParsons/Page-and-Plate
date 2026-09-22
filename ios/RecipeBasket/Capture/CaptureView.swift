@@ -71,7 +71,7 @@ struct CaptureView: View {
                 }
             }
         }
-        .navigationTitle("Add recipe")
+        .navigationTitle("New recipe")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             if flow.pages.count > 1 {

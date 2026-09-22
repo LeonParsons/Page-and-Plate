@@ -273,3 +273,32 @@ Awaiting the user's device pass: document camera, export at 1 portion, titles/no
 Leon ran the full SPEC §10 Phase 7 walkthrough from Xcode against `RecipeBasket.storekit`: the free count goes down per successful scan, the gate shows the paywall at the limit, buying Unlimited unlocks scanning at once with the Worker logging `entitled: true`, and expiring the test subscription brings the free count back.
 
 Still open: the **phone leg** of Phase 7 (the free tier counts and gates on the device — no products there until App Store Connect), the **Phase 4 device pass** noted above, and all of Phase 8 before any public release.
+
+## Design pass — Page & Plate
+
+### 2026-09-22 · The name, and how far it reaches
+
+- **Page & Plate** replaces the working name Recipe Basket, chosen by Leon. Everything a user can see changes: `CFBundleDisplayName`, the splash and welcome, the paywall, both Info.plist usage strings, the Reminders permission copy, and the subscription's display name in `RecipeBasket.storekit`.
+- **Internals keep the old name on purpose**: the bundle id `com.leonparsons.RecipeBasket`, the Xcode target and scheme, the repo folder, and the StoreKit **product ids**. The bundle id is welded to the provisioning profile on the phone, the Keychain scan ledger and the Worker's per-device KV keys; product ids are never shown. Renaming them would reset the free-scan ledger and buy nothing. Revisit only if Leon wants a clean id before submission — it costs a re-provision.
+- Still to do before submission: reserve the name in App Store Connect, and rename the subscription group and products there to match.
+
+### 2026-09-22 · A design system, and why the accent was the whole game
+
+- **`ios/RecipeBasket/Brand.swift`** now holds the name, tagline, palette, display face and the mark. The brand colours and the name/tagline were previously copy-pasted into `SplashView` and `WelcomeView`; there is one copy of each now. `Brand.name` and `Brand.tagline` are `nonisolated` so off-main-actor code (`RemindersStore`) can build messages from them — the project sets `SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor`, so without it a plain `static let` is main-actor bound.
+- **The accent was never wired up at all.** `AccentColor.colorset` was empty *and* `ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME` was unset, so filling the colour set alone changed nothing — Xcode's own templates set that build setting, XcodeGen does not. Both are fixed; the whole app is now tomato instead of system blue, which was the single highest-value change in the pass.
+- **Colours were picked for contrast, not just hue.** The old tomato `#ED5C33` is 3.2:1 on a light ground, below the 4.5:1 floor, so it could tint a shape but never set text. `#B23A1B` is 5.6:1 on paper and 6.0:1 under white — it works as a label *and* as a fill. Dark-mode pairs were checked the same way (`#F2775A` at 6.4:1 on `#1A1713`).
+- **Paper and ink over the old gradient wash.** Gradient-plus-rounded-sans is the default look of the moment; a warm paper ground with a serif display face reads as a cookbook and is what Apple's editorial team weights most ("design-aware app with a distinctive UI"). Applied to the branded surfaces (splash, welcome) in this pass; the List screens still use system materials, which is deliberate — they get dark mode and Dynamic Type for free.
+- **Display face: SF Serif for now.** `Brand.display(_:)` uses Fraunces when the file is bundled and falls back to `.system(design: .serif)`, which is on-device. The canvas was designed in Fraunces; bundling it is one font file plus `UIAppFonts`, and nothing breaks either way. Verified on the simulator that the fallback looks right.
+- **The system launch screen had no colour**, so a cold launch flashed white before the splash. `UILaunchScreen` now names a `LaunchBackground` colour set matching `Brand.paper`; the two read as one screen.
+
+### 2026-09-22 · The mark, and the icon script
+
+- The mark is a plate seen from above holding an open book — the shopping basket belonged to the old name. `BrandMark` draws it in a SwiftUI `Canvas` from a 100 × 100 space, so it takes the current foreground colour and stays sharp at any size rather than shipping as an asset.
+- **`ios/Tools/RenderAppIcon.swift` is committed this time.** The script that drew the first icon was never checked in (noted 2026-09-21), so re-rendering meant rewriting it. It draws the same geometry as `BrandMark` into three 1024 PNGs with no alpha, and is run with `swift ios/Tools/RenderAppIcon.swift`.
+- **The mark is inset to 66% of the tile.** Drawn edge to edge it crowded iOS's rounded mask and the strokes read far heavier than they do in the app — caught by looking at the rendered PNG, not by reasoning about it.
+
+### 2026-09-22 · Copy
+
+- Welcome rows cut from 25–40 words each to a title plus one short sentence. The paywall leads with "Scan as many pages as you cook" instead of opening on our API costs; the free-scan count and the cancel note follow.
+- The review screen was titled "Review" and the capture screen "Add recipe"; both are now "New recipe". Leon's note on the store frames applies to the app itself: the app is meant to make life easier, so the screen where the model has just done the work shouldn't read like marking homework.
+- Verified on the simulator in light and dark: splash, welcome, Settings → Scans, and the tint across the Plan tab.

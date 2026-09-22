@@ -47,14 +47,15 @@ targets:
     info:
       path: RecipeBasket/Info.plist
       properties:
-        CFBundleDisplayName: Recipe Basket
+        CFBundleDisplayName: Page & Plate
         RBAPIBaseURL: $(RB_API_BASE_URL)
         RBAppKey: $(RB_APP_KEY)
-        NSCameraUsageDescription: Recipe Basket uses the camera to scan cookbook pages.
-        NSRemindersFullAccessUsageDescription: Recipe Basket adds a recipe's ingredients to a Reminders list you choose. It never reads, changes or deletes your existing reminders.
+        NSCameraUsageDescription: Page & Plate uses the camera to photograph cookbook pages.
+        NSRemindersFullAccessUsageDescription: Page & Plate adds a recipe's ingredients to a Reminders list you choose. It never reads, changes or deletes your existing reminders.
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true      # plain-http localhost for `wrangler dev`
-        UILaunchScreen: {}
+        UILaunchScreen:
+          UIColorName: LaunchBackground   # the splash's own ground, so a cold launch doesn't flash white
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: true
         UIApplicationSupportsIndirectInputEvents: true
@@ -70,6 +71,8 @@ targets:
       base:
         SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
         GENERATE_INFOPLIST_FILE: NO
+        # Without this the AccentColor colour set is ignored and every tint falls back to system blue.
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
 
   RecipeBasketTests:
     type: bundle.unit-test

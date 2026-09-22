@@ -1,6 +1,6 @@
-# Recipe Basket — Product Spec (v0.3 draft)
+# Page & Plate — Product Spec (v0.3 draft)
 
-Working name. Place this file at `docs/SPEC.md`.
+Named 2026-09-22; the working name was Recipe Basket, which survives as the Xcode target and bundle id.
 
 ## 1. Summary
 
@@ -23,7 +23,7 @@ A **planner** (v0.3) puts recipes on the days of a week, each meal with its own 
 - One export for a planned week, merging only exact matches (name + unit + package size).
 
 **v0.4 goals (Phase 7)**
-- A free tier — 20 scans in any rolling 30 days (a scan is one extraction that returns a recipe; failures don't count) — and an auto-renewable subscription, **Recipe Basket Unlimited** (monthly or yearly, price TBC), that lifts it. Star ratings on recipes.
+- A free tier — 20 scans in any rolling 30 days (a scan is one extraction that returns a recipe; failures don't count) — and an auto-renewable subscription, **Page & Plate Unlimited** (monthly or yearly, price TBC), that lifts it. Star ratings on recipes.
 
 **Non-goals**
 - Android or any non-Apple platform.

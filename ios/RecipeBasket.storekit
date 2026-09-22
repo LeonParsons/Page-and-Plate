@@ -7,7 +7,7 @@
     {
       "id": "5A1C2B3D",
       "localizations": [],
-      "name": "Recipe Basket Unlimited",
+      "name": "Page & Plate Unlimited",
       "subscriptions": [
         {
           "adHocOffers": [],
@@ -19,7 +19,7 @@
           "introductoryOffer": null,
           "localizations": [
             {
-              "description": "Unlimited recipe scans, billed monthly.",
+              "description": "Unlimited cookbook scans, billed monthly.",
               "displayName": "Monthly",
               "locale": "en_GB"
             }
@@ -40,7 +40,7 @@
           "introductoryOffer": null,
           "localizations": [
             {
-              "description": "Unlimited recipe scans, billed yearly.",
+              "description": "Unlimited cookbook scans, billed yearly.",
               "displayName": "Yearly",
               "locale": "en_GB"
             }

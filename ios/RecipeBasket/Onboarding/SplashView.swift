@@ -1,35 +1,37 @@
 import SwiftUI
 
 /// Branded splash shown on every cold launch for a moment, then the app. The welcome page (once) follows it.
+/// The system launch screen uses the same ground (`LaunchBackground`), so the two read as one screen.
 struct SplashView: View {
     static let duration: Duration = .milliseconds(1900)
 
-    private static let tomato = Color(red: 0.93, green: 0.36, blue: 0.20)
-    private static let amber = Color(red: 0.98, green: 0.66, blue: 0.22)
-
     var body: some View {
         ZStack {
-            LinearGradient(colors: [Self.tomato, Self.amber], startPoint: .topLeading, endPoint: .bottomTrailing)
+            Brand.paper
                 .ignoresSafeArea()
-            VStack(spacing: 16) {
-                Image(systemName: "basket.fill")
-                    .font(.system(size: 88, weight: .medium))
-                    .foregroundStyle(.white)
-                    .padding(28)
-                    .background(.white.opacity(0.14), in: Circle())
-                Text("Recipe Basket")
-                    .font(.system(.largeTitle, design: .rounded, weight: .bold))
-                    .foregroundStyle(.white)
-                Text("From cookbook page to weekly plan and shopping list.")
-                    .multilineTextAlignment(.center)
-                    .font(.title3)
-                    .foregroundStyle(.white.opacity(0.9))
-                ProgressView()
-                    .tint(.white)
-                    .controlSize(.large)
-                    .padding(.top, 32)
+
+            VStack(spacing: 28) {
+                BrandMark(size: 120)
+                    .foregroundStyle(Brand.tomato)
+
+                VStack(spacing: 10) {
+                    Text(Brand.name)
+                        .font(Brand.display(40))
+                        .foregroundStyle(Brand.ink)
+                    Text(Brand.tagline)
+                        .font(.body)
+                        .foregroundStyle(Brand.inkSecondary)
+                        .multilineTextAlignment(.center)
+                }
             }
-            .padding(.horizontal, 28)
+            .padding(.horizontal, 40)
+
+            VStack {
+                Spacer()
+                ProgressView()
+                    .tint(Brand.tomato)
+                    .padding(.bottom, 72)
+            }
         }
     }
 }

@@ -11,12 +11,14 @@ struct PaywallView: View {
     var body: some View {
         SubscriptionStoreView(productIDs: Unlimited.all) {
             VStack(spacing: 12) {
-                Image(systemName: "basket.fill")
-                    .font(.system(size: 56, weight: .medium))
-                    .foregroundStyle(Color.accentColor)
-                Text("Recipe Basket Unlimited")
-                    .font(.title2.bold())
-                Text("Every recipe you photograph is read by an AI, and that costs a little each time. \(ScanAllowance.freeScans) scans every 30 days are free; Unlimited lets you scan as much as you cook. Cancel any time.")
+                BrandMark(size: 64)
+                    .foregroundStyle(Brand.tomato)
+                Text("\(Brand.name) Unlimited")
+                    .font(Brand.display(28, relativeTo: .title2))
+                Text("Scan as many pages as you cook.")
+                    .font(.headline)
+                    .multilineTextAlignment(.center)
+                Text("\(ScanAllowance.freeScans) scans every 30 days are free. Unlimited removes the limit, and you can cancel any time.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)

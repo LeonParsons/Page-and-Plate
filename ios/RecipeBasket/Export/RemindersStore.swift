@@ -23,7 +23,7 @@ nonisolated enum RemindersError: Error, Equatable {
 
     var message: String {
         switch self {
-        case .accessDenied: "Reminders access is off for Recipe Basket."
+        case .accessDenied: "Reminders access is off for \(Brand.name)."
         case .listNotFound: "That Reminders list no longer exists. Choose another one."
         case .listReadOnly: "That list can't be changed. Choose another one."
         case let .saveFailed(detail): "Couldn't add the reminders: \(detail)"

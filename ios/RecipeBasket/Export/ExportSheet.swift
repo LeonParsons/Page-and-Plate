@@ -101,7 +101,7 @@ struct ExportSheet: View {
                 Text(model.content.heading)
             } footer: {
                 if !model.canChooseList {
-                    Text("Recipe Basket has add-only access, so items go to your default Reminders list. Allow full access in Settings to choose a list.")
+                    Text("\(Brand.name) has add-only access, so items go to your default Reminders list. Allow full access in Settings to choose a list.")
                 }
             }
 
@@ -157,7 +157,7 @@ struct ExportSheet: View {
         } description: {
             Text(model.access == .restricted
                  ? "Reminders access is restricted on this device. You can still share the list as text."
-                 : "Allow Reminders access for Recipe Basket in Settings, or share the list as text instead.")
+                 : "Allow Reminders access for \(Brand.name) in Settings, or share the list as text instead.")
         } actions: {
             if model.access == .denied, let url = URL(string: UIApplication.openSettingsURLString) {
                 Link("Open Settings", destination: url)

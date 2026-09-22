@@ -1,4 +1,6 @@
-# CLAUDE.md — Recipe Basket (working name)
+# CLAUDE.md — Page & Plate
+
+(The Xcode target, bundle id and StoreKit product ids are still `RecipeBasket` / `com.leonparsons.RecipeBasket`. Internal only; a user never sees them.)
 
 Native iPhone and iPad app: photograph a recipe page → extract ingredients and yield → user confirms → scale to the portions wanted → add that recipe's ingredients to Apple Reminders (or share as text). A week planner puts recipes on days, each meal with its own portions, and exports the whole week at once.
 
@@ -23,6 +25,8 @@ Each recipe can be exported on its own, or a planned week in one go. The week ex
 ```
 ios/project.yml               XcodeGen spec
 ios/RecipeBasket/             App target: SwiftUI views, SwiftData models, VisionKit, EventKit, API client (Planner/ is the week view, Subscription/ the free tier and StoreKit)
+ios/RecipeBasket/Brand.swift  Name, tagline, palette, display face and the app mark — the only place any of them live
+ios/Tools/RenderAppIcon.swift Re-renders the three 1024 app-icon PNGs from the same geometry as BrandMark
 ios/RecipeBasket.storekit     Local StoreKit configuration: the two Unlimited plans at placeholder prices
 ios/Packages/RecipeCore/      Pure Swift: Codable models, scaling, rounding, formatting (no SwiftUI/UIKit/EventKit/networking)
 api/                          Cloudflare Worker: POST /extract, eval script, JSON Schema export
@@ -50,6 +54,7 @@ cd api && npm install && npm test && npm run typecheck
 cd api && npm run dev          # wrangler dev on http://localhost:8787 (secrets from api/.dev.vars)
 cd api && npm run smoke -- ../fixtures/photos/chickpea-arrabbiata.jpg   # POST a real page to the dev server
 cd api && npm run schema       # regenerate schema/extraction.schema.json from Zod
+swift ios/Tools/RenderAppIcon.swift   # re-render the three 1024 app-icon PNGs after a change to the mark
 cd api && npm run eval         # extraction accuracy against fixtures/photos (both models; ≈ $1 per run)
 cd api && npm run deploy       # after `npx wrangler login`, a KV namespace id in wrangler.jsonc and the two secrets (see docs/DECISIONS.md)
 # StoreKit: only Xcode's own launch path syncs RecipeBasket.storekit to the simulator, so under `xcodebuild test`

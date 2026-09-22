@@ -7,16 +7,13 @@ struct WelcomeView: View {
 
     let onContinue: () -> Void
 
-    private static let tomato = Color(red: 0.93, green: 0.36, blue: 0.20)
-    private static let amber = Color(red: 0.98, green: 0.66, blue: 0.22)
-
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
                 header
                 features
-                    .padding(.horizontal, 28)
-                    .padding(.top, 32)
+                    .padding(.horizontal, 32)
+                    .padding(.top, 28)
                     .padding(.bottom, 24)
             }
         }
@@ -29,72 +26,72 @@ struct WelcomeView: View {
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
-            .tint(Self.tomato)
-            .padding(.horizontal, 28)
+            .tint(Brand.tomato)
+            .padding(.horizontal, 32)
             .padding(.vertical, 12)
             .background(.bar)
         }
-        .background(Color(.systemBackground))
+        .background(Brand.paper)
         .ignoresSafeArea(edges: .top)
     }
 
     private var header: some View {
-        ZStack {
-                LinearGradient(colors: [Self.tomato, Self.amber], startPoint: .topLeading, endPoint: .bottomTrailing)
-                VStack(spacing: 16) {
-                    Image(systemName: "basket.fill")
-                        .font(.system(size: 88, weight: .medium))
-                        .foregroundStyle(.white)
-                        .padding(28)
-                        .background(.white.opacity(0.14), in: Circle())
-                    Text("Recipe Basket")
-                        .font(.system(.largeTitle, design: .rounded, weight: .bold))
-                        .foregroundStyle(.white)
-                    Text("From cookbook page to weekly plan and shopping list.")
-                        .multilineTextAlignment(.center)
-                        .font(.title3)
-                        .foregroundStyle(.white.opacity(0.9))
-                }
-                .padding(.top, 72)
-                .padding(.bottom, 36)
-            }
-            .frame(maxWidth: .infinity)
+        VStack(spacing: 16) {
+            BrandMark(size: 72)
+                .foregroundStyle(Brand.tomato)
+            Text(Brand.name)
+                .font(Brand.display(34, relativeTo: .title))
+                .foregroundStyle(Brand.ink)
+            Text(Brand.tagline)
+                .font(.callout)
+                .foregroundStyle(Brand.inkSecondary)
+                .multilineTextAlignment(.center)
+        }
+        .padding(.top, 84)
+        .padding(.bottom, 32)
+        .padding(.horizontal, 32)
+        .frame(maxWidth: .infinity)
+        .overlay(alignment: .bottom) { Divider() }
     }
 
     private var features: some View {
-            VStack(alignment: .leading, spacing: 24) {
-                feature(
-                    "camera.viewfinder",
-                    "Photograph the ingredient list",
-                    "Just the list — the method stays in the book. Note the book and page so you can find it again."
-                )
-                feature(
-                    "person.2",
-                    "Scale to the portions you want",
-                    "Cooking for one from a recipe that serves four? Every quantity is scaled and rounded the way a cook would — ¼ tin, ¾ tsp — in the book's own units."
-                )
-                feature(
-                    "calendar",
-                    "Plan the week",
-                    "Put recipes on the days you'll cook them, move them around, and set the portions for each meal."
-                )
-                feature(
-                    "checklist",
-                    "Add it to Reminders",
-                    "One tap sends a recipe's ingredients — or the whole week's — to a Reminders list, staples left out. Or share the list as text."
-                )
-            }
+        VStack(alignment: .leading, spacing: 26) {
+            feature(
+                "camera.viewfinder",
+                "Photograph the page",
+                "Just the ingredients. The method stays in the book."
+            )
+            feature(
+                "person.2",
+                "Scale to any number",
+                "Serves four, cooking for one? Every quantity follows — ¼ tin, ¾ tsp."
+            )
+            feature(
+                "calendar",
+                "Plan the week",
+                "Put recipes on the days you will cook them."
+            )
+            feature(
+                "checklist",
+                "Shop in one tap",
+                "A whole week of ingredients, merged and sent to Reminders."
+            )
+        }
     }
 
     private func feature(_ symbol: String, _ title: String, _ detail: String) -> some View {
         HStack(alignment: .top, spacing: 16) {
             Image(systemName: symbol)
                 .font(.title2)
-                .foregroundStyle(Self.tomato)
-                .frame(width: 36)
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title).font(.headline)
-                Text(detail).font(.subheadline).foregroundStyle(.secondary)
+                .foregroundStyle(Brand.tomato)
+                .frame(width: 32)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(.headline)
+                    .foregroundStyle(Brand.ink)
+                Text(detail)
+                    .font(.subheadline)
+                    .foregroundStyle(Brand.inkSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
