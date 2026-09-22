@@ -22,6 +22,9 @@ A **planner** (v0.3) puts recipes on the days of a week, each meal with its own 
 - A week planner: any number of meals per day, each with its own portions; move, reorder and remove; navigate weeks; add from the library or by scanning straight onto a day.
 - One export for a planned week, merging only exact matches (name + unit + package size).
 
+**v0.4 goals (Phase 7)**
+- A free tier — 20 scans in any rolling 30 days (a scan is one extraction that returns a recipe; failures don't count) — and an auto-renewable subscription, **Recipe Basket Unlimited** (monthly or yearly, price TBC), that lifts it. Star ratings on recipes.
+
 **Non-goals**
 - Android or any non-Apple platform.
 - Fuzzy merging across recipes (plurals, "red onion" vs "onion", tbsp into ml).
@@ -47,6 +50,9 @@ A **planner** (v0.3) puts recipes on the days of a week, each meal with its own 
 - **Review / Edit recipe:** title, optional source note ("Book name, p.88"), yield fields, warnings banner, ingredient rows. Each row edits structured fields: quantity, max quantity, unit (picker), package size, name, preparation, optional, scalable. The raw printed text is shown read-only under each row.
 - **Recipe detail:** page photos, a 1–5 star rating (tap a star; tap the current one to clear), portions stepper, scaled ingredient list grouped by section, "Add to Reminders", "Share", "Edit", "Add to plan…" (this week or next; shows what each day already has) and the upcoming days it is planned on. Opened from a planned meal, the portions section is that meal's ("Portions for Wednesday 23 Sep"): the stepper, the scaled list and Add to Reminders use the meal's portions and leave the recipe's own "I want" alone; adding stamps the meal too.
 - **Export sheet:** target Reminders list picker (defaults to last used; option to create a list called "Shopping"), ingredient checklist, "Add N items" button, confirmation ("Added 9 items to Shopping").
+- **Capture, gated (Phase 7):** under Extract, "12 of 20 free scans left" / "Unlimited scans" / "No free scans until 3 Oct". Once the free scans are used, Extract becomes "Subscribe to keep scanning" and opens the paywall; the pages are kept.
+- **Paywall (Phase 7):** Apple's `SubscriptionStoreView` over the two Unlimited plans with a short pitch, the prices from the store, Restore purchases, and links to the terms and privacy policy. Buying dismisses it and unlocks scanning immediately.
+- **Settings → Scans (Phase 7):** the same status line; "Get Unlimited…" or, when subscribed, the period end and "Manage subscription" (Apple's sheet); "Restore purchases". Debug builds add "Use up free scans" and "Reset free scans".
 - **Week export (Phase 6):** "Shop" (cart) on the Plan tab, disabled when the week has no meals. The same export sheet as a recipe, headed "3 meals · 21 – 27 Sep", over the week's merged list in one "Shopping list" section; each row captioned with the meals it covers ("BEEF RENDANG (Mon), Chickpea arrabbiata (Wed)"), staples unticked, same list picker and Share.
 - **Settings:** default Reminders list, staples list (unticked by default on export).
 
@@ -106,11 +112,11 @@ struct RecipeYield: Codable, Equatable {
 
 `POST /extract`
 
-- Headers: `x-app-key` (shared secret), `x-device-id` (random UUID created on first launch, stored in Keychain).
+- Headers: `x-app-key` (shared secret), `x-device-id` (random UUID created on first launch, stored in Keychain), and from Phase 7 `x-entitlement` (the app's current Unlimited transaction as Apple signed it — a compact JWS — when subscribed).
 - Body: `{ images: [{ mediaType: "image/jpeg", data: "<base64>" }] }` — 1 to 3 images.
 - Responses:
   - `200 { recipe: { title, yield, ingredients }, warnings: string[] }`
-  - `401` bad app key · `413` too large · `422 { error: "no_recipe_found" | "unreadable" }` · `429` rate limited · `502 { error: "model_invalid_output" }`
+  - `401` bad app key · `402 { error: "free_quota_exhausted", limit, retryAfterSeconds }` free scans used and no entitlement · `413` too large · `422 { error: "no_recipe_found" | "unreadable" }` · `429` rate limited · `502 { error: "model_invalid_output" }`
 
 **Implementation**
 - Zod schema is the source of truth; `npm run schema` writes `schema/extraction.schema.json`.
@@ -182,7 +188,8 @@ struct RecipeYield: Codable, Equatable {
 
 ## 9. Security, privacy, cost
 
-- The Worker checks `x-app-key`, enforces a per-device rate limit (default 30 extractions/day) and a max body size.
+- The Worker checks `x-app-key`, enforces a per-device rate limit (default 30 extractions/day, counted on attempts) and a max body size.
+- **Free tier and Unlimited (Phase 7).** A scan is one extraction that returns a recipe. Free: `FREE_SCANS` in any rolling `FREE_WINDOW_DAYS` per device — 20 in 30 for release, **temporarily 100** while the app is in private use (`ScanAllowance.freeScans` and `api/wrangler.jsonc` must agree). Enforced twice: the app (StoreKit 2 entitlement + a Keychain ledger of successful scans, so a reinstall doesn't reset it) decides before calling, and the Worker keeps its own count of successful scans per device and answers 402 past it unless the request carries `x-entitlement`. **For now the Worker accepts a well-formed `x-entitlement` without verifying it** — the same trust as the shared app key — so a patched app could still scan freely; before public release the Worker must verify the JWS signature chain against Apple's root and the device must prove itself with App Attest (Phase 8).
 - Set a monthly spend limit in the Anthropic Console.
 - The shared app key can be extracted from the app binary. Acceptable for personal and TestFlight use only; replace with real authentication before any public release.
 - Page images go only to the Worker and are not stored there. On device, store downscaled page images and extracted data only.
@@ -220,7 +227,14 @@ struct RecipeYield: Codable, Equatable {
 - `WeekShopping` in `RecipeCore` with fixtures for the merge rule; the export sheet generalised over recipe or week content; "Shop" on the Plan tab.
 - ✅ On a device: a week with two recipes sharing onion, garlic and oil exports one merged row for each, notes list both meals, staples arrive unticked, the Recipes tab shows "Added to Reminders" for both recipes, and a single recipe's "Add to Reminders" is unchanged. **Accepted on the device 2026-09-21.**
 
-**Later:** iCloud sync between iPhone and iPad (SwiftData + CloudKit), on-device extraction with Apple's Foundation Models framework to remove the API cost, storing method text, public release with real auth.
+**Phase 7 — Free scans and Unlimited (v0.4)**
+- `ScanAllowance` in `RecipeCore`; the Worker's free window and `x-entitlement`; StoreKit 2 `SubscriptionStore`, Keychain `ScanLedger`, `ScanQuota` gate; paywall, capture footnote, Settings → Scans; `RecipeBasket.storekit` for local testing.
+- ✅ In the simulator with the StoreKit configuration (run from Xcode): the count goes down per successful scan, the 21st (101st for now) shows the paywall, buying Unlimited unlocks it at once and the Worker logs `entitled: true`, expiring the test subscription brings the free count back. On the phone (no products until App Store Connect): the free tier counts and gates.
+
+**Phase 8 — Verified entitlements (before public release)**
+- The Worker verifies `x-entitlement` (JWS signature chain to Apple's root, bundle id, product id, expiry, not revoked) and App Attest proves the device; products created in App Store Connect with the same ids; real terms and privacy pages.
+
+**Later:** iCloud sync between iPhone and iPad (SwiftData + CloudKit), on-device extraction with Apple's Foundation Models framework to remove the API cost, storing method text.
 
 ## 11. Fixtures
 
@@ -260,3 +274,4 @@ Each case: ingredient + base yield + target yield → expected line text.
 2. Should recipes sync between iPhone and iPad from day one, or is that "Later"?
 3. Should method text be stored in future? (Affects the data model and the copyright position of keeping book content.)
 4. Should the week export offer "since last shop" (only meals not yet exported) once the weekly rhythm settles?
+5. Unlimited prices (placeholders in `RecipeBasket.storekit`: £1.99 / month, £14.99 / year) and the terms and privacy URLs (`Legal` in `Subscription/Products.swift` points at example.com until real pages exist).

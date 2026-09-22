@@ -244,6 +244,20 @@ Each of these is a place where SPEC v0.2 was silent, overlapping or contradictor
 
 Phases 5 and 6 accepted by the user on the device ("Phase 5 is good", "Looks good"). v0.3 is complete: SPEC §10 Phase 5–6 criteria met; the "Later" list (iCloud sync, on-device extraction, method text, public release) is the next conversation.
 
+## Phase 7 — free scans and Unlimited
+
+### 2026-09-22 · Design
+
+- **Why now:** before the App Store polish, the API cost needs a lid: 20 scans per rolling 30 days free, Unlimited by subscription (monthly + yearly, no trial, price TBC in App Store Connect). No paid membership yet, so everything runs against a local StoreKit configuration.
+- **Where it's enforced — "device now, Worker ready".** Leon asked whether device-only would be safe for public use; the honest answer was no: the Worker spends the money and trusts a shared key that ships in the binary. So the app gates (StoreKit 2 entitlement + a Keychain ledger of successful scans, which survives reinstall like the device id) *and* the Worker counts successful scans per device in KV and answers **402 `free_quota_exhausted`** past the limit. The app sends its signed transaction as `x-entitlement`; the Worker accepts any well-formed JWS for now — the same trust level as the app key, no worse than today — so that verification (Phase 8) needs no app update. Rotating device ids is closed by App Attest, also Phase 8.
+- **402 rather than 429** so the app can tell "pay or wait a month" from "try again after midnight" and show the paywall instead of a retry message.
+- **The Worker counts successes for the free tier but attempts for the daily cap.** A failed extraction shouldn't cost a free scan (the app counts the same way, so the two ledgers agree); the daily cap is abuse control and stays as it was.
+- **A scan is one extraction that returns a recipe**, whatever the page count — matches how the app and the Worker already meter.
+- **`SubscriptionStoreView` over a custom paywall:** Apple's view renders the plans, prices, intro offers, restore and policy links the way App Review expects, for ~30 lines. Product ids by `productIDs:` rather than a group id, so nothing depends on the numeric group App Store Connect will assign.
+- **Temporarily 100 free scans** (Leon, 2026-09-22) while the app is in private use: `ScanAllowance.freeScans` and `FREE_SCANS` in wrangler.jsonc, with `releaseFreeScans = 20` kept beside it and the tests pinned to 20 so nothing moves when it goes back.
+- **StoreKit tests under `xcodebuild`:** on the iOS 26 simulator, command-line test runs don't push the scheme's StoreKit configuration, so `SKTestSession` fails with `SKInternalErrorDomain 3` (Apple forums confirm; running the app from Xcode once fixes it for that simulator). `SubscriptionStoreTests` record a known issue in that case rather than failing; the gate itself is tested with a fake entitlement source. Apple's `StoreKitTest` headers also emit a deprecation warning under Xcode 26 — silenced for the test target only (`-Xcc -Wno-deprecated-declarations`).
+- Placeholders that must be real before submission: prices, `Legal.terms` / `Legal.privacy` (example.com).
+
 ### Open: device acceptance (SPEC §10 Phase 4)
 
 Awaiting the user's device pass: document camera, export at 1 portion, titles/notes, staples unticked, duplicate export, denied permission + Share, and the Grocery-list section behaviour.

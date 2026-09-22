@@ -13,6 +13,7 @@ Each recipe can be exported on its own, or a planned week in one go. The week ex
 - **Persistence:** SwiftData.
 - **Capture:** VisionKit `VNDocumentCameraViewController` (wrapped for SwiftUI; auto-crops and flattens pages) plus `PhotosPicker` for existing photos. Resize long edge to ≤1568 px, JPEG quality ≈0.8 before upload.
 - **Export:** EventKit (`requestFullAccessToReminders`) for Reminders; SwiftUI `ShareLink` for plain text.
+- **Subscription:** StoreKit 2 (`Transaction.currentEntitlements` / `Transaction.updates`, `SubscriptionStoreView`); product ids in `Subscription/Products.swift`, mirrored in `ios/RecipeBasket.storekit` for the simulator (the scheme's StoreKit configuration). The free tier is `ScanAllowance` in RecipeCore plus a Keychain ledger.
 - **Core logic:** local Swift package `RecipeCore` (models, scaling, rounding, fraction formatting, line formatting). Tests use Swift Testing.
 - **API proxy:** Cloudflare Worker (TypeScript) + Hono + `@anthropic-ai/sdk` + Zod 4. Model name from env `ANTHROPIC_MODEL` (default `claude-sonnet-5`). API key is a Wrangler secret. Tests with Vitest.
 - **Dependencies:** no third-party Swift packages without asking first.
@@ -21,7 +22,8 @@ Each recipe can be exported on its own, or a planned week in one go. The week ex
 
 ```
 ios/project.yml               XcodeGen spec
-ios/RecipeBasket/             App target: SwiftUI views, SwiftData models, VisionKit, EventKit, API client (Planner/ is the week view)
+ios/RecipeBasket/             App target: SwiftUI views, SwiftData models, VisionKit, EventKit, API client (Planner/ is the week view, Subscription/ the free tier and StoreKit)
+ios/RecipeBasket.storekit     Local StoreKit configuration: the two Unlimited plans at placeholder prices
 ios/Packages/RecipeCore/      Pure Swift: Codable models, scaling, rounding, formatting (no SwiftUI/UIKit/EventKit/networking)
 api/                          Cloudflare Worker: POST /extract, eval script, JSON Schema export
 schema/extraction.schema.json Generated from the Worker's Zod schema; the contract between API and app
@@ -50,6 +52,8 @@ cd api && npm run smoke -- ../fixtures/photos/chickpea-arrabbiata.jpg   # POST a
 cd api && npm run schema       # regenerate schema/extraction.schema.json from Zod
 cd api && npm run eval         # extraction accuracy against fixtures/photos (both models; ≈ $1 per run)
 cd api && npm run deploy       # after `npx wrangler login`, a KV namespace id in wrangler.jsonc and the two secrets (see docs/DECISIONS.md)
+# StoreKit: `xcodebuild test` on the iOS 26 simulator can't install RecipeBasket.storekit (SKTestSession error 3), so
+# SubscriptionStoreTests record a known issue until the app has been run once from Xcode (Cmd-R) on that simulator.
 xcrun simctl privacy "iPhone 17 Pro" reset reminders com.leonparsons.RecipeBasket   # re-test the Reminders permission prompt
 xcodebuild build -project ios/RecipeBasket.xcodeproj -scheme RecipeBasket -destination 'platform=iOS,id=00008150-00095D492140401C' -allowProvisioningUpdates   # Leon's iPhone
 xcrun devicectl device install app --device 00008150-00095D492140401C <DerivedData>/Build/Products/Debug-iphoneos/RecipeBasket.app
@@ -72,6 +76,7 @@ Definition of done for any task: `swift test` in RecipeCore, the Xcode test run,
 7. **Fractions are fine.** ¼ of a tin is a valid output. Never round a count up to a whole item.
 8. **`RecipeCore` stays pure.** No UI, persistence, EventKit or network imports.
 9. **Export only adds reminders.** Never read back, update or delete existing reminders.
+9b. **The free limit lives in two places that must agree:** `ScanAllowance.freeScans` (app) and `FREE_SCANS` in `api/wrangler.jsonc` (Worker). Temporarily 100; the release value is 20. The Worker does not yet verify `x-entitlement` — don't describe the paywall as tamper-proof until Phase 8 does.
 10. **Check current Apple, Anthropic and Cloudflare docs** rather than relying on memory. Record any deviation from this file in `docs/DECISIONS.md`.
 
 ## Working style
