@@ -4,10 +4,14 @@ import StoreKitTest
 import Testing
 @testable import RecipeBasket
 
-/// Real StoreKit 2 against `RecipeBasket.storekit`. On the iOS 26 simulator `xcodebuild test` from the command line
-/// does not push the StoreKit configuration to the simulator, so `SKTestSession` cannot install the products
-/// (SKInternalErrorDomain 3) — once the app has been run from Xcode with the scheme's StoreKit configuration, it
-/// can. When the products are missing the suite records a known issue instead of a failure.
+/// Real StoreKit 2 against `RecipeBasket.storekit`. Only Xcode's own launch path (Cmd-R, Cmd-U) syncs the scheme's
+/// StoreKit configuration to the simulator; `xcodebuild test` has no equivalent, so every `SKTestSession` write
+/// fails with SKInternalErrorDomain 3 and a purchase throws `.notEntitled`.
+///
+/// Running the app once from Xcode installs the configuration for the *app*, so `Product.products(for:)` then
+/// answers while the session is still inert — the products are the wrong signal for "can this suite drive
+/// StoreKit?". Both the products and the session are probed, and either one missing records a known issue
+/// rather than a failure.
 @Suite("SubscriptionStore (StoreKit 2 over RecipeBasket.storekit)", .serialized)
 @MainActor
 struct SubscriptionStoreTests {
@@ -19,12 +23,30 @@ struct SubscriptionStoreTests {
         session.clearTransactions()
         let products = try await Product.products(for: Unlimited.all)
         guard !products.isEmpty else {
-            withKnownIssue("StoreKit configuration not installed: run the app from Xcode once, then re-run", isIntermittent: true) {
-                Issue.record("SKTestSession could not install RecipeBasket.storekit")
-            }
+            skip("SKTestSession could not install RecipeBasket.storekit")
             return nil
         }
         return session
+    }
+
+    /// Buys through the session, or reports that this simulator never got the configuration. `.notEntitled` is how
+    /// an unsynced configuration surfaces at the purchase ("off-device buy mode: Unable to Complete Request" in the
+    /// log); every other error is a real failure and propagates.
+    private func buy(_ id: String, in session: SKTestSession) async throws -> Bool {
+        do {
+            _ = try await session.buyProduct(identifier: id)
+            return true
+        } catch StoreKitError.notEntitled {
+            skip("SKTestSession could not buy \(id): notEntitled")
+            return false
+        }
+    }
+
+    /// Records a known issue rather than a failure, so a command-line run stays green and says why.
+    private func skip(_ reason: String) {
+        withKnownIssue("StoreKit configuration not synced to this simulator: run the tests from Xcode (Cmd-U)", isIntermittent: true) {
+            Issue.record(Comment(rawValue: reason))
+        }
     }
 
     @Test("The configuration carries both Unlimited plans")
@@ -47,7 +69,7 @@ struct SubscriptionStoreTests {
         #expect(!store.isSubscribed)
         #expect(store.entitlementJWS == nil)
 
-        _ = try await session.buyProduct(identifier: Unlimited.monthly)
+        guard try await buy(Unlimited.monthly, in: session) else { return }
         await store.refresh()
         #expect(store.isSubscribed)
         let jws = try #require(store.entitlementJWS)

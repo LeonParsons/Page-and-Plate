@@ -52,8 +52,9 @@ cd api && npm run smoke -- ../fixtures/photos/chickpea-arrabbiata.jpg   # POST a
 cd api && npm run schema       # regenerate schema/extraction.schema.json from Zod
 cd api && npm run eval         # extraction accuracy against fixtures/photos (both models; ≈ $1 per run)
 cd api && npm run deploy       # after `npx wrangler login`, a KV namespace id in wrangler.jsonc and the two secrets (see docs/DECISIONS.md)
-# StoreKit: `xcodebuild test` on the iOS 26 simulator can't install RecipeBasket.storekit (SKTestSession error 3), so
-# SubscriptionStoreTests record a known issue until the app has been run once from Xcode (Cmd-R) on that simulator.
+# StoreKit: only Xcode's own launch path syncs RecipeBasket.storekit to the simulator, so under `xcodebuild test`
+# SKTestSession stays inert (error 3, purchases .notEntitled) and SubscriptionStoreTests record a known issue.
+# To exercise the real purchase lifecycle, run the tests from Xcode (Cmd-U).
 xcrun simctl privacy "iPhone 17 Pro" reset reminders com.leonparsons.RecipeBasket   # re-test the Reminders permission prompt
 xcodebuild build -project ios/RecipeBasket.xcodeproj -scheme RecipeBasket -destination 'platform=iOS,id=00008150-00095D492140401C' -allowProvisioningUpdates   # Leon's iPhone
 xcrun devicectl device install app --device 00008150-00095D492140401C <DerivedData>/Build/Products/Debug-iphoneos/RecipeBasket.app

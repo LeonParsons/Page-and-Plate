@@ -261,3 +261,15 @@ Phases 5 and 6 accepted by the user on the device ("Phase 5 is good", "Looks goo
 ### Open: device acceptance (SPEC §10 Phase 4)
 
 Awaiting the user's device pass: document camera, export at 1 portion, titles/notes, staples unticked, duplicate export, denied permission + Share, and the Grocery-list section behaviour.
+
+### 2026-09-22 · StoreKit tests under `xcodebuild` — the earlier note was half right
+
+- Running the app from Xcode fixes less than assumed. Only Xcode's own launch path (Cmd-R, Cmd-U) syncs the scheme's StoreKit configuration to the simulator, over an XPC call `xcodebuild` has no equivalent for. A Cmd-R installs it for the **app**, so `Product.products(for:)` starts answering, while `SKTestSession` stays inert: every session write returns `SKInternalErrorDomain 3` and `buyProduct` throws `StoreKitError.notEntitled` ("Failed to purchase … in off-device buy mode"). The suite's escape hatch was keyed on the products being missing — the wrong signal — so the Cmd-R turned a recorded known issue into a hard failure.
+- **Both are probed now**: missing products *or* a `.notEntitled` purchase record a known issue naming the remedy ("run the tests from Xcode (Cmd-U)"); every other purchase error propagates as a real failure, so a genuine `SubscriptionStore` bug still fails the run. `xcodebuild test`: 84 tests pass with one known issue.
+- **The scheme cannot carry it.** `storeKitConfiguration` under a scheme's `test:` action is accepted by XcodeGen 2.46 and silently dropped — it only ever writes `StoreKitConfigurationFileReference` into `LaunchAction`. `xcodebuild` exposes no flag for it either. So the StoreKit lifecycle is genuinely exercised only from Xcode; the command line covers the gate through the fake entitlement source, as before.
+
+### 2026-09-22 · Accepted (Phase 7, simulator leg)
+
+Leon ran the full SPEC §10 Phase 7 walkthrough from Xcode against `RecipeBasket.storekit`: the free count goes down per successful scan, the gate shows the paywall at the limit, buying Unlimited unlocks scanning at once with the Worker logging `entitled: true`, and expiring the test subscription brings the free count back.
+
+Still open: the **phone leg** of Phase 7 (the free tier counts and gates on the device — no products there until App Store Connect), the **Phase 4 device pass** noted above, and all of Phase 8 before any public release.

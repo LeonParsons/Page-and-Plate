@@ -229,7 +229,7 @@ struct RecipeYield: Codable, Equatable {
 
 **Phase 7 — Free scans and Unlimited (v0.4)**
 - `ScanAllowance` in `RecipeCore`; the Worker's free window and `x-entitlement`; StoreKit 2 `SubscriptionStore`, Keychain `ScanLedger`, `ScanQuota` gate; paywall, capture footnote, Settings → Scans; `RecipeBasket.storekit` for local testing.
-- ✅ In the simulator with the StoreKit configuration (run from Xcode): the count goes down per successful scan, the 21st (101st for now) shows the paywall, buying Unlimited unlocks it at once and the Worker logs `entitled: true`, expiring the test subscription brings the free count back. On the phone (no products until App Store Connect): the free tier counts and gates.
+- ✅ In the simulator with the StoreKit configuration (run from Xcode): the count goes down per successful scan, the 21st (101st for now) shows the paywall, buying Unlimited unlocks it at once and the Worker logs `entitled: true`, expiring the test subscription brings the free count back. **Simulator leg accepted 2026-09-22.** On the phone (no products until App Store Connect): the free tier counts and gates — still open.
 
 **Phase 8 — Verified entitlements (before public release)**
 - The Worker verifies `x-entitlement` (JWS signature chain to Apple's root, bundle id, product id, expiry, not revoked) and App Attest proves the device; products created in App Store Connect with the same ids; real terms and privacy pages.
