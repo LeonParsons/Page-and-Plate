@@ -295,7 +295,7 @@ Still open: the **phone leg** of Phase 7 (the free tier counts and gates on the 
 
 - The mark is a plate seen from above holding an open book — the shopping basket belonged to the old name. `BrandMark` draws it in a SwiftUI `Canvas` from a 100 × 100 space, so it takes the current foreground colour and stays sharp at any size rather than shipping as an asset.
 - **`ios/Tools/RenderAppIcon.swift` is committed this time.** The script that drew the first icon was never checked in (noted 2026-09-21), so re-rendering meant rewriting it. It draws the same geometry as `BrandMark` into three 1024 PNGs with no alpha, and is run with `swift ios/Tools/RenderAppIcon.swift`.
-- **The mark is inset to 66% of the tile.** Drawn edge to edge it crowded iOS's rounded mask and the strokes read far heavier than they do in the app — caught by looking at the rendered PNG, not by reasoning about it.
+- **The mark is inset to 78% of the tile** (`markFraction`). Drawn edge to edge it crowded iOS's rounded mask and read far heavier than in the app; the first correction to 66% then left it looking small on the home screen (Leon, on the phone). 78% is the settled value — big enough to read at Spotlight size, still clear of the mask corners. Both errors were caught by looking at the rendered PNG and the springboard, not by reasoning about it.
 
 ### 2026-09-22 · Copy
 

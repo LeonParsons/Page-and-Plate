@@ -36,7 +36,7 @@ let side = 1024
 
 // The mark is drawn in the same 100 x 100 space as `BrandMark`, but inset: drawn edge to edge the rim crowds
 // the corners once iOS applies its rounded mask, and the strokes read far heavier than they do in the app.
-let markFraction: CGFloat = 0.66
+let markFraction: CGFloat = 0.78
 let markSide = CGFloat(side) * markFraction
 let inset = (CGFloat(side) - markSide) / 2
 let scale = markSide / 100
