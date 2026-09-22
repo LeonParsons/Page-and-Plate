@@ -16,7 +16,7 @@ A **planner** (v0.3) puts recipes on the days of a week, each meal with its own 
 - Reliable structured extraction with a mandatory review step.
 - Deterministic scaling with readable fractions (¼ tin, ¾ tsp).
 - Per-recipe export to Apple Reminders, with share-as-text as a fallback.
-- Single user, single device, no accounts.
+- Single user, single device, no accounts. (Revised by §10 "Later — a shared week", which adds invited guests without accounts of ours.)
 
 **v0.3 goals (Phases 5–6)**
 - A week planner: any number of meals per day, each with its own portions; move, reorder and remove; navigate weeks; add from the library or by scanning straight onto a day.
@@ -192,7 +192,7 @@ struct RecipeYield: Codable, Equatable {
 - **Free tier and Unlimited (Phase 7).** A scan is one extraction that returns a recipe. Free: `FREE_SCANS` in any rolling `FREE_WINDOW_DAYS` per device — 20 in 30 for release, **temporarily 100** while the app is in private use (`ScanAllowance.freeScans` and `api/wrangler.jsonc` must agree). Enforced twice: the app (StoreKit 2 entitlement + a Keychain ledger of successful scans, so a reinstall doesn't reset it) decides before calling, and the Worker keeps its own count of successful scans per device and answers 402 past it unless the request carries `x-entitlement`. **For now the Worker accepts a well-formed `x-entitlement` without verifying it** — the same trust as the shared app key — so a patched app could still scan freely; before public release the Worker must verify the JWS signature chain against Apple's root and the device must prove itself with App Attest (Phase 8).
 - Set a monthly spend limit in the Anthropic Console.
 - The shared app key can be extracted from the app binary. Acceptable for personal and TestFlight use only; replace with real authentication before any public release.
-- Page images go only to the Worker and are not stored there. On device, store downscaled page images and extracted data only.
+- Page images go only to the Worker and are not stored there. On device, store downscaled page images and extracted data only. (Revised by §10 "Later — a shared week": iCloud sync and a share put recipes and page images in the user's own CloudKit container, which is still never ours.)
 
 ## 10. Phases and acceptance criteria
 
@@ -250,7 +250,7 @@ Decided (Leon, 2026-09-22), so this is the shape it takes when it is built:
 
 Two things to do at implementation time, not before:
 
-- **Restate §2 and §9.** "Single user, single device, no accounts" becomes "no accounts of ours", and §9 says the same — a shared week is still accountless from our side, but the current wording reads as forbidding it.
+- **Restate §2 and §9.** §2's "single user, single device, no accounts" becomes "no accounts of ours". §9 is a different point and needs its own edit: it currently says extracted data and page images live on device only, and sync plus a share moves them into the user's own iCloud. Neither ends up on our servers, which is the property worth preserving in both rewrites.
 - **Land iCloud sync first.** A shared week is a synced week plus permissions; there is no sensible order the other way round.
 
 ## 11. Fixtures
