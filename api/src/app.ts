@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import type { Extractor, ExtractOptions } from "./extract.ts";
 import { errorResponse } from "./errors.ts";
-import { consumeDailyQuota } from "./quota.ts";
+import { checkFreeQuota, consumeDailyQuota, recordFreeScan } from "./quota.ts";
 import { ExtractRequestSchema } from "./schema.ts";
 
 export type Bindings = {
@@ -12,6 +12,9 @@ export type Bindings = {
   ANTHROPIC_MODEL?: string;
   ANTHROPIC_EFFORT?: string;
   DAILY_LIMIT?: string;
+  /** The free tier: successful scans per device in any rolling FREE_WINDOW_DAYS (SPEC §9). */
+  FREE_SCANS?: string;
+  FREE_WINDOW_DAYS?: string;
   MAX_BODY_BYTES?: string;
   QUOTA: KVNamespace;
 };
@@ -24,8 +27,12 @@ export type AppDeps = {
 
 export const DEFAULT_MODEL = "claude-sonnet-5";
 const DEFAULT_DAILY_LIMIT = 30;
+const DEFAULT_FREE_SCANS = 20;
+const DEFAULT_FREE_WINDOW_DAYS = 30;
 const DEFAULT_MAX_BODY_BYTES = 8 * 1024 * 1024;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+/** A compact JWS: three base64url segments. The shape the app's signed App Store transaction has. */
+const JWS = /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/;
 const EFFORTS = new Set(["low", "medium", "high", "xhigh", "max"]);
 
 function timingSafeEqual(a: string, b: string): boolean {
@@ -102,13 +109,27 @@ export function createApp(deps: AppDeps) {
 
     // 5. Daily quota — counted before the model call so failures still cost an attempt.
     const limit = intSetting(c.env.DAILY_LIMIT, DEFAULT_DAILY_LIMIT);
-    const quota = await consumeDailyQuota(c.env.QUOTA, deviceId.toLowerCase(), limit, now());
+    const device = deviceId.toLowerCase();
+    const quota = await consumeDailyQuota(c.env.QUOTA, device, limit, now());
     if (!quota.allowed) {
       c.header("Retry-After", String(quota.retryAfterSeconds));
       return errorResponse(c, "rate_limited", { limit, retryAfterSeconds: quota.retryAfterSeconds });
     }
 
-    // 6. Extract.
+    // 6. Free tier, unless the request carries the app's signed subscription transaction. The JWS is not yet
+    // verified here — it is trusted like the app key is — so this holds only until Phase 8 verifies it (SPEC §9).
+    const entitled = JWS.test(c.req.header("x-entitlement") ?? "");
+    const freeScans = intSetting(c.env.FREE_SCANS, DEFAULT_FREE_SCANS);
+    const freeWindowSeconds = intSetting(c.env.FREE_WINDOW_DAYS, DEFAULT_FREE_WINDOW_DAYS) * 24 * 60 * 60;
+    if (!entitled) {
+      const free = await checkFreeQuota(c.env.QUOTA, device, freeScans, freeWindowSeconds, now());
+      if (!free.allowed) {
+        c.header("Retry-After", String(free.retryAfterSeconds));
+        return errorResponse(c, "free_quota_exhausted", { limit: freeScans, retryAfterSeconds: free.retryAfterSeconds });
+      }
+    }
+
+    // 7. Extract.
     const options: ExtractOptions = {
       apiKey: c.env.ANTHROPIC_API_KEY,
       model: c.env.ANTHROPIC_MODEL ?? DEFAULT_MODEL,
@@ -117,6 +138,9 @@ export function createApp(deps: AppDeps) {
       options.effort = c.env.ANTHROPIC_EFFORT as ExtractOptions["effort"];
     }
     const outcome = await deps.extract(parsed.data.images, options);
+    if (outcome.kind === "ok" && !entitled) {
+      await recordFreeScan(c.env.QUOTA, device, freeWindowSeconds, now());
+    }
 
     // One structured line per request; never the images or the raw model text.
     console.log(
@@ -132,6 +156,7 @@ export function createApp(deps: AppDeps) {
         modelLatencyMs: outcome.latencyMs,
         totalLatencyMs: Date.now() - startedAt,
         quotaUsed: quota.used,
+        entitled,
       }),
     );
 

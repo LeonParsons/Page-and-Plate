@@ -9,6 +9,7 @@ export type ErrorCode =
   | "no_recipe_found"
   | "unreadable"
   | "rate_limited"
+  | "free_quota_exhausted"
   | "model_invalid_output"
   | "upstream_unavailable"
   | "server_misconfigured"
@@ -21,6 +22,7 @@ export const ERROR_STATUS: Record<ErrorCode, ContentfulStatusCode> = {
   no_recipe_found: 422,
   unreadable: 422,
   rate_limited: 429,
+  free_quota_exhausted: 402,
   model_invalid_output: 502,
   upstream_unavailable: 503,
   server_misconfigured: 500,

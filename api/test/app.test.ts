@@ -126,6 +126,62 @@ describe("POST /extract", () => {
     expect(baseEnv.ANTHROPIC_MODEL).toBe("claude-sonnet-5");
   });
 
+  describe("free scans (SPEC §9)", () => {
+    const freeEnv = { ...testEnv, FREE_SCANS: "2", DAILY_LIMIT: "10" };
+    const jws = "eyJhbGciOiJFUzI1NiJ9.eyJ0cmFuc2FjdGlvbklkIjoiMSJ9.c2ln";
+
+    it("402 free_quota_exhausted after FREE_SCANS successful scans in 30 days; failures don't count", async () => {
+      const device = crypto.randomUUID();
+      expect((await post(app, { env: freeEnv, device })).status).toBe(200);
+      extract.mockResolvedValueOnce({ ...okOutcome, kind: "unreadable", reason: null } as ExtractOutcome);
+      expect((await post(app, { env: freeEnv, device })).status).toBe(422);
+      expect((await post(app, { env: freeEnv, device })).status).toBe(200);
+
+      const res = await post(app, { env: freeEnv, device });
+      expect(res.status).toBe(402);
+      expect(await res.json()).toMatchObject({ error: "free_quota_exhausted", limit: 2 });
+      expect(Number(res.headers.get("retry-after"))).toBeGreaterThan(0);
+      expect(extract).toHaveBeenCalledTimes(3);
+      expect((await post(app, { env: freeEnv, device: crypto.randomUUID() })).status).toBe(200);
+    });
+
+    it("a slot frees once the oldest scan is 30 days old", async () => {
+      let clock = new Date("2026-09-01T12:00:00Z");
+      app = createApp({ extract, now: () => clock });
+      const device = crypto.randomUUID();
+      expect((await post(app, { env: freeEnv, device })).status).toBe(200);
+      clock = new Date("2026-09-15T12:00:00Z");
+      expect((await post(app, { env: freeEnv, device })).status).toBe(200);
+      expect((await post(app, { env: freeEnv, device })).status).toBe(402);
+      clock = new Date("2026-10-01T12:00:01Z");
+      expect((await post(app, { env: freeEnv, device })).status).toBe(200);
+      expect((await post(app, { env: freeEnv, device })).status).toBe(402);
+    });
+
+    it("a well-formed x-entitlement skips the free limit (unverified for now); the daily cap still applies", async () => {
+      const device = crypto.randomUUID();
+      const entitled = { headers: { "x-entitlement": jws } };
+      for (let i = 0; i < 5; i++) {
+        expect((await post(app, { env: freeEnv, device, ...entitled })).status).toBe(200);
+      }
+      const capped = { ...freeEnv, DAILY_LIMIT: "5" };
+      expect((await post(app, { env: capped, device, ...entitled })).status).toBe(429);
+    });
+
+    it("a malformed x-entitlement is ignored", async () => {
+      const device = crypto.randomUUID();
+      const bad = { headers: { "x-entitlement": "not-a-jws" } };
+      expect((await post(app, { env: freeEnv, device, ...bad })).status).toBe(200);
+      expect((await post(app, { env: freeEnv, device, ...bad })).status).toBe(200);
+      expect((await post(app, { env: freeEnv, device, ...bad })).status).toBe(402);
+    });
+
+    it("the defaults from wrangler.jsonc are 20 scans in 30 days", () => {
+      expect(baseEnv.FREE_SCANS).toBe("20");
+      expect(baseEnv.FREE_WINDOW_DAYS).toBe("30");
+    });
+  });
+
   it("maps the failure outcomes to typed errors", async () => {
     const base = { model: "claude-sonnet-5", latencyMs: 10, attempts: 2, usage };
     const cases: [ExtractOutcome, number, Record<string, unknown>][] = [
