@@ -132,6 +132,9 @@ struct ExportSheet: View {
                                 }
                             }
                         }
+                        // Without .plain the Button tints its whole label, so every row reads as a link and the
+                        // .primary / .secondary styles above never show.
+                        .buttonStyle(.plain)
                     }
                 } header: {
                     if section.name == nil {
