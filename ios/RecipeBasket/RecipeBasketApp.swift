@@ -7,11 +7,18 @@ struct RecipeBasketApp: App {
     @State private var subscriptions: SubscriptionStore
     @State private var quota: ScanQuota
     private let remindersStore = EventKitRemindersStore()
+    private let container: ModelContainer
 
     init() {
         let subscriptions = SubscriptionStore()
         _subscriptions = State(initialValue: subscriptions)
         _quota = State(initialValue: ScanQuota(entitlements: subscriptions))
+        do {
+            container = try AppModelContainer.make()
+        } catch {
+            // Launching with an empty library would be indistinguishable from losing it.
+            fatalError("Could not open the recipe store: \(error)")
+        }
     }
 
     var body: some Scene {
@@ -24,6 +31,6 @@ struct RecipeBasketApp: App {
             .environment(quota)
             .task { await subscriptions.start() }
         }
-        .modelContainer(for: AppSchema.models)
+        .modelContainer(container)
     }
 }

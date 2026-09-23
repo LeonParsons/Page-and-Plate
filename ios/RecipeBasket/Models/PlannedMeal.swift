@@ -6,14 +6,15 @@ import SwiftData
 /// is the position within it. Removed with its recipe (cascade from `Recipe.plannedMeals`).
 @Model
 final class PlannedMeal {
-    @Attribute(.unique) var id: UUID
+    /// Not `.unique`: CloudKit does not support uniqueness constraints (CLAUDE.md).
+    var id: UUID = UUID()
     /// `PlanDay.isoString` — sorts chronologically and compares in `#Predicate`, with no time zone to get wrong.
-    var dayKey: String
-    var order: Int
+    var dayKey: String = ""
+    var order: Int = 0
     /// ≥ 1; the meal's own copy, so the same recipe can be for 2 on Monday and for 4 next week.
-    var portions: Int
+    var portions: Int = 1
     var recipe: Recipe?
-    var createdAt: Date
+    var createdAt: Date = Date.distantPast
     /// When this meal's ingredients were last added to Reminders — from its own detail screen, or (Phase 6) the
     /// week export.
     var exportedAt: Date?
@@ -34,7 +35,8 @@ final class PlannedMeal {
     }
 }
 
-/// Every model in the store, in one place for the app and the tests.
+/// Every model in the store, in one place for the app and the tests. This is `SchemaV2` — the current
+/// version; `SchemaV1` is the frozen pre-CloudKit shape the migration comes from.
 nonisolated enum AppSchema {
     static let models: [any PersistentModel.Type] = [Recipe.self, RecipePage.self, PlannedMeal.self]
 }

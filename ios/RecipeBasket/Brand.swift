@@ -134,7 +134,12 @@ extension View {
 
 extension Color {
     /// A light/dark pair from two hex values, so a brand colour is one line rather than a colour set.
-    init(light: UInt32, dark: UInt32) {
+    ///
+    /// `nonisolated` is load-bearing, not tidiness. This target defaults to `MainActor` isolation, so without
+    /// it the dynamic-provider closure below is main-actor isolated — and UIKit resolves it on whatever thread
+    /// asks for the colour, including SwiftUI's `AsyncRenderer`. Swift 6 traps on the isolation check and the
+    /// app dies with `EXC_BREAKPOINT` inside `dispatch_assert_queue`, nowhere near this line.
+    nonisolated init(light: UInt32, dark: UInt32) {
         self.init(UIColor { traits in
             UIColor(hex: traits.userInterfaceStyle == .dark ? dark : light)
         })
@@ -142,7 +147,7 @@ extension Color {
 }
 
 private extension UIColor {
-    convenience init(hex: UInt32) {
+    nonisolated convenience init(hex: UInt32) {
         self.init(
             red: CGFloat((hex >> 16) & 0xFF) / 255,
             green: CGFloat((hex >> 8) & 0xFF) / 255,

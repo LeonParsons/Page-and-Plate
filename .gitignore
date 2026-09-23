@@ -23,4 +23,5 @@ api/worker-configuration.d.ts
 
 # ios (Phase 2): generated plist and local secrets
 ios/RecipeBasket/Info.plist
+ios/RecipeBasket/RecipeBasket.entitlements
 ios/Config/Secrets.xcconfig

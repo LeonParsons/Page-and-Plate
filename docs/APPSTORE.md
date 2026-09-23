@@ -160,3 +160,6 @@ until you have sat with the phone and checked.
 4. Real terms and privacy URLs — `Subscription/Products.swift` still points at example.com.
 5. ~~Screenshots.~~ Nine frames shot 2026-09-23; see `marketing/README.md` for what is still weak.
 6. A VoiceOver and large-type pass, before the accessibility paragraph goes in the nomination.
+7. **Push the CloudKit schema to production.** It is created in the development environment on first run;
+   a build shipped against it would sync into nothing. App Store Connect → the iCloud container →
+   Deploy Schema Changes.

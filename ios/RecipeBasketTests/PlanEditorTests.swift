@@ -52,7 +52,7 @@ struct PlanEditorTests {
         #expect(second.portions == 1)         // arrabbiata serves 1
         #expect(third.portions == 6)
         #expect(try world.editor.meals(on: monday).map(\.id) == [first, second, third].map(\.id))
-        #expect(world.rendang.plannedMeals.map(\.id) == [first.id])
+        #expect(world.rendang.meals.map(\.id) == [first.id])
     }
 
     @Test("Week fetch is day order then plan order and excludes other weeks")

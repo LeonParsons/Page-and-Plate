@@ -14,6 +14,7 @@ struct SettingsView: View {
     @State private var newStaple = ""
     @State private var isShowingPaywall = false
     @State private var isManagingSubscription = false
+    @State private var cloud = CloudAccount()
     @AppStorage(WelcomeView.hasSeenKey) private var hasSeenWelcome = false
 
     var body: some View {
@@ -41,6 +42,14 @@ struct SettingsView: View {
                     Text("Scans")
                 } footer: {
                     Text("A scan is one photographed recipe. \(ScanAllowance.freeScans) are free every 30 days; Unlimited removes the limit.")
+                }
+
+                Section {
+                    LabeledContent("iCloud", value: cloud.statusText)
+                } header: {
+                    Text("Sync")
+                } footer: {
+                    Text(cloud.detailText)
                 }
 
                 Section {
@@ -104,6 +113,7 @@ struct SettingsView: View {
                 access = store.authorizationStatus()
                 lists = access == .fullAccess ? store.lists() : []
             }
+            .task { await cloud.refresh() }
             .sheet(isPresented: $isShowingPaywall) {
                 PaywallView()
             }

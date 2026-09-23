@@ -12,7 +12,7 @@ Each recipe can be exported on its own, or a planned week in one go. The week ex
 
 - **App:** Swift 6 language mode, SwiftUI, iOS/iPadOS 17 minimum, universal target (iPhone and iPad).
 - **Project generation:** XcodeGen from `ios/project.yml`. Never hand-edit `.pbxproj`; change `project.yml` and regenerate.
-- **Persistence:** SwiftData.
+- **Persistence:** SwiftData, mirrored to the user's own private iCloud database (container `iCloud.com.leonparsons.RecipeBasket`). `AppModelContainer` migrates locally first, then opens mirrored. Schema versions live in `SchemaV1.swift` (frozen) and `AppSchemaVersions.swift`.
 - **Capture:** VisionKit `VNDocumentCameraViewController` (wrapped for SwiftUI; auto-crops and flattens pages) plus `PhotosPicker` for existing photos. Resize long edge to ≤1568 px, JPEG quality ≈0.8 before upload.
 - **Export:** EventKit (`requestFullAccessToReminders`) for Reminders; SwiftUI `ShareLink` for plain text.
 - **Subscription:** StoreKit 2 (`Transaction.currentEntitlements` / `Transaction.updates`, `SubscriptionStoreView`); product ids in `Subscription/Products.swift`, mirrored in `ios/RecipeBasket.storekit` for the simulator (the scheme's StoreKit configuration). The free tier is `ScanAllowance` in RecipeCore plus a Keychain ledger.
@@ -26,6 +26,8 @@ Each recipe can be exported on its own, or a planned week in one go. The week ex
 ios/project.yml               XcodeGen spec
 ios/RecipeBasket/             App target: SwiftUI views, SwiftData models, VisionKit, EventKit, API client (Planner/ is the week view, Subscription/ the free tier and StoreKit)
 ios/RecipeBasket/Brand.swift  Name, tagline, palette, display face and the app mark — the only place any of them live
+ios/RecipeBasket/Models/      Recipe, PlannedMeal (SchemaV2), SchemaV1 frozen, AppSchemaVersions (migration plan)
+ios/RecipeBasket/App/         AppModelContainer (the store), CloudAccount (iCloud status), AppConfiguration, DeviceIdentity
 ios/Tools/RenderAppIcon.swift Re-renders the three 1024 app-icon PNGs from the same geometry as BrandMark
 ios/RecipeBasket.storekit     Local StoreKit configuration: the two Unlimited plans at placeholder prices
 ios/Packages/RecipeCore/      Pure Swift: Codable models, scaling, rounding, formatting (no SwiftUI/UIKit/EventKit/networking)
@@ -85,6 +87,7 @@ Definition of done for any task: `swift test` in RecipeCore, the Xcode test run,
 8. **`RecipeCore` stays pure.** No UI, persistence, EventKit or network imports.
 9. **Export only adds reminders.** Never read back, update or delete existing reminders.
 9b. **The free limit lives in two places that must agree:** `ScanAllowance.freeScans` (app) and `FREE_SCANS` in `api/wrangler.jsonc` (Worker). Temporarily 100; the release value is 20. The Worker does not yet verify `x-entitlement` — don't describe the paywall as tamper-proof until Phase 8 does.
+9c. **Every `@Model` property must stay CloudKit-legal.** No `@Attribute(.unique)`, a default value on every non-optional attribute, and every relationship optional. Break one and the store silently stops syncing — `CloudKitSchemaTests` catches it, including by loading a real mirrored container. Read a to-many relationship through its accessor (`orderedPages`, `meals`), not the optional property.
 10. **Check current Apple, Anthropic and Cloudflare docs** rather than relying on memory. Record any deviation from this file in `docs/DECISIONS.md`.
 
 ## Working style

@@ -16,7 +16,7 @@ A **planner** (v0.3) puts recipes on the days of a week, each meal with its own 
 - Reliable structured extraction with a mandatory review step.
 - Deterministic scaling with readable fractions (¼ tin, ¾ tsp).
 - Per-recipe export to Apple Reminders, with share-as-text as a fallback.
-- Single user, single device, no accounts. (Revised by §10 "Later — a shared week", which adds invited guests without accounts of ours.)
+- **No accounts of ours.** Identity, where it is needed at all, is the user's own Apple Account. Phase 9 syncs a user's own devices through their iCloud; §10 "Later — a shared week" adds an invited guest the same way. We never hold a user record.
 
 **v0.3 goals (Phases 5–6)**
 - A week planner: any number of meals per day, each with its own portions; move, reorder and remove; navigate weeks; add from the library or by scanning straight onto a day.
@@ -31,7 +31,7 @@ A **planner** (v0.3) puts recipes on the days of a week, each meal with its own 
 - De-duplicating, updating or deleting reminders.
 - Unit conversion (beyond g→kg and ml→l display promotion) and rounding up to whole purchasable items.
 - Storing or displaying method text.
-- iCloud sync between devices, nutrition, prices, meal slots (breakfast/lunch/dinner), copying whole weeks, marking meals cooked, multiple recipes from one photo.
+- Nutrition, prices, meal slots (breakfast/lunch/dinner), copying whole weeks, marking meals cooked, multiple recipes from one photo. (iCloud sync was a non-goal through v0.4; Phase 9 builds it.)
 
 ## 3. Core flow
 
@@ -192,7 +192,7 @@ struct RecipeYield: Codable, Equatable {
 - **Free tier and Unlimited (Phase 7).** A scan is one extraction that returns a recipe. Free: `FREE_SCANS` in any rolling `FREE_WINDOW_DAYS` per device — 20 in 30 for release, **temporarily 100** while the app is in private use (`ScanAllowance.freeScans` and `api/wrangler.jsonc` must agree). Enforced twice: the app (StoreKit 2 entitlement + a Keychain ledger of successful scans, so a reinstall doesn't reset it) decides before calling, and the Worker keeps its own count of successful scans per device and answers 402 past it unless the request carries `x-entitlement`. **For now the Worker accepts a well-formed `x-entitlement` without verifying it** — the same trust as the shared app key — so a patched app could still scan freely; before public release the Worker must verify the JWS signature chain against Apple's root and the device must prove itself with App Attest (Phase 8).
 - Set a monthly spend limit in the Anthropic Console.
 - The shared app key can be extracted from the app binary. Acceptable for personal and TestFlight use only; replace with real authentication before any public release.
-- Page images go only to the Worker and are not stored there. On device, store downscaled page images and extracted data only. (Revised by §10 "Later — a shared week": iCloud sync and a share put recipes and page images in the user's own CloudKit container, which is still never ours.)
+- Page images go only to the Worker and are not stored there. They are kept, downscaled, with the extracted data on the user's devices and — from Phase 9 — mirrored to **the user's own private iCloud database**. Nothing of a user's library is ever on our infrastructure; the Worker sees an image for the length of one extraction and keeps none of it. §10 "Later — a shared week" extends this to a guest, who sees a projection of the library in a shared CloudKit zone the owner can revoke.
 
 ## 10. Phases and acceptance criteria
 
@@ -231,10 +231,14 @@ struct RecipeYield: Codable, Equatable {
 - `ScanAllowance` in `RecipeCore`; the Worker's free window and `x-entitlement`; StoreKit 2 `SubscriptionStore`, Keychain `ScanLedger`, `ScanQuota` gate; paywall, capture footnote, Settings → Scans; `RecipeBasket.storekit` for local testing.
 - ✅ In the simulator with the StoreKit configuration (run from Xcode): the count goes down per successful scan, the 21st (101st for now) shows the paywall, buying Unlimited unlocks it at once and the Worker logs `entitled: true`, expiring the test subscription brings the free count back. **Simulator leg accepted 2026-09-22.** On the phone (no products until App Store Connect): the free tier counts and gates — still open.
 
+**Phase 9 — iCloud sync (v0.5)**
+- The schema goes CloudKit-legal (`SchemaV1` frozen, `SchemaV2` current, `AppMigrationPlan` between them); the iCloud entitlement and container `iCloud.com.leonparsons.RecipeBasket`; `AppModelContainer` migrates locally, then opens mirrored, falling back to local when iCloud is unavailable; Settings → Sync says truthfully what is happening.
+- ✅ In the suite: the CloudKit rules hold for every model (including a mirrored container actually loading the schema), and a real V1 store on disk migrates to V2 with every value intact. On **two devices signed into the same iCloud account**: a recipe scanned on one appears on the other with its page images; a meal added to Thursday on one shows on the other, and a portions change travels back; deleting a recipe removes it and its planned meals on both; edits made in airplane mode land when the network returns; a fresh install pulls the existing library down rather than starting empty.
+
 **Phase 8 — Verified entitlements (before public release)**
 - The Worker verifies `x-entitlement` (JWS signature chain to Apple's root, bundle id, product id, expiry, not revoked) and App Attest proves the device; products created in App Store Connect with the same ids; real terms and privacy pages.
 
-**Later:** iCloud sync between iPhone and iPad (SwiftData + CloudKit), on-device extraction with Apple's Foundation Models framework to remove the API cost, storing method text, and a **shared week** (below).
+**Later:** on-device extraction with Apple's Foundation Models framework to remove the API cost, storing method text, and a **shared week** (below). iCloud sync moved out of "Later" and became Phase 9.
 
 ### Later — a shared week
 
@@ -242,7 +246,8 @@ Invite someone else to a week's plan. Both people see the same days; both can ad
 
 Decided (Leon, 2026-09-22), so this is the shape it takes when it is built:
 
-- **Invite by link**, accepted in the app, with no account to create. CloudKit sharing (`CKShare` over the SwiftData store) gives exactly that: Apple IDs carry the identity, the invite is a system share sheet, and nothing new is stored on our side. Our own accounts and backend are explicitly not the plan.
+- **Invite by link**, accepted in the app, with no account to create. Apple Accounts carry the identity, the invite is a system share sheet, and nothing new is stored on our side. Our own accounts and backend are explicitly not the plan.
+- **Correction (2026-09-23): not `CKShare` over the SwiftData store.** That was the original wording here and it describes something that does not exist — SwiftData mirrors to the *private* database only, and Apple's DTS has confirmed the shared database is unsupported. `CKShare` shares a **custom record zone**, which SwiftData does not expose. The route chosen instead: SwiftData keeps local truth and the private mirror, and a purpose-built layer publishes a **projection** — the week, plus title, source, ingredients, rating and a thumbnail for each library recipe, never the full page scans — into a shared zone carrying the `CKShare`. Guest writes come back through the same zone. See `docs/DECISIONS.md`.
 - **The share is the week, plus read access to the owner's library.** A guest adding a meal to Thursday picks from the recipes the owner already has — the same searchable picker the owner uses, minus "Scan new recipe". The guest sees titles, photographs and ingredients so they can choose properly; they do not get a copy that outlives the share.
 - **A guest cannot scan.** No new recipes, no edits to the ones that exist. Only the owner adds to the library. This keeps the owner's collection theirs, and it means a shared week can never spend an extraction the owner did not ask for — the free tier and the API bill stay exactly as they are today.
 - **Last-writer-wins per meal.** Two people rarely touch the same meal in the same second, and a merge UI for "Sara set Wednesday to 4 while you set it to 2" costs far more than it is worth. Portions, order and the set of meals are all small independent values.
@@ -250,8 +255,8 @@ Decided (Leon, 2026-09-22), so this is the shape it takes when it is built:
 
 Two things to do at implementation time, not before:
 
-- **Restate §2 and §9.** §2's "single user, single device, no accounts" becomes "no accounts of ours". §9 is a different point and needs its own edit: it currently says extracted data and page images live on device only, and sync plus a share moves them into the user's own iCloud. Neither ends up on our servers, which is the property worth preserving in both rewrites.
-- **Land iCloud sync first.** A shared week is a synced week plus permissions; there is no sensible order the other way round.
+- ~~**Restate §2 and §9.**~~ Done in Phase 9: §2 now reads "no accounts of ours", and §9 says page images and extracted data live on the user's devices and in their own private iCloud. Neither ends up on our servers, which is the property both rewrites preserve.
+- ~~**Land iCloud sync first.**~~ Done: that is Phase 9. A shared week is a synced week plus permissions; there is no sensible order the other way round.
 
 ## 11. Fixtures
 

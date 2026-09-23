@@ -176,14 +176,14 @@ struct RecipeDetailView: View {
     /// "Planned: Fri 25 Sep, Mon 28 Sep" — today and later, so the recipe screen answers "when am I cooking this?".
     private var plannedText: String? {
         let today = PlanDay(.now)
-        let upcoming = recipe.plannedMeals.filter { !$0.isDeleted && $0.day >= today }.sorted { ($0.day, $0.order) < ($1.day, $1.order) }
+        let upcoming = recipe.meals.filter { !$0.isDeleted && $0.day >= today }.sorted { ($0.day, $0.order) < ($1.day, $1.order) }
         guard !upcoming.isEmpty else { return nil }
         return "Planned: " + upcoming.map(\.day.shortText).joined(separator: ", ")
     }
 
     private var deleteMessage: String {
         var text = "The recipe and its page photos are removed from this device. Reminders already added are not affected."
-        let planned = recipe.plannedMeals.filter { !$0.isDeleted }.count
+        let planned = recipe.meals.filter { !$0.isDeleted }.count
         if planned > 0 {
             text += planned == 1 ? " It also comes off the plan." : " It also comes off the plan (\(planned) meals)."
         }

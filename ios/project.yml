@@ -56,6 +56,8 @@ targets:
           NSAllowsLocalNetworking: true      # plain-http localhost for `wrangler dev`
         UILaunchScreen:
           UIColorName: LaunchBackground   # the splash's own ground, so a cold launch doesn't flash white
+        UIBackgroundModes:
+          - remote-notification           # CloudKit pushes changes from the user's other devices
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: true
         UIApplicationSupportsIndirectInputEvents: true
@@ -67,6 +69,16 @@ targets:
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
         ITSAppUsesNonExemptEncryption: false
+    # iCloud mirroring (Phase 9). Generated like Info.plist, so it is git-ignored.
+    entitlements:
+      path: RecipeBasket/RecipeBasket.entitlements
+      properties:
+        com.apple.developer.icloud-services:
+          - CloudKit
+        com.apple.developer.icloud-container-identifiers:
+          - iCloud.com.leonparsons.RecipeBasket
+        # Xcode rewrites this to `production` when archiving for distribution.
+        aps-environment: development
     settings:
       base:
         SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor

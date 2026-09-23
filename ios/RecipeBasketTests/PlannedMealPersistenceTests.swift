@@ -43,7 +43,7 @@ struct PlannedMealPersistenceTests {
         #expect(saved.portions == 2)
         #expect(saved.recipe?.id == recipe.id)
         #expect(saved.exportedAt == nil)
-        #expect(try #require(fresh.fetch(FetchDescriptor<Recipe>()).first).plannedMeals.map(\.id) == [meal.id])
+        #expect(try #require(fresh.fetch(FetchDescriptor<Recipe>()).first).meals.map(\.id) == [meal.id])
     }
 
     @Test("Portions are clamped to the Portions range")
