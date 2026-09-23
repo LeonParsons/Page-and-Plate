@@ -409,3 +409,11 @@ Not built, and not next; recorded so it is not re-argued from scratch. Leon's ca
 - **Warning before the purge was considered and rejected as unreliable, not just expensive.** The account can change while the app is not running, so on next launch the purge has already happened during store load. A "warning" would arrive after the fact about half the time.
 - **What was done instead — the cheapest thing that was also the most correct: fix a sentence that had become false.** Settings said "\(Brand.name) works normally without it — everything stays on this device", written this morning and untrue from the moment sync landed. It now says signing out removes the local copy, that the recipes stay in iCloud, and that they come back on signing in again.
 - **The lesson worth keeping:** the copy written for a feature can be invalidated by the same feature. This was caught by accident while chasing something else.
+
+### 2026-09-23 · The accessibility pass
+
+- **The export checklist was the real find.** Every row was a `Button` whose label held the tick icon, so VoiceOver read "circle, Butter beans, Smoky butter beans (Wed)" with no way to tell ticked from unticked — on the one screen whose entire purpose is ticking things. Each row is now a single element with an `accessibilityValue` of "Ticked"/"Not ticked", the `.isSelected` trait, and a hint saying what a double tap does.
+- **Decorative things are hidden** rather than announced: the welcome symbols, the plus-circles that repeat the text beside them, and the page thumbnails in meal rows (a photo of a cookbook page has nothing useful to say, and the title is right next to it).
+- **Meal rows read as one phrase** — "Chickpea arrabbiata, rated 4 of 5, LEON Happy Curries, p. 110" — instead of three separate stops. The stepper stays its own element so it is still operable.
+- **Large type checked on a real iPad at the largest accessibility size** across the recipe screen, export sheet, Settings, Review and the paywall. Nothing broke. Worth noting this is the second time the iPad has earned its keep today.
+- **Not done: a deliberate VoiceOver session.** The nomination's accessibility paragraph is a claim made to Apple, so it stays do-not-send until someone has navigated the export sheet with VoiceOver on and heard the states. The fixes above were made without hearing them.
