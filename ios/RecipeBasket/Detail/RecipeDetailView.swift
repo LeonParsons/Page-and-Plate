@@ -124,6 +124,7 @@ struct RecipeDetailView: View {
                 }
             }
         }
+        .paperBackground()
         .navigationTitle(recipe.title)
         .navigationBarTitleDisplayMode(.large)
         .toolbar {

@@ -42,6 +42,7 @@ struct AddMealSheet: View {
                         }
                         .buttonStyle(.plain)
                     }
+                    .paperBackground()
                     .overlay {
                         if filtered.isEmpty {
                             ContentUnavailableView.search(text: search)

@@ -42,6 +42,7 @@ struct DayPickerSheet: View {
                     }
                 }
             }
+            .paperBackground()
             .navigationTitle("Add to plan")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

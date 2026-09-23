@@ -92,6 +92,7 @@ struct SettingsView: View {
                     LabeledContent("Extraction API", value: serverDescription)
                 }
             }
+            .paperBackground()
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

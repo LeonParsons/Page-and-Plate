@@ -141,6 +141,7 @@ struct WeekView: View {
                 }
             }
         }
+        .paperBackground()
         .confirmationDialog("Move to", isPresented: Binding(get: { movingMeal != nil }, set: { if !$0 { movingMeal = nil } }), titleVisibility: .visible) {
             if let meal = movingMeal {
                 ForEach(week.days.filter { $0 != meal.day }) { target in

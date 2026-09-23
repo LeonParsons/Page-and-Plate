@@ -18,8 +18,18 @@ enum Brand {
     /// Secondary accent, for staple tags and other quiet marks.
     static let ochre = Color(light: 0x8A5D18, dark: 0xD9A441)
 
-    /// The branded ground (splash, welcome). Warm, so the app reads as paper rather than as a form.
+    /// Full-bleed brand surfaces: the splash and the welcome header.
     static let paper = Color(light: 0xFAF7F0, dark: 0x1A1713)
+
+    /// Behind a `List` or `Form`, in place of iOS's `systemGroupedBackground` — which is #F2F2F7, whose
+    /// *blue* channel is the highest, so every screen read cool and generic next to the warm brand surfaces.
+    /// Applied through `.paperBackground()`.
+    ///
+    /// Light is `paper` exactly. Dark is darker than `paper`, because rows keep the system's
+    /// `secondarySystemGroupedBackground` (#1C1C1E) — on #1A1713 the cards are nearly invisible, and stock iOS
+    /// separates them by sitting that fill on near-black. The split mirrors Apple's own
+    /// `systemBackground` / `systemGroupedBackground` distinction.
+    static let groupedPaper = Color(light: 0xFAF7F0, dark: 0x0E0C0A)
 
     /// Ink on `paper`.
     static let ink = Color(light: 0x23201B, dark: 0xF2EDE4)
@@ -106,6 +116,19 @@ struct BrandMark: View {
         }
         .frame(width: size, height: size)
         .accessibilityHidden(true)
+    }
+}
+
+extension View {
+    /// Puts a `List` or `Form` on the brand's paper ground with warm card fills, in place of iOS's cool
+    /// `systemGroupedBackground`. Every grouped screen in the app uses this, so they all match; leaving one
+    /// out is what makes the difference visible.
+    /// Rows keep their own system fill, which adapts on its own; only the ground behind them changes.
+    /// (`.listRowBackground` here would be silently ignored — on a `List` it does not reach the rows.)
+    func paperBackground() -> some View {
+        self
+            .scrollContentBackground(.hidden)
+            .background(Brand.groupedPaper)
     }
 }
 

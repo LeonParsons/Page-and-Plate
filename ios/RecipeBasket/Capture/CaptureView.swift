@@ -71,6 +71,7 @@ struct CaptureView: View {
                 }
             }
         }
+        .paperBackground()
         .navigationTitle("New recipe")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {

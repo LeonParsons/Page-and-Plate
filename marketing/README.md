@@ -44,9 +44,5 @@ guarantees Apple's accepted dimensions rather than resizing afterwards.
 1. **The free-scan count.** Frame 1 reads "17 of 20 free scans left" because the build was made with
    `ScanAllowance.freeScans = 20`, the release value. The repo is back to 100 for Leon's private use, so
    rebuild with 20 before reshooting anything.
-2. **A real photograph would be better than frame 1's flat render.** The page in that frame is a clean
-   digital render, and it reads as one. Printing a page at A5, photographing it on a real surface near a
-   window, and re-running the capture would make the whole set more convincing. Everything else in the frames
-   is unaffected.
-3. The iPad export sheet sits as a small form sheet over the plan and does not use the width well. It is
+2. The iPad export sheet sits as a small form sheet over the plan and does not use the width well. It is
    honest, but it is the weakest of the nine.

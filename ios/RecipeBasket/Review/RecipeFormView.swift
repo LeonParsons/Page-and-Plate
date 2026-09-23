@@ -126,6 +126,7 @@ struct RecipeFormView: View {
                 }
             }
         }
+        .paperBackground()
     }
 
     private var pagesColumn: some View {

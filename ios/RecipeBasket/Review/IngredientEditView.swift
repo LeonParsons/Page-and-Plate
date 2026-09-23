@@ -119,6 +119,7 @@ struct IngredientEditView: View {
                 }
             }
         }
+        .paperBackground()
     }
 
     private func optional(_ binding: Binding<String?>) -> Binding<String> {

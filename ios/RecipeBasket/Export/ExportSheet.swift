@@ -152,6 +152,7 @@ struct ExportSheet: View {
                 }
             }
         }
+        .paperBackground()
     }
 
     private var accessDenied: some View {
@@ -234,6 +235,7 @@ struct ReminderListPicker: View {
                     }
                 }
             }
+            .paperBackground()
             .navigationTitle("Reminders list")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
