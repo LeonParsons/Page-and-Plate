@@ -18,8 +18,8 @@ struct SharePlanSection: View {
 
     var body: some View {
         Section {
-            if let owner = membership.ownerTitle, membership.isGuest {
-                LabeledContent("Shared with you", value: "\(owner)'s plan")
+            if membership.isGuest {
+                LabeledContent("Shared with you", value: membership.ownerTitle.map { "\($0)'s plan" } ?? "A shared plan")
                 Button("Leave this plan", role: .destructive) { membership.forget() }
             } else {
                 Button {

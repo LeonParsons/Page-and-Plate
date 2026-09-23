@@ -37,6 +37,31 @@ struct SharedPlanMembershipTests {
         #expect(reopened.ownerTitle == "Leon")
     }
 
+    @Test("A nameless owner is still a guest — CloudKit usually won't say who they are")
+    func guestWithoutAName() {
+        let defaults = makeDefaults()
+        let membership = SharedPlanMembership(defaults: defaults)
+        membership.remember(zoneID: zone, ownerTitle: nil)
+
+        #expect(membership.isGuest, "the plan is joined whether or not the owner has a name")
+        #expect(membership.ownerTitle == nil)
+
+        let reopened = SharedPlanMembership(defaults: defaults)
+        #expect(reopened.isGuest)
+        #expect(reopened.ownerTitle == nil)
+    }
+
+    @Test("A name is not left behind when a later share has none")
+    func nameIsClearedNotStale() {
+        let defaults = makeDefaults()
+        let membership = SharedPlanMembership(defaults: defaults)
+        membership.remember(zoneID: zone, ownerTitle: "Leon")
+        membership.remember(zoneID: zone, ownerTitle: nil)
+
+        #expect(membership.ownerTitle == nil)
+        #expect(SharedPlanMembership(defaults: defaults).ownerTitle == nil, "and not read back from defaults")
+    }
+
     @Test("Leaving removes every trace, including after a relaunch")
     func forgettingIsComplete() {
         let defaults = makeDefaults()

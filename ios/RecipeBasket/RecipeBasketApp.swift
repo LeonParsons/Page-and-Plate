@@ -35,7 +35,9 @@ struct RecipeBasketApp: App {
             .environment(quota)
             .environment(sharedPlan)
             .task { await subscriptions.start() }
-            .task { await guestPlan?.start() }
+            // Keyed on `isGuest`, not a bare `.task`: an invite is accepted long after launch, and a
+            // one-shot task has already run and bailed by then — which left the guest with an empty week.
+            .task(id: guestPlan?.membership.isGuest ?? false) { await guestPlan?.start() }
             .task { sharedPlan.watchLocalChanges(context: container.mainContext) }
         }
         .modelContainer(container)

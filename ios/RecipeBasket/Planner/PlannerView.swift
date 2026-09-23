@@ -31,10 +31,15 @@ struct PlannerView: View {
     }
 
     /// "This week" on your own plan; "Leon · This week" on someone else's, so it is never ambiguous whose
-    /// meals you are looking at.
+    /// meals you are looking at. CloudKit often won't name the owner, hence the fallback.
     private var navigationTitle: String {
-        guard scope == .shared, let owner = guestPlan?.membership.ownerTitle else { return week.title }
-        return "\(owner) · \(week.title)"
+        guard scope == .shared else { return week.title }
+        return "\(guestPlan?.membership.ownerTitle ?? "Shared") · \(week.title)"
+    }
+
+    /// "Leon's week", or just "Shared week" when CloudKit won't say who they are.
+    private var sharedWeekLabel: String {
+        guestPlan?.membership.ownerTitle.map { "\($0)'s week" } ?? "Shared week"
     }
 
     private var weekMeals: [PlannedMeal] {
@@ -48,24 +53,29 @@ struct PlannerView: View {
 
     var body: some View {
         NavigationStack {
-            Group {
-                if scope == .shared, let guestPlan {
-                    SharedWeekView(week: week, client: guestPlan.client, remindersStore: remindersStore)
-                        .modelContainer(guestPlan.container)
-                } else {
-                    WeekView(week: week, meals: weekMeals, remindersStore: remindersStore, onAdd: { addingTo = $0 }, onDeleteRecipe: deleteRecipe)
+            VStack(spacing: 0) {
+                // A guest gets a visible switcher, not a menu hidden behind the title: the first person to
+                // accept an invite could not find `toolbarTitleMenu` at all, and there is no affordance on a
+                // large title to tell them it is there.
+                if isGuest {
+                    Picker("Whose week", selection: $scope) {
+                        Text("My week").tag(Scope.mine)
+                        Text(sharedWeekLabel).tag(Scope.shared)
+                    }
+                    .pickerStyle(.segmented)
+                    .padding(.horizontal)
+                    .padding(.bottom, 8)
+                }
+                Group {
+                    if scope == .shared, let guestPlan {
+                        SharedWeekView(week: week, client: guestPlan.client, remindersStore: remindersStore)
+                            .modelContainer(guestPlan.container)
+                    } else {
+                        WeekView(week: week, meals: weekMeals, remindersStore: remindersStore, onAdd: { addingTo = $0 }, onDeleteRecipe: deleteRecipe)
+                    }
                 }
             }
                 .navigationTitle(navigationTitle)
-                .toolbarTitleMenu {
-                    if isGuest {
-                        Picker("Whose week", selection: $scope) {
-                            Text("My week").tag(Scope.mine)
-                            Text("\(guestPlan?.membership.ownerTitle ?? "Shared")'s week").tag(Scope.shared)
-                        }
-                        .pickerStyle(.inline)
-                    }
-                }
                 .toolbar {
                     ToolbarItemGroup(placement: .topBarLeading) {
                         Button("Previous week", systemImage: "chevron.left") { week = week.previous() }

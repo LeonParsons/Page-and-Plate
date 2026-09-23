@@ -22,7 +22,8 @@ final class SharedPlanMembership {
 
     private let defaults: UserDefaults
     private(set) var zoneID: CKRecordZone.ID?
-    /// "Leon" — what the guest's week switcher says.
+    /// "Leon" — what the guest's week switcher says. nil when CloudKit won't tell us who the owner is,
+    /// which is common: the UI phrases itself without a name rather than inventing one.
     private(set) var ownerTitle: String?
 
     init(defaults: UserDefaults = .standard) {
@@ -41,12 +42,16 @@ final class SharedPlanMembership {
     }
 
     /// Split out from `remember(_:)` so the persistence can be tested without a real `CKShare`.
-    func remember(zoneID zone: CKRecordZone.ID, ownerTitle title: String) {
+    func remember(zoneID zone: CKRecordZone.ID, ownerTitle title: String?) {
         zoneID = zone
         ownerTitle = title
         defaults.set(zone.zoneName, forKey: Key.zoneName)
         defaults.set(zone.ownerName, forKey: Key.ownerName)
-        defaults.set(title, forKey: Key.ownerTitle)
+        if let title {
+            defaults.set(title, forKey: Key.ownerTitle)
+        } else {
+            defaults.removeObject(forKey: Key.ownerTitle)
+        }
     }
 
     /// Called when the owner revokes, or the guest leaves. Nothing of the shared plan may outlive this.
@@ -58,15 +63,16 @@ final class SharedPlanMembership {
         }
     }
 
-    /// The owner's given name if CloudKit will tell us, otherwise something that still reads as a person's
-    /// plan rather than a bug.
-    private static func title(for share: CKShare) -> String {
+    /// The owner's given name if CloudKit will tell us. It usually won't — an identity carries a name only
+    /// when the owner is discoverable — so this returns nil rather than a placeholder, and every caller
+    /// phrases itself without a name. The old fallback put "Shared's plan" on screen.
+    private static func title(for share: CKShare) -> String? {
         let components = share.owner.userIdentity.nameComponents
         if let name = components?.givenName, !name.isEmpty { return name }
         if let formatted = components.map({ PersonNameComponentsFormatter().string(from: $0) }), !formatted.isEmpty {
             return formatted
         }
-        return "Shared"
+        return nil
     }
 }
 
