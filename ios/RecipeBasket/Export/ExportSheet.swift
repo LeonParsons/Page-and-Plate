@@ -11,6 +11,8 @@ struct ExportSheet: View {
     @State private var isPickingList = false
     @State private var confirmation: ExportModel.AddResult?
     @State private var errorMessage: String?
+    /// Claimed at the moment of adding, so the flag flipping cannot change the alert already on screen.
+    @State private var showsGroceriesTip = false
 
     init(recipe: Recipe, meal: PlannedMeal? = nil, store: any RemindersStoring, settings: ExportSettings) {
         _model = State(initialValue: ExportModel(recipe: recipe, meal: meal, store: store, settings: settings))
@@ -72,7 +74,11 @@ struct ExportSheet: View {
                 Button("Done") { dismiss() }
             } message: {
                 if let confirmation {
-                    Text("Added \(confirmation.count) \(confirmation.count == 1 ? "item" : "items") to \(confirmation.listTitle).")
+                    Text(GroceriesTip.message(
+                        count: confirmation.count,
+                        listTitle: confirmation.listTitle,
+                        includingTip: showsGroceriesTip
+                    ))
                 }
             }
             .alert("Couldn't add reminders", isPresented: Binding(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })) {
@@ -196,7 +202,9 @@ struct ExportSheet: View {
 
     private func add() {
         do {
-            confirmation = try model.addToReminders()
+            let result = try model.addToReminders()
+            showsGroceriesTip = GroceriesTip.claim()
+            confirmation = result
             try? modelContext.save()
         } catch let error as RemindersError {
             errorMessage = error.message
