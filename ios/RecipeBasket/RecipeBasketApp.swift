@@ -6,6 +6,7 @@ struct RecipeBasketApp: App {
     @State private var exportSettings = ExportSettings()
     @State private var subscriptions: SubscriptionStore
     @State private var quota: ScanQuota
+    @State private var sharedPlan = SharedWeekPublisher()
     private let remindersStore = EventKitRemindersStore()
     private let container: ModelContainer
 
@@ -29,6 +30,7 @@ struct RecipeBasketApp: App {
             .environment(exportSettings)
             .environment(subscriptions)
             .environment(quota)
+            .environment(sharedPlan)
             .task { await subscriptions.start() }
         }
         .modelContainer(container)

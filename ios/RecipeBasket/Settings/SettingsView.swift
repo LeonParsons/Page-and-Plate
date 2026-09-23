@@ -7,6 +7,7 @@ struct SettingsView: View {
     @Environment(SubscriptionStore.self) private var subscriptions
     @Environment(ScanQuota.self) private var quota
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
     let store: any RemindersStoring
 
     @State private var lists: [ReminderList] = []
@@ -15,6 +16,7 @@ struct SettingsView: View {
     @State private var isShowingPaywall = false
     @State private var isManagingSubscription = false
     @State private var cloud = CloudAccount()
+    @Environment(SharedWeekPublisher.self) private var sharedPlan
     @AppStorage(WelcomeView.hasSeenKey) private var hasSeenWelcome = false
 
     var body: some View {
@@ -51,6 +53,20 @@ struct SettingsView: View {
                 } footer: {
                     Text(cloud.detailText)
                 }
+
+                #if DEBUG
+                // Phase 10 step 1: proves a CKSyncEngine can run in the same container SwiftData mirrors.
+                // Replaced by the real "Share this plan…" entry in step 2.
+                Section("Shared plan (debug)") {
+                    LabeledContent("Publisher", value: sharedPlan.statusText)
+                    Button("Publish the plan") {
+                        Task {
+                            await sharedPlan.start()
+                            try? sharedPlan.publish(from: modelContext)
+                        }
+                    }
+                }
+                #endif
 
                 Section {
                     if access == .fullAccess {

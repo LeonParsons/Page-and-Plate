@@ -15,8 +15,9 @@ nonisolated enum ImageProcessing {
         case encodingFailed
     }
 
-    /// For photo-picker data (JPEG, HEIC, PNG …).
-    static func makePage(fromImageData data: Data) throws(ProcessingError) -> CapturedPage {
+    /// For photo-picker data (JPEG, HEIC, PNG …). `maxLongEdge` is a parameter so the shared-plan thumbnail
+    /// (Phase 10) can reuse this path at a much smaller size rather than growing a second downscaler.
+    static func makePage(fromImageData data: Data, maxLongEdge: Int = ImageProcessing.maxLongEdge) throws(ProcessingError) -> CapturedPage {
         guard !data.isEmpty,
               let source = CGImageSourceCreateWithData(data as CFData, nil),
               CGImageSourceGetCount(source) > 0
