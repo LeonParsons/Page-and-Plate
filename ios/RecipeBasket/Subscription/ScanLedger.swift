@@ -1,8 +1,9 @@
 import Foundation
 import RecipeCore
 
-/// The dates of this device's successful scans, in the Keychain so a reinstall doesn't hand out 20 more (SPEC §9).
-/// Stored as epoch seconds; pruned to the free window on every write.
+/// This device's scan tally, in the Keychain so a reinstall doesn't hand out a fresh trial (SPEC §9): the lifetime
+/// count of successful scans, plus the dates inside the subscription's weekly window. Ledgers written before
+/// 2026-09-23 held a bare array of dates; `ScanTally.decode` still reads those.
 nonisolated struct ScanLedger: Sendable {
     static let defaultKey = "scan-ledger"
     let store: KeychainStore
@@ -14,16 +15,13 @@ nonisolated struct ScanLedger: Sendable {
     }
 
     /// Unreadable or corrupt storage reads as no scans — the Worker's own count is the backstop.
-    func dates() -> [Date] {
-        guard let text = try? store.string(forKey: key),
-              let seconds = try? JSONDecoder().decode([Double].self, from: Data(text.utf8))
-        else { return [] }
-        return seconds.map { Date(timeIntervalSince1970: $0) }
+    func tally() -> ScanTally {
+        guard let text = try? store.string(forKey: key) else { return ScanTally() }
+        return ScanTally.decode(text)
     }
 
-    func write(_ dates: [Date]) throws {
-        let data = try JSONEncoder().encode(dates.map(\.timeIntervalSince1970))
-        try store.set(String(decoding: data, as: UTF8.self), forKey: key)
+    func write(_ tally: ScanTally) throws {
+        try store.set(tally.encoded(), forKey: key)
     }
 
     func clear() throws {

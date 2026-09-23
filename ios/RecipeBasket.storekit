@@ -19,7 +19,7 @@
           "introductoryOffer": null,
           "localizations": [
             {
-              "description": "Unlimited cookbook scans, billed monthly.",
+              "description": "Scans for everything you cook, billed monthly.",
               "displayName": "Monthly",
               "locale": "en_GB"
             }
@@ -40,7 +40,7 @@
           "introductoryOffer": null,
           "localizations": [
             {
-              "description": "Unlimited cookbook scans, billed yearly.",
+              "description": "Scans for everything you cook, billed yearly.",
               "displayName": "Yearly",
               "locale": "en_GB"
             }

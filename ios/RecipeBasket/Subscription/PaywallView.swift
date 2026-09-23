@@ -18,7 +18,7 @@ struct PaywallView: View {
                 Text("Scan as many pages as you cook.")
                     .font(.headline)
                     .multilineTextAlignment(.center)
-                Text("\(ScanAllowance.freeScans) scans every 30 days are free. Unlimited removes the limit, and you can cancel any time.")
+                Text("Your first \(ScanAllowance.trialScans) scans are free. A subscription covers everything you cook in a week, and you can cancel any time.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)

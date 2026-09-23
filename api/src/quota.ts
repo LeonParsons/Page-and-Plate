@@ -34,12 +34,54 @@ export async function consumeDailyQuota(kv: KVNamespace, deviceId: string, limit
 }
 
 /**
- * The free tier (SPEC §9): successful scans in a rolling window, per device. Unlike the daily cap this counts
- * successes only — a failed extraction never costs a free scan — so it is checked before the model call and
- * recorded after it. The KV value is the in-window success times (ms); anything older is dropped on write.
+ * The free trial (SPEC §9): FREE_SCANS successful scans per device, ever. Not a window — since 2026-09-23 a spent
+ * trial never comes back, so the key is stored without a TTL. Unlike the daily cap this counts successes only: a
+ * failed extraction never costs a scan, so it is checked before the model call and recorded after it.
+ *
+ * The value is the count. Values written before 2026-09-23 are an array of in-window times; their length becomes
+ * the total, which undercounts a lifetime — the direction that favours the user.
  */
 
 export type FreeQuotaResult = {
+  allowed: boolean;
+  /** Successful scans on this device, ever. */
+  used: number;
+};
+
+export function freeQuotaKey(deviceId: string): string {
+  return `free:${deviceId}`;
+}
+
+export async function readFreeTotal(kv: KVNamespace, deviceId: string): Promise<number> {
+  const raw = await kv.get(freeQuotaKey(deviceId));
+  if (!raw) return 0;
+  try {
+    const value: unknown = JSON.parse(raw);
+    if (typeof value === "number" && Number.isFinite(value)) return Math.max(0, Math.trunc(value));
+    if (Array.isArray(value)) return value.length;
+  } catch {
+    // Fall through: unreadable storage reads as no scans, and the app's own ledger is the other half of the gate.
+  }
+  return 0;
+}
+
+export async function checkFreeQuota(kv: KVNamespace, deviceId: string, limit: number): Promise<FreeQuotaResult> {
+  const used = await readFreeTotal(kv, deviceId);
+  return { allowed: used < limit, used };
+}
+
+export async function recordFreeScan(kv: KVNamespace, deviceId: string): Promise<void> {
+  const used = await readFreeTotal(kv, deviceId);
+  await kv.put(freeQuotaKey(deviceId), String(used + 1));
+}
+
+/**
+ * The subscription's weekly ceiling (SPEC §9): WEEKLY_SCANS successful scans in a rolling WEEKLY_WINDOW_DAYS.
+ * Real, and never named to the user — the app is told when there is room again, not how many there were.
+ * Recorded for every successful scan, entitled or not, so subscribing mid-week starts from the true count.
+ */
+
+export type WeeklyQuotaResult = {
   allowed: boolean;
   /** Successful scans inside the window right now. */
   used: number;
@@ -47,14 +89,14 @@ export type FreeQuotaResult = {
   retryAfterSeconds: number;
 };
 
-export function freeQuotaKey(deviceId: string): string {
-  return `free:${deviceId}`;
+export function weeklyQuotaKey(deviceId: string): string {
+  return `week:${deviceId}`;
 }
 
 async function readWindow(kv: KVNamespace, deviceId: string, windowSeconds: number, now: Date): Promise<number[]> {
   let times: unknown;
   try {
-    times = JSON.parse((await kv.get(freeQuotaKey(deviceId))) ?? "[]");
+    times = JSON.parse((await kv.get(weeklyQuotaKey(deviceId))) ?? "[]");
   } catch {
     times = [];
   }
@@ -64,7 +106,7 @@ async function readWindow(kv: KVNamespace, deviceId: string, windowSeconds: numb
     .sort((a, b) => a - b);
 }
 
-export async function checkFreeQuota(kv: KVNamespace, deviceId: string, limit: number, windowSeconds: number, now: Date): Promise<FreeQuotaResult> {
+export async function checkWeeklyQuota(kv: KVNamespace, deviceId: string, limit: number, windowSeconds: number, now: Date): Promise<WeeklyQuotaResult> {
   const times = await readWindow(kv, deviceId, windowSeconds, now);
   if (times.length >= limit) {
     const oldest = times[0]!;
@@ -73,8 +115,8 @@ export async function checkFreeQuota(kv: KVNamespace, deviceId: string, limit: n
   return { allowed: true, used: times.length, retryAfterSeconds: 0 };
 }
 
-export async function recordFreeScan(kv: KVNamespace, deviceId: string, windowSeconds: number, now: Date): Promise<void> {
+export async function recordWeeklyScan(kv: KVNamespace, deviceId: string, windowSeconds: number, now: Date): Promise<void> {
   const times = await readWindow(kv, deviceId, windowSeconds, now);
   times.push(now.getTime());
-  await kv.put(freeQuotaKey(deviceId), JSON.stringify(times), { expirationTtl: windowSeconds });
+  await kv.put(weeklyQuotaKey(deviceId), JSON.stringify(times), { expirationTtl: windowSeconds });
 }

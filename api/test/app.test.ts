@@ -126,11 +126,11 @@ describe("POST /extract", () => {
     expect(baseEnv.ANTHROPIC_MODEL).toBe("claude-sonnet-5");
   });
 
-  describe("free scans (SPEC §9)", () => {
+  describe("the scan gate (SPEC §9)", () => {
     const freeEnv = { ...testEnv, FREE_SCANS: "2", DAILY_LIMIT: "10" };
     const jws = "eyJhbGciOiJFUzI1NiJ9.eyJ0cmFuc2FjdGlvbklkIjoiMSJ9.c2ln";
 
-    it("402 free_quota_exhausted after FREE_SCANS successful scans in 30 days; failures don't count", async () => {
+    it("402 free_quota_exhausted after FREE_SCANS successful scans; failures don't count", async () => {
       const device = crypto.randomUUID();
       expect((await post(app, { env: freeEnv, device })).status).toBe(200);
       extract.mockResolvedValueOnce({ ...okOutcome, kind: "unreadable", reason: null } as ExtractOutcome);
@@ -140,25 +140,23 @@ describe("POST /extract", () => {
       const res = await post(app, { env: freeEnv, device });
       expect(res.status).toBe(402);
       expect(await res.json()).toMatchObject({ error: "free_quota_exhausted", limit: 2 });
-      expect(Number(res.headers.get("retry-after"))).toBeGreaterThan(0);
       expect(extract).toHaveBeenCalledTimes(3);
       expect((await post(app, { env: freeEnv, device: crypto.randomUUID() })).status).toBe(200);
     });
 
-    it("a slot frees once the oldest scan is 30 days old", async () => {
+    it("the trial never comes back — a year later it is still spent", async () => {
       let clock = new Date("2026-09-01T12:00:00Z");
       app = createApp({ extract, now: () => clock });
       const device = crypto.randomUUID();
       expect((await post(app, { env: freeEnv, device })).status).toBe(200);
-      clock = new Date("2026-09-15T12:00:00Z");
       expect((await post(app, { env: freeEnv, device })).status).toBe(200);
       expect((await post(app, { env: freeEnv, device })).status).toBe(402);
-      clock = new Date("2026-10-01T12:00:01Z");
-      expect((await post(app, { env: freeEnv, device })).status).toBe(200);
+      clock = new Date("2027-09-01T12:00:00Z");
       expect((await post(app, { env: freeEnv, device })).status).toBe(402);
+      expect((await post(app, { env: freeEnv, device })).headers.get("retry-after")).toBeNull();
     });
 
-    it("a well-formed x-entitlement skips the free limit (unverified for now); the daily cap still applies", async () => {
+    it("a well-formed x-entitlement skips the trial (unverified for now); the daily cap still applies", async () => {
       const device = crypto.randomUUID();
       const entitled = { headers: { "x-entitlement": jws } };
       for (let i = 0; i < 5; i++) {
@@ -176,12 +174,43 @@ describe("POST /extract", () => {
       expect((await post(app, { env: freeEnv, device, ...bad })).status).toBe(402);
     });
 
-    it("wrangler.jsonc says 100 scans in 30 days for now (the release value is 20); the code default is 20", async () => {
-      expect(baseEnv.FREE_SCANS).toBe("100");
-      expect(baseEnv.FREE_WINDOW_DAYS).toBe("30");
+    it("a subscription stops at the week's ceiling, and the reply says when — never how many", async () => {
+      let clock = new Date("2026-09-21T12:00:00Z");
+      app = createApp({ extract, now: () => clock });
+      const device = crypto.randomUUID();
+      const env = { ...freeEnv, WEEKLY_SCANS: "3", DAILY_LIMIT: "50" };
+      const entitled = { headers: { "x-entitlement": jws } };
+      for (let i = 0; i < 3; i++) {
+        expect((await post(app, { env, device, ...entitled })).status).toBe(200);
+      }
+      const res = await post(app, { env, device, ...entitled });
+      expect(res.status).toBe(429);
+      const body = await res.json();
+      expect(body).toMatchObject({ error: "weekly_quota_exhausted" });
+      expect(Object.keys(body as object).sort()).toEqual(["error", "retryAfterSeconds"]);
+      expect(Number(res.headers.get("retry-after"))).toBeGreaterThan(0);
+
+      clock = new Date("2026-09-28T12:00:01Z");
+      expect((await post(app, { env, device, ...entitled })).status).toBe(200);
+    });
+
+    it("free scans fill the week too, so subscribing mid-week starts from the true count", async () => {
+      const device = crypto.randomUUID();
+      const env = { ...testEnv, FREE_SCANS: "2", WEEKLY_SCANS: "2", DAILY_LIMIT: "50" };
+      expect((await post(app, { env, device })).status).toBe(200);
+      expect((await post(app, { env, device })).status).toBe(200);
+      const res = await post(app, { env, device, headers: { "x-entitlement": jws } });
+      expect(res.status).toBe(429);
+      expect(await res.json()).toMatchObject({ error: "weekly_quota_exhausted" });
+    });
+
+    it("wrangler.jsonc and the code defaults agree: 5 free, 25 a week", async () => {
+      expect(baseEnv.FREE_SCANS).toBe("5");
+      expect(baseEnv.WEEKLY_SCANS).toBe("25");
+      expect(baseEnv.WEEKLY_WINDOW_DAYS).toBe("7");
       const noVar = { ...testEnv, FREE_SCANS: undefined, DAILY_LIMIT: "30" };
       const device = crypto.randomUUID();
-      for (let i = 0; i < 20; i++) expect((await post(app, { env: noVar, device })).status).toBe(200);
+      for (let i = 0; i < 5; i++) expect((await post(app, { env: noVar, device })).status).toBe(200);
       expect((await post(app, { env: noVar, device })).status).toBe(402);
     });
   });

@@ -10,6 +10,7 @@ export type ErrorCode =
   | "unreadable"
   | "rate_limited"
   | "free_quota_exhausted"
+  | "weekly_quota_exhausted"
   | "model_invalid_output"
   | "upstream_unavailable"
   | "server_misconfigured"
@@ -23,6 +24,7 @@ export const ERROR_STATUS: Record<ErrorCode, ContentfulStatusCode> = {
   unreadable: 422,
   rate_limited: 429,
   free_quota_exhausted: 402,
+  weekly_quota_exhausted: 429,
   model_invalid_output: 502,
   upstream_unavailable: 503,
   server_misconfigured: 500,

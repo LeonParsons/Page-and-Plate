@@ -42,7 +42,7 @@ struct ExtractingView: View {
         switch error {
         case .offline, .network: "wifi.slash"
         case .noRecipeFound, .unreadable: "doc.text.magnifyingglass"
-        case .rateLimited: "clock"
+        case .rateLimited, .weeklyQuotaExhausted: "clock"
         case .notConfigured, .unauthorized: "key"
         default: "exclamationmark.triangle"
         }

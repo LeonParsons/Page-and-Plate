@@ -60,7 +60,12 @@ final class AddRecipeFlow {
     func extract() {
         guard canExtract else { return }
         if let quota, !quota.canScan {
-            needsSubscription = true
+            // Out of trial → the paywall. At the week's ceiling with a subscription → say so; there is nothing to buy.
+            if quota.isSubscribed {
+                error = .weeklyQuotaExhausted(retryAfterSeconds: quota.nextScanAt.map { Int($0.timeIntervalSinceNow) })
+            } else {
+                needsSubscription = true
+            }
             return
         }
         error = nil

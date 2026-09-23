@@ -12,6 +12,9 @@ nonisolated enum ExtractionError: Error, Equatable, Sendable {
     case rateLimited(retryAfterSeconds: Int?)
     /// The Worker's own count of this device's free scans is used up (402). The app's gate normally catches this first.
     case freeQuotaExhausted(retryAfterSeconds: Int?)
+    /// A subscriber has reached the week's ceiling (429 `weekly_quota_exhausted`). The number is never shown —
+    /// only when there is room again (SPEC §9).
+    case weeklyQuotaExhausted(retryAfterSeconds: Int?)
     case modelInvalidOutput
     case upstreamUnavailable
     case offline
@@ -30,6 +33,7 @@ nonisolated enum ExtractionError: Error, Equatable, Sendable {
         case .unreadable: "Couldn't read the page"
         case .rateLimited: "Daily limit reached"
         case .freeQuotaExhausted: "Free scans used up"
+        case .weeklyQuotaExhausted: "That's this week's cooking"
         case .modelInvalidOutput: "Extraction failed"
         case .upstreamUnavailable: "Service busy"
         case .offline: "No connection"
@@ -56,9 +60,11 @@ nonisolated enum ExtractionError: Error, Equatable, Sendable {
             [reason, "Retake the photo in better light, holding the phone flat over the page."].compactMap { $0 }.joined(separator: " ")
         case let .rateLimited(seconds):
             "You've used today's extractions." + (seconds.map { " Try again in about \(Self.approximateDuration($0))." } ?? "")
-        case let .freeQuotaExhausted(seconds):
-            "You've used your free scans for the last 30 days. Subscribe to Unlimited to keep scanning"
-                + (seconds.map { ", or wait about \(Self.approximateDuration($0))." } ?? ".")
+        case .freeQuotaExhausted:
+            "You've used your free scans. Subscribe to keep scanning."
+        case let .weeklyQuotaExhausted(seconds):
+            "You've scanned a lot this week. There's room again"
+                + (seconds.map { " in about \(Self.approximateDuration($0))." } ?? " shortly.")
         case .modelInvalidOutput:
             "The server couldn't turn the page into a recipe. Try again."
         case .upstreamUnavailable:

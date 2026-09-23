@@ -29,7 +29,7 @@ ios/RecipeBasket/Brand.swift  Name, tagline, palette, display face and the app m
 ios/RecipeBasket/Models/      Recipe, PlannedMeal (SchemaV2), SchemaV1 frozen, AppSchemaVersions (migration plan)
 ios/RecipeBasket/App/         AppModelContainer (the store), CloudAccount (iCloud status), AppConfiguration, DeviceIdentity
 ios/Tools/RenderAppIcon.swift Re-renders the three 1024 app-icon PNGs from the same geometry as BrandMark
-ios/RecipeBasket.storekit     Local StoreKit configuration: the two Unlimited plans at placeholder prices
+ios/RecipeBasket.storekit     Local StoreKit configuration: the two subscription plans at placeholder prices
 ios/Packages/RecipeCore/      Pure Swift: Codable models, scaling, rounding, formatting (no SwiftUI/UIKit/EventKit/networking)
 api/                          Cloudflare Worker: POST /extract, eval script, JSON Schema export
 schema/extraction.schema.json Generated from the Worker's Zod schema; the contract between API and app
@@ -86,7 +86,7 @@ Definition of done for any task: `swift test` in RecipeCore, the Xcode test run,
 7. **Fractions are fine.** ¼ of a tin is a valid output. Never round a count up to a whole item.
 8. **`RecipeCore` stays pure.** No UI, persistence, EventKit or network imports.
 9. **Export only adds reminders.** Never read back, update or delete existing reminders.
-9b. **The free limit lives in two places that must agree:** `ScanAllowance.freeScans` (app) and `FREE_SCANS` in `api/wrangler.jsonc` (Worker). Temporarily 100; the release value is 20. The Worker does not yet verify `x-entitlement` — don't describe the paywall as tamper-proof until Phase 8 does.
+9b. **The scan limits live in two places that must agree:** `ScanAllowance.trialScans` / `.weeklyScans` (app) and `FREE_SCANS` / `WEEKLY_SCANS` in `api/wrangler.jsonc` (Worker). The trial is **5 scans for the life of the device** — no window, no recovery. A subscription carries **25 in any rolling 7 days**, which is a real ceiling and is **never shown to the user**: not in the app, not in the Worker's error body. Tell someone when there is room again, never how many they had. The Worker does not yet verify `x-entitlement` — don't describe the paywall as tamper-proof until Phase 8 does.
 9c. **Every `@Model` property must stay CloudKit-legal.** No `@Attribute(.unique)`, a default value on every non-optional attribute, and every relationship optional. Break one and the store silently stops syncing — `CloudKitSchemaTests` catches it, including by loading a real mirrored container. Read a to-many relationship through its accessor (`orderedPages`, `meals`), not the optional property.
 10. **Check current Apple, Anthropic and Cloudflare docs** rather than relying on memory. Record any deviation from this file in `docs/DECISIONS.md`.
 

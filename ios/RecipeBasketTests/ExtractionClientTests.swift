@@ -28,11 +28,21 @@ struct ExtractionClientTests {
         _ = try await entitled.extract(pages: pages)
         #expect(try #require(StubURLProtocol.recordedRequests().last).request.value(forHTTPHeaderField: "x-entitlement") == "a.b.c")
 
-        StubURLProtocol.install { _, _ in .response(status: 402, body: Data(#"{"error":"free_quota_exhausted","limit":20,"retryAfterSeconds":864000}"#.utf8)) }
-        await #expect(throws: ExtractionError.freeQuotaExhausted(retryAfterSeconds: 864_000)) {
+        StubURLProtocol.install { _, _ in .response(status: 402, body: Data(#"{"error":"free_quota_exhausted","limit":5}"#.utf8)) }
+        await #expect(throws: ExtractionError.freeQuotaExhausted(retryAfterSeconds: nil)) {
             try await makeClient().extract(pages: pages)
         }
-        #expect(ExtractionError.freeQuotaExhausted(retryAfterSeconds: 864_000).message.contains("10 days"))
+        // The trial never comes back, so nothing is offered but the subscription.
+        #expect(!ExtractionError.freeQuotaExhausted(retryAfterSeconds: nil).message.contains("wait"))
+    }
+
+    @Test("The week's ceiling is reported as a wait, never as a number")
+    func weeklyCeilingCopy() {
+        let error = ExtractionError.weeklyQuotaExhausted(retryAfterSeconds: 2 * 24 * 60 * 60)
+        #expect(error.message.contains("2 days"))
+        #expect(!error.message.contains("25"), "the ceiling is never named")
+        #expect(!error.title.contains("25"))
+        #expect(!ExtractionError.weeklyQuotaExhausted(retryAfterSeconds: nil).message.isEmpty)
     }
 
     @Test("Sends a POST with both headers and the pages as base64 JPEG in order")
@@ -73,6 +83,7 @@ struct ExtractionClientTests {
         (422, #"{"error":"unreadable"}"#, [:], .unreadable(nil)),
         (429, #"{"error":"rate_limited","limit":30,"retryAfterSeconds":3600}"#, ["Retry-After": "3600"], .rateLimited(retryAfterSeconds: 3600)),
         (429, #"{"error":"rate_limited"}"#, ["Retry-After": "120"], .rateLimited(retryAfterSeconds: 120)),
+        (429, #"{"error":"weekly_quota_exhausted","retryAfterSeconds":86400}"#, [:], .weeklyQuotaExhausted(retryAfterSeconds: 86_400)),
         (502, #"{"error":"model_invalid_output"}"#, [:], .modelInvalidOutput),
         (503, #"{"error":"upstream_unavailable"}"#, [:], .upstreamUnavailable),
         (500, #"{"error":"internal"}"#, [:], .unexpectedStatus(500)),

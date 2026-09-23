@@ -2,20 +2,30 @@ import Foundation
 import Observation
 import RecipeCore
 
-/// The scan gate (SPEC §9): subscribed, or under the free allowance. Owns the ledger; reads the entitlement.
+/// The scan gate (SPEC §9). Two limits over one ledger:
+///
+/// - **The trial** — `trialScans` successful scans on this device, ever. Spent is spent; the way on is a subscription.
+/// - **The week** — a subscription carries `weeklyScans` in any rolling seven days. Real, and deliberately never
+///   named to the user (Leon, 2026-09-23): the promise is "enough for everything you cook in a week". Someone who
+///   hits it is told when there is room again, never how many they had.
 @Observable
 final class ScanQuota {
     private let ledger: ScanLedger
     private let entitlements: any EntitlementSource
     private let now: () -> Date
-    private(set) var allowance: ScanAllowance
+    let trialScans: Int
+    let weeklyScans: Int
+    private(set) var tally: ScanTally
 
-    init(ledger: ScanLedger = ScanLedger(), entitlements: any EntitlementSource, freeScans: Int = ScanAllowance.freeScans,
+    init(ledger: ScanLedger = ScanLedger(), entitlements: any EntitlementSource,
+         trialScans: Int = ScanAllowance.trialScans, weeklyScans: Int = ScanAllowance.weeklyScans,
          now: @escaping () -> Date = { .now }) {
         self.ledger = ledger
         self.entitlements = entitlements
+        self.trialScans = trialScans
+        self.weeklyScans = weeklyScans
         self.now = now
-        allowance = ScanAllowance(scans: ledger.dates(), freeScans: freeScans)
+        tally = ledger.tally()
     }
 
     var isSubscribed: Bool {
@@ -26,48 +36,54 @@ final class ScanQuota {
         entitlements.entitlementJWS
     }
 
+    private var weekly: ScanAllowance {
+        tally.weekly(limit: weeklyScans)
+    }
+
+    /// Free scans left in the trial. Meaningless while subscribed — `statusText` is what the UI shows.
     var remaining: Int {
-        allowance.remaining(at: now())
+        tally.trialRemaining(limit: trialScans)
     }
 
-    var isExhausted: Bool {
-        allowance.isExhausted(at: now())
+    var isTrialExhausted: Bool {
+        tally.isTrialExhausted(limit: trialScans)
     }
 
-    /// When the next free scan frees up, while exhausted.
-    var nextFreeAt: Date? {
-        allowance.nextFreeAt(at: now())
+    /// While subscribed and at the weekly ceiling: when there is room again. nil otherwise.
+    var nextScanAt: Date? {
+        isSubscribed ? weekly.nextScanAt(at: now()) : nil
     }
 
     var canScan: Bool {
-        isSubscribed || !isExhausted
+        isSubscribed ? !weekly.isExhausted(at: now()) : !isTrialExhausted
     }
 
-    /// "Unlimited scans" / "12 of 20 free scans left" / "No free scans until 3 Oct".
+    /// "Enough for the week" / "More scans from 30 Sep" / "3 of 5 free scans left" / "No free scans left".
     var statusText: String {
-        if isSubscribed { return "Unlimited scans" }
-        if let nextFreeAt {
-            return "No free scans until \(nextFreeAt.formatted(date: .abbreviated, time: .omitted))"
+        if isSubscribed {
+            guard let nextScanAt else { return "Enough for the week" }
+            return "More scans from \(nextScanAt.formatted(date: .abbreviated, time: .omitted))"
         }
-        return "\(remaining) of \(allowance.freeScans) free scans left"
+        if isTrialExhausted { return "No free scans left" }
+        return "\(remaining) of \(trialScans) free scans left"
     }
 
-    /// One successful extraction. Counted even when subscribed, so lapsing doesn't hand out fresh free scans.
+    /// One successful extraction. Counted even when subscribed, so lapsing doesn't hand out a fresh trial.
     func recordScan() {
-        allowance = allowance.recording(now()).pruned(at: now())
-        try? ledger.write(allowance.scans)
+        tally = tally.recording(now()).pruned(at: now())
+        try? ledger.write(tally)
     }
 
     #if DEBUG
-    /// Settings (debug builds only): fill the window, or empty it, to exercise the paywall.
-    func useUpFreeScans() {
+    /// Settings (debug builds only): spend both limits, or clear them, to exercise the paywall and the ceiling.
+    func useUpScans() {
         let now = now()
-        allowance = ScanAllowance(scans: Array(repeating: now, count: allowance.freeScans), freeScans: allowance.freeScans)
-        try? ledger.write(allowance.scans)
+        tally = ScanTally(total: trialScans, recent: Array(repeating: now, count: weeklyScans))
+        try? ledger.write(tally)
     }
 
-    func resetFreeScans() {
-        allowance = ScanAllowance(scans: [], freeScans: allowance.freeScans)
+    func resetScans() {
+        tally = ScanTally()
         try? ledger.clear()
     }
     #endif

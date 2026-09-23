@@ -35,13 +35,13 @@ struct SettingsView: View {
                         Task { await subscriptions.restore() }
                     }
                     #if DEBUG
-                    Button("Use up free scans (debug)") { quota.useUpFreeScans() }
-                    Button("Reset free scans (debug)") { quota.resetFreeScans() }
+                    Button("Use up scans (debug)") { quota.useUpScans() }
+                    Button("Reset scans (debug)") { quota.resetScans() }
                     #endif
                 } header: {
                     Text("Scans")
                 } footer: {
-                    Text("A scan is one photographed recipe. \(ScanAllowance.freeScans) are free every 30 days; Unlimited removes the limit.")
+                    Text("A scan is one photographed recipe. The first \(ScanAllowance.trialScans) are free. A subscription covers everything you cook in a week.")
                 }
 
                 Section {

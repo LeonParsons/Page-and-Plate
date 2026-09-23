@@ -41,8 +41,9 @@ guarantees Apple's accepted dimensions rather than resizing afterwards.
 
 ## Before these go to App Store Connect
 
-1. **The free-scan count.** Frame 1 reads "17 of 20 free scans left" because the build was made with
-   `ScanAllowance.freeScans = 20`, the release value. The repo is back to 100 for Leon's private use, so
-   rebuild with 20 before reshooting anything.
+1. **The free-scan count.** Frame 1 reads "17 of 20 free scans left", from the limits as they were before
+   2026-09-23. The trial is now 5 for the life of the device (`ScanAllowance.trialScans`), so the frame has to
+   be reshot — and a build with scans already spent will say "No free scans left" instead, which is a weaker
+   frame. Shoot it on a device with 2 or 3 scans used.
 2. The iPad export sheet sits as a small form sheet over the plan and does not use the width well. It is
    honest, but it is the weakest of the nine.

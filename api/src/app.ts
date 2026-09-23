@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import type { Extractor, ExtractOptions } from "./extract.ts";
 import { errorResponse } from "./errors.ts";
-import { checkFreeQuota, consumeDailyQuota, recordFreeScan } from "./quota.ts";
+import { checkFreeQuota, checkWeeklyQuota, consumeDailyQuota, recordFreeScan, recordWeeklyScan } from "./quota.ts";
 import { ExtractRequestSchema } from "./schema.ts";
 
 export type Bindings = {
@@ -12,9 +12,11 @@ export type Bindings = {
   ANTHROPIC_MODEL?: string;
   ANTHROPIC_EFFORT?: string;
   DAILY_LIMIT?: string;
-  /** The free tier: successful scans per device in any rolling FREE_WINDOW_DAYS (SPEC §9). */
+  /** The free trial: successful scans per device, ever (SPEC §9). */
   FREE_SCANS?: string;
-  FREE_WINDOW_DAYS?: string;
+  /** The subscription's ceiling: successful scans per device in any rolling WEEKLY_WINDOW_DAYS. Never shown. */
+  WEEKLY_SCANS?: string;
+  WEEKLY_WINDOW_DAYS?: string;
   MAX_BODY_BYTES?: string;
   QUOTA: KVNamespace;
 };
@@ -27,8 +29,9 @@ export type AppDeps = {
 
 export const DEFAULT_MODEL = "claude-sonnet-5";
 const DEFAULT_DAILY_LIMIT = 30;
-const DEFAULT_FREE_SCANS = 20;
-const DEFAULT_FREE_WINDOW_DAYS = 30;
+const DEFAULT_FREE_SCANS = 5;
+const DEFAULT_WEEKLY_SCANS = 25;
+const DEFAULT_WEEKLY_WINDOW_DAYS = 7;
 const DEFAULT_MAX_BODY_BYTES = 8 * 1024 * 1024;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /** A compact JWS: three base64url segments. The shape the app's signed App Store transaction has. */
@@ -116,16 +119,25 @@ export function createApp(deps: AppDeps) {
       return errorResponse(c, "rate_limited", { limit, retryAfterSeconds: quota.retryAfterSeconds });
     }
 
-    // 6. Free tier, unless the request carries the app's signed subscription transaction. The JWS is not yet
-    // verified here — it is trusted like the app key is — so this holds only until Phase 8 verifies it (SPEC §9).
+    // 6. The scan gate, in two halves. Without the app's signed subscription transaction it is the free trial —
+    // a lifetime count, so there is nothing to wait for. With one it is the week's ceiling, which the response
+    // reports only as a time, never as a number: the subscription promises enough for a week's cooking, and
+    // naming the figure invites counting against it (SPEC §9). The JWS is not yet verified here — it is trusted
+    // like the app key is — so this holds only until Phase 8 verifies it.
     const entitled = JWS.test(c.req.header("x-entitlement") ?? "");
     const freeScans = intSetting(c.env.FREE_SCANS, DEFAULT_FREE_SCANS);
-    const freeWindowSeconds = intSetting(c.env.FREE_WINDOW_DAYS, DEFAULT_FREE_WINDOW_DAYS) * 24 * 60 * 60;
-    if (!entitled) {
-      const free = await checkFreeQuota(c.env.QUOTA, device, freeScans, freeWindowSeconds, now());
+    const weeklyScans = intSetting(c.env.WEEKLY_SCANS, DEFAULT_WEEKLY_SCANS);
+    const weeklyWindowSeconds = intSetting(c.env.WEEKLY_WINDOW_DAYS, DEFAULT_WEEKLY_WINDOW_DAYS) * 24 * 60 * 60;
+    if (entitled) {
+      const week = await checkWeeklyQuota(c.env.QUOTA, device, weeklyScans, weeklyWindowSeconds, now());
+      if (!week.allowed) {
+        c.header("Retry-After", String(week.retryAfterSeconds));
+        return errorResponse(c, "weekly_quota_exhausted", { retryAfterSeconds: week.retryAfterSeconds });
+      }
+    } else {
+      const free = await checkFreeQuota(c.env.QUOTA, device, freeScans);
       if (!free.allowed) {
-        c.header("Retry-After", String(free.retryAfterSeconds));
-        return errorResponse(c, "free_quota_exhausted", { limit: freeScans, retryAfterSeconds: free.retryAfterSeconds });
+        return errorResponse(c, "free_quota_exhausted", { limit: freeScans });
       }
     }
 
@@ -138,8 +150,10 @@ export function createApp(deps: AppDeps) {
       options.effort = c.env.ANTHROPIC_EFFORT as ExtractOptions["effort"];
     }
     const outcome = await deps.extract(parsed.data.images, options);
-    if (outcome.kind === "ok" && !entitled) {
-      await recordFreeScan(c.env.QUOTA, device, freeWindowSeconds, now());
+    if (outcome.kind === "ok") {
+      // The week is recorded either way, so subscribing mid-week starts from the true count.
+      await recordWeeklyScan(c.env.QUOTA, device, weeklyWindowSeconds, now());
+      if (!entitled) await recordFreeScan(c.env.QUOTA, device);
     }
 
     // One structured line per request; never the images or the raw model text.

@@ -80,7 +80,10 @@ nonisolated final class ExtractionClient: Sendable {
         case 402: throw .freeQuotaExhausted(retryAfterSeconds: retryAfter)
         case 413: throw .payloadTooLarge
         case 422: throw body?.error == "unreadable" ? .unreadable(body?.message) : .noRecipeFound(body?.message)
-        case 429: throw .rateLimited(retryAfterSeconds: retryAfter)
+        case 429:
+            throw body?.error == "weekly_quota_exhausted"
+                ? .weeklyQuotaExhausted(retryAfterSeconds: retryAfter)
+                : .rateLimited(retryAfterSeconds: retryAfter)
         case 502: throw .modelInvalidOutput
         case 503: throw .upstreamUnavailable
         default: throw .unexpectedStatus(http.statusCode)

@@ -81,7 +81,9 @@ struct CaptureView: View {
         }
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 8) {
-                if quota.canScan {
+                if quota.canScan || quota.isSubscribed {
+                    // A subscriber at the week's ceiling keeps the Extract button, disabled — there is nothing to
+                    // sell them, and the footnote below says when it comes back.
                     Button {
                         flow.extract()
                     } label: {
@@ -90,7 +92,7 @@ struct CaptureView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .controlSize(.large)
-                    .disabled(!flow.canExtract || isImporting)
+                    .disabled(!flow.canExtract || isImporting || !quota.canScan)
                 } else {
                     Button {
                         flow.needsSubscription = true

@@ -438,3 +438,31 @@ Not built, and not next; recorded so it is not re-argued from scratch. Leon's ca
 - **`GroceriesTip` is its own type, not a method on the view**, so the once-only rule is testable. `claim()` both answers and marks, which is what makes "exactly once" a single atomic thing rather than two statements a future edit could separate. Five tests.
 - The flag is claimed at the moment of adding and held in `@State`, so flipping it cannot blank the tip out of the alert already on screen.
 - No "Show me how" button: there is no public URL that opens a Reminders list's settings, and a button that cannot do what it says is worse than none.
+
+### 2026-09-23 · The scan limits reshaped: 5 for life, 25 a week unnamed
+
+- **Decision (Leon).** The free tier becomes **5 scans total** — for the life of the device, not a rolling
+  window — after which the only way on is a subscription. The subscription stops being literally unlimited and
+  carries **25 scans in any rolling 7 days**, and that number is **never shown to the user**.
+- **Why.** Twenty free scans every thirty days was a free product, not a trial: enough to plan a fortnight,
+  reset monthly, forever. Five once is a taste. At the other end, "unlimited" had no lid on the API bill at all;
+  25 a week is more than anyone cooking from books gets through, so it binds only on abuse.
+- **Why the ceiling stays quiet.** A number invites counting against it — people ration long before they reach
+  it, and the promise turns into a budget. The copy says "enough for everything you cook in a week"; someone who
+  does reach the ceiling is told when there is room again, never how many they had. The Worker's
+  `weekly_quota_exhausted` body carries `retryAfterSeconds` and nothing else, and a test asserts exactly that.
+- **How it is counted.** One ledger, two shapes (`ScanTally` in RecipeCore): `total`, the lifetime count the
+  trial spends, and `recent`, the dates still inside the week. Pruning drops old dates and never the total, so
+  the Keychain entry stays small while the trial stays spent. Free scans fill the week too, so subscribing
+  mid-week starts from the true count. The Worker mirrors both: `free:<device>` is now a bare count with no TTL,
+  `week:<device>` is the rolling window it used to be.
+- **Migration.** Ledgers and KV values written before today are an array of dates. Their length becomes the
+  lifetime total — an undercount, since those arrays were already pruned to thirty days, which errs towards the
+  user. Both sides have a test for it.
+- **What this costs us.** Leon's own two devices have far more than 5 scans recorded, so the trial reads as
+  spent on both. That is correct behaviour, not a bug; Settings → "Reset scans (debug)" clears it, and the
+  Worker's `free:<device>` key needs clearing separately if it 402s.
+- **Left open.** The plan is still *named* "Page & Plate Unlimited" while carrying a ceiling. Every other
+  user-facing claim has gone ("removes the limit", "Unlimited cookbook scans", the status line "Unlimited
+  scans"), but the name is itself a claim and App Review reads subscription names. Recorded as blocker 2 in
+  `docs/APPSTORE.md`; the product ids stay as they are either way, since they are never shown.
