@@ -11,13 +11,17 @@ struct HomeView: View {
     @Environment(ExportSettings.self) private var settings
     @Environment(ScanQuota.self) private var quota
     @State private var selection: Recipe.ID?
+    /// The sidebar holds the whole list *and* the Add/Sort/Group/Settings toolbar, so on iPad a collapsed
+    /// sidebar leaves a screen with nothing on it and no way back. `.all` keeps it open; the user can still
+    /// hide it with the toggle, and `.balanced` means it takes its own width rather than covering the recipe.
+    @State private var columnVisibility = NavigationSplitViewVisibility.all
     @State private var isAdding = false
     @State private var isShowingSettings = false
     @AppStorage("list.sort") private var sortRaw = RecipeListOrdering.Sort.newest.rawValue
     @AppStorage("list.grouping") private var groupingRaw = RecipeListOrdering.Grouping.none.rawValue
 
     var body: some View {
-        NavigationSplitView {
+        NavigationSplitView(columnVisibility: $columnVisibility) {
             Group {
                 if recipes.isEmpty {
                     ContentUnavailableView {
@@ -82,6 +86,7 @@ struct HomeView: View {
                 ContentUnavailableView("Select a recipe", systemImage: "book", description: Text("Choose a recipe from the list, or add one."))
             }
         }
+        .navigationSplitViewStyle(.balanced)
     }
 
     private var sort: RecipeListOrdering.Sort {
