@@ -44,13 +44,15 @@ struct GroceriesTipTests {
         #expect(GroceriesTip.message(count: 1, listTitle: "Shopping", includingTip: false) == "Added 1 item to Shopping.")
     }
 
-    @Test("The tip names the list and the exact setting")
-    func tipIsActionable() {
-        let message = GroceriesTip.message(count: 3, listTitle: "Groceries list", includingTip: true)
-        #expect(message.hasPrefix("Added 3 items to Groceries list."))
+    @Test("The tip names the exact setting, and stays one line")
+    func tipIsActionableAndShort() {
+        let message = GroceriesTip.message(count: 3, listTitle: "Shopping", includingTip: true)
+        #expect(message.hasPrefix("Added 3 items to Shopping."))
         #expect(message.contains("List Info"))
         #expect(message.contains("List Type"))
         #expect(message.contains("Groceries"))
-        #expect(message.contains(Brand.name))
+        // An alert is an interruption; the reference version lives in Settings.
+        let tip = message.split(separator: "\n").last.map(String.init) ?? ""
+        #expect(tip.count < 90, "the tip has grown to \(tip.count) characters")
     }
 }

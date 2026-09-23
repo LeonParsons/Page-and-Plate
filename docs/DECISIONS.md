@@ -433,7 +433,8 @@ Not built, and not next; recorded so it is not re-argued from scratch. Leon's ca
 ### 2026-09-23 · A one-time Groceries tip after the first export
 
 - Leon's call after the footers landed: a footer is there for someone already looking, and nobody looks. The moment that matters is the first time items reach Reminders and the user goes to see them.
-- **It rides the existing "Added to Reminders" alert** rather than adding a second interruption. First export only: "Added 12 items to Shopping." plus "Did you know? … set List Type to Groceries." Same tap, same alert, once ever.
+- **It rides the existing "Added to Reminders" alert** rather than adding a second interruption. First export only: "Added 12 items to Shopping." plus one line — "Tip: in Reminders, List Info → List Type → Groceries sorts these into aisles." Same tap, same alert, once ever.
+- **Kept to one line, and a test holds it there.** The first draft was three sentences; an alert is an interruption, not documentation, and the reference version already lives in Settings. `GroceriesTipTests` fails if the tip grows past 90 characters.
 - **`GroceriesTip` is its own type, not a method on the view**, so the once-only rule is testable. `claim()` both answers and marks, which is what makes "exactly once" a single atomic thing rather than two statements a future edit could separate. Five tests.
 - The flag is claimed at the moment of adding and held in `@State`, so flipping it cannot blank the tip out of the alert already on screen.
 - No "Show me how" button: there is no public URL that opens a Reminders list's settings, and a button that cannot do what it says is worse than none.

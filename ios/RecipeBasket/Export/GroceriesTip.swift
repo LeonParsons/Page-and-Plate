@@ -20,7 +20,7 @@ nonisolated enum GroceriesTip {
     static func message(count: Int, listTitle: String, includingTip: Bool) -> String {
         let added = "Added \(count) \(count == 1 ? "item" : "items") to \(listTitle)."
         guard includingTip else { return added }
-        return added + "\n\nDid you know? In Reminders, tap List Info on “\(listTitle)” and set List Type to "
-            + "Groceries. It will sort these into aisles on its own — \(Brand.name) already names items to suit."
+        // One line. It is an interruption, not documentation — the longer version lives in Settings.
+        return added + "\n\nTip: in Reminders, List Info → List Type → Groceries sorts these into aisles."
     }
 }
