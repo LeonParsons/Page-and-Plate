@@ -372,3 +372,12 @@ Not built, and not next; recorded so it is not re-argued from scratch. Leon's ca
 - **`SharedExportTests` is the test that proves the projection is sufficient.** A projected week produces byte-identical `WeekShopping` lines to the owner's own week from the same data — so the guest's Shop needs no separate implementation, and `PlannedMealExport` defines what the projection must carry.
 - **Thumbnails reuse `ImageProcessing`** with `maxLongEdge` as a new parameter (default unchanged), rather than a second downscaler. 240 px: recognisable in a list, useless for reading someone else's cookbook.
 - **Deliberately temporary:** a DEBUG "Publish the plan" button in Settings. It exists only to prove the above; step 2 replaces it with the real share entry.
+
+### 2026-09-23 · Phase 10 step 2: invite and accept
+
+- **Apple's sharing UI, not ours.** `UICloudSharingController` wrapped for SwiftUI — there is no SwiftUI equivalent (`ShareLink` shares a URL, not a `CKShare`). The invite goes out through Messages, Mail or a copied link with nothing of ours involved, which is the §2 promise kept rather than restated.
+- **`CKSharingSupported: true`** in the Info plist. Without it a share link opens the App Store instead of the app, and the invite looks broken to the person you sent it to.
+- **Acceptance needs both paths.** `windowScene(_:userDidAcceptCloudKitShareWith:)` for a tap while the app runs, **and** `connectionOptions.cloudKitShareMetadata` for a cold launch from the link. Missing the second is the usual reason share links appear to do nothing. SwiftUI still has no lifecycle hook for either, so the app now carries a scene delegate for this one job, reached through the single shared `SharedPlanMembership` — the only shared instance in the app, and only because UIKit leaves no other seam.
+- **Re-inviting reuses the existing share.** `shareForInviting()` fetches the zone's share before creating one, so "Manage sharing…" twice cannot produce two plans.
+- **`publicPermission = .none`**: invited people only, never anyone who comes by the link.
+- **Not verifiable here.** Accepting an invite needs a *second Apple Account*; Leon's iPhone and iPad share his, so sending himself an invite exercises nothing. The acceptance path stays unproven until Sara's phone is present — recorded so it is not mistaken for tested.

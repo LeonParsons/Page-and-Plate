@@ -3,6 +3,8 @@ import SwiftUI
 
 @main
 struct RecipeBasketApp: App {
+    // SwiftUI still has no lifecycle hook for an accepted CloudKit share (SPEC §10).
+    @UIApplicationDelegateAdaptor(SharedPlanAppDelegate.self) private var appDelegate
     @State private var exportSettings = ExportSettings()
     @State private var subscriptions: SubscriptionStore
     @State private var quota: ScanQuota

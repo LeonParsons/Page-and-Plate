@@ -51,7 +51,7 @@ final class SharedWeekPublisher: NSObject {
     }
 
     /// Brings the engine up. Safe to call more than once.
-    func start() async {
+    func start() async throws {
         guard engine == nil else { return }
         state = .preparing
         stateSerialization = loadState()
@@ -70,6 +70,8 @@ final class SharedWeekPublisher: NSObject {
         } catch {
             log.error("could not create the shared zone: \(error.localizedDescription, privacy: .public)")
             state = .failed(error.localizedDescription)
+            engine = nil       // so a retry actually retries rather than short-circuiting on `engine != nil`
+            throw error
         }
     }
 
@@ -101,6 +103,40 @@ final class SharedWeekPublisher: NSObject {
 
         engine.state.add(pendingRecordZoneChanges: ids.map { .saveRecord($0) })
         log.info("staged \(ids.count, privacy: .public) records for the shared plan")
+    }
+
+    // MARK: The share
+
+    /// The zone's existing share, if the owner has invited anyone before.
+    ///
+    /// Zone-wide sharing: the `CKShare` is attached to the zone, not to a root record, so every record in it
+    /// comes with the invite and a guest needs one link for the whole plan.
+    func existingShare() async throws -> CKShare? {
+        let zone = try await container.privateCloudDatabase.recordZone(for: SharedWeekZone.id)
+        guard let reference = zone.share else { return nil }
+        return try await container.privateCloudDatabase.record(for: reference.recordID) as? CKShare
+    }
+
+    /// The share to hand to `UICloudSharingController` — the existing one, or a new one. Re-inviting someone
+    /// must never make a second share, or the owner ends up with two plans they cannot tell apart.
+    func shareForInviting() async throws -> CKShare {
+        try await start()
+        if let existing = try await existingShare() { return existing }
+
+        let share = CKShare(recordZoneID: SharedWeekZone.id)
+        share[CKShare.SystemFieldKey.title] = "\(Brand.name) — my plan"
+        share.publicPermission = .none   // invited people only, never anyone with the link
+        let result = try await container.privateCloudDatabase.modifyRecords(saving: [share], deleting: [])
+        guard let saved = try result.saveResults[share.recordID]?.get() as? CKShare else {
+            throw SharedWeekError.badRecord("the share came back without a record")
+        }
+        return saved
+    }
+
+    /// Ends the share for everyone. The guest's copy goes with it (SPEC §10: no copy outlives the share).
+    func stopSharing() async throws {
+        guard let share = try await existingShare() else { return }
+        _ = try await container.privateCloudDatabase.modifyRecords(saving: [], deleting: [share.recordID])
     }
 
     // MARK: Engine state

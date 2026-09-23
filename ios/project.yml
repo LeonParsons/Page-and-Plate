@@ -58,6 +58,7 @@ targets:
           UIColorName: LaunchBackground   # the splash's own ground, so a cold launch doesn't flash white
         UIBackgroundModes:
           - remote-notification           # CloudKit pushes changes from the user's other devices
+        CKSharingSupported: true          # without this, a share link opens the App Store instead of the app
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: true
         UIApplicationSupportsIndirectInputEvents: true
