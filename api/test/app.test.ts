@@ -204,13 +204,13 @@ describe("POST /extract", () => {
       expect(await res.json()).toMatchObject({ error: "weekly_quota_exhausted" });
     });
 
-    it("wrangler.jsonc and the code defaults agree: 5 free, 25 a week", async () => {
-      expect(baseEnv.FREE_SCANS).toBe("5");
+    it("wrangler.jsonc and the code defaults agree: 7 free, 25 a week", async () => {
+      expect(baseEnv.FREE_SCANS).toBe("7");
       expect(baseEnv.WEEKLY_SCANS).toBe("25");
       expect(baseEnv.WEEKLY_WINDOW_DAYS).toBe("7");
       const noVar = { ...testEnv, FREE_SCANS: undefined, DAILY_LIMIT: "30" };
       const device = crypto.randomUUID();
-      for (let i = 0; i < 5; i++) expect((await post(app, { env: noVar, device })).status).toBe(200);
+      for (let i = 0; i < 7; i++) expect((await post(app, { env: noVar, device })).status).toBe(200);
       expect((await post(app, { env: noVar, device })).status).toBe(402);
     });
   });

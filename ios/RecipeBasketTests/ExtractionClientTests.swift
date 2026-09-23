@@ -28,7 +28,7 @@ struct ExtractionClientTests {
         _ = try await entitled.extract(pages: pages)
         #expect(try #require(StubURLProtocol.recordedRequests().last).request.value(forHTTPHeaderField: "x-entitlement") == "a.b.c")
 
-        StubURLProtocol.install { _, _ in .response(status: 402, body: Data(#"{"error":"free_quota_exhausted","limit":5}"#.utf8)) }
+        StubURLProtocol.install { _, _ in .response(status: 402, body: Data(#"{"error":"free_quota_exhausted","limit":7}"#.utf8)) }
         await #expect(throws: ExtractionError.freeQuotaExhausted(retryAfterSeconds: nil)) {
             try await makeClient().extract(pages: pages)
         }

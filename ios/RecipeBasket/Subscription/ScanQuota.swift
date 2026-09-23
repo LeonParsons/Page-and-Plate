@@ -58,7 +58,7 @@ final class ScanQuota {
         isSubscribed ? !weekly.isExhausted(at: now()) : !isTrialExhausted
     }
 
-    /// "Enough for the week" / "More scans from 30 Sep" / "3 of 5 free scans left" / "No free scans left".
+    /// "Enough for the week" / "More scans from 30 Sep" / "3 of 7 free scans left" / "No free scans left".
     var statusText: String {
         if isSubscribed {
             guard let nextScanAt else { return "Enough for the week" }

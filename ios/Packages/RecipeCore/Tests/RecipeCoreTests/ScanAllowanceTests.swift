@@ -21,7 +21,7 @@ struct ScanAllowanceTests {
         #expect(allowance.nextScanAt(at: now) == nil)
         #expect(ScanAllowance.weeklyScans == 25)
         #expect(ScanAllowance.weeklyWindow == 7 * 24 * 60 * 60)
-        #expect(ScanAllowance.trialScans == 5, "the trial is a lifetime total, not a window")
+        #expect(ScanAllowance.trialScans == 7, "the trial is a lifetime total, not a window")
     }
 
     @Test("Only scans inside the window count; the edge is exclusive")

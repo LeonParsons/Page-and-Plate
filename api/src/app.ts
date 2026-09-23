@@ -29,7 +29,7 @@ export type AppDeps = {
 
 export const DEFAULT_MODEL = "claude-sonnet-5";
 const DEFAULT_DAILY_LIMIT = 30;
-const DEFAULT_FREE_SCANS = 5;
+const DEFAULT_FREE_SCANS = 7;
 const DEFAULT_WEEKLY_SCANS = 25;
 const DEFAULT_WEEKLY_WINDOW_DAYS = 7;
 const DEFAULT_MAX_BODY_BYTES = 8 * 1024 * 1024;

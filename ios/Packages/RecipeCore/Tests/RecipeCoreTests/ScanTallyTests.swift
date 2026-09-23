@@ -16,14 +16,14 @@ struct ScanTallyTests {
     func empty() {
         let tally = ScanTally()
         #expect(tally.total == 0)
-        #expect(tally.trialRemaining() == 5)
+        #expect(tally.trialRemaining() == 7)
         #expect(!tally.isTrialExhausted())
         #expect(!tally.weekly().isExhausted(at: now))
     }
 
-    @Test("The trial never comes back: five scans years ago still exhaust it")
+    @Test("The trial never comes back: seven scans years ago still exhaust it")
     func trialIsForLife() {
-        let ancient = ScanTally(total: 5, recent: []).pruned(at: now)
+        let ancient = ScanTally(total: 7, recent: []).pruned(at: now)
         #expect(ancient.trialRemaining() == 0)
         #expect(ancient.isTrialExhausted())
         #expect(!ancient.weekly().isExhausted(at: now), "the week is clear — only a subscription can use it")

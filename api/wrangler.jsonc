@@ -10,7 +10,7 @@
   "vars": {
     "ANTHROPIC_MODEL": "claude-sonnet-5",
     "DAILY_LIMIT": "30",
-    "FREE_SCANS": "5",          // the trial, for the life of the device — must match ScanAllowance.trialScans
+    "FREE_SCANS": "7",          // the trial, for the life of the device — must match ScanAllowance.trialScans
     "WEEKLY_SCANS": "25",       // the subscription's ceiling — must match ScanAllowance.weeklyScans, and is never shown
     "WEEKLY_WINDOW_DAYS": "7",
     "MAX_BODY_BYTES": "8388608"

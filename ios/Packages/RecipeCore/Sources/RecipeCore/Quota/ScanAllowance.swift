@@ -6,7 +6,7 @@ import Foundation
 public struct ScanAllowance: Hashable, Sendable {
     /// The free trial: successful scans on this device, ever. Not a window — once they are gone the only way on is a
     /// subscription. The Worker's `FREE_SCANS` in api/wrangler.jsonc must say the same.
-    public static let trialScans = 5
+    public static let trialScans = 7
 
     /// What a subscription actually carries. Deliberately never shown (Leon, 2026-09-23): the promise is "enough for
     /// everything you cook in a week", and printing a number invites counting against it. The Worker's

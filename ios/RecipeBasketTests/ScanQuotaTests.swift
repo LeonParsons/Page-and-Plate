@@ -52,56 +52,56 @@ struct ScanQuotaTests {
     private let now = Date(timeIntervalSince1970: 1_800_000_000)
     private let day: TimeInterval = 86_400
 
-    /// Five and twenty-five, spelled out, so a later change to the shipped numbers doesn't quietly rewrite what
+    /// Seven and twenty-five, spelled out, so a later change to the shipped numbers doesn't quietly rewrite what
     /// these tests claim.
     private func makeQuota(tally: ScanTally = ScanTally(), subscribed: Bool = false, now: Date? = nil) throws -> (ScanQuota, ScanLedger, FakeEntitlements) {
         let ledger = ScanLedger(store: KeychainStore(service: "app.recipe-basket.tests"), key: "ledger-\(UUID().uuidString)")
         try ledger.write(tally)
         let entitlements = FakeEntitlements(isSubscribed: subscribed, entitlementJWS: subscribed ? "a.b.c" : nil)
         let clock = now ?? self.now
-        return (ScanQuota(ledger: ledger, entitlements: entitlements, trialScans: 5, weeklyScans: 25, now: { clock }), ledger, entitlements)
+        return (ScanQuota(ledger: ledger, entitlements: entitlements, trialScans: 7, weeklyScans: 25, now: { clock }), ledger, entitlements)
     }
 
-    @Test("Fresh: five left, can scan; each recorded scan counts down and is persisted")
+    @Test("Fresh: seven left, can scan; each recorded scan counts down and is persisted")
     func countsDown() throws {
         let (quota, ledger, _) = try makeQuota()
         defer { try? ledger.clear() }
         #expect(quota.canScan)
-        #expect(quota.remaining == 5)
-        #expect(quota.statusText == "5 of 5 free scans left")
+        #expect(quota.remaining == 7)
+        #expect(quota.statusText == "7 of 7 free scans left")
         #expect(quota.entitlementJWS == nil)
 
         quota.recordScan()
-        #expect(quota.remaining == 4)
-        #expect(quota.statusText == "4 of 5 free scans left")
+        #expect(quota.remaining == 6)
+        #expect(quota.statusText == "6 of 7 free scans left")
         #expect(ledger.tally().recent == [now])
-        #expect(ScanQuota(ledger: ledger, entitlements: FakeEntitlements(), trialScans: 5, now: { now }).remaining == 4, "read back from the Keychain")
+        #expect(ScanQuota(ledger: ledger, entitlements: FakeEntitlements(), trialScans: 7, now: { now }).remaining == 6, "read back from the Keychain")
         #expect(ScanQuota(ledger: ledger, entitlements: FakeEntitlements(), now: { now }).remaining == ScanAllowance.trialScans - 1, "the app's default")
     }
 
-    @Test("Five scans end the trial for good — a year later it is still spent")
+    @Test("Seven scans end the trial for good — a year later it is still spent")
     func trialNeverReturns() throws {
-        let (quota, ledger, _) = try makeQuota(tally: ScanTally(total: 5))
+        let (quota, ledger, _) = try makeQuota(tally: ScanTally(total: 7))
         defer { try? ledger.clear() }
         #expect(!quota.canScan)
         #expect(quota.remaining == 0)
         #expect(quota.statusText == "No free scans left")
         #expect(quota.nextScanAt == nil, "nothing to wait for")
 
-        let later = try makeQuota(tally: ScanTally(total: 5), now: now.addingTimeInterval(365 * day))
+        let later = try makeQuota(tally: ScanTally(total: 7), now: now.addingTimeInterval(365 * day))
         defer { try? later.1.clear() }
         #expect(!later.0.canScan)
     }
 
     @Test("Subscribed: scans freely, sends the entitlement, and the trial keeps counting underneath")
     func subscribed() throws {
-        let (quota, ledger, entitlements) = try makeQuota(tally: ScanTally(total: 4), subscribed: true)
+        let (quota, ledger, entitlements) = try makeQuota(tally: ScanTally(total: 6), subscribed: true)
         defer { try? ledger.clear() }
         #expect(quota.canScan)
         #expect(quota.statusText == "Enough for the week")
         #expect(quota.entitlementJWS == "a.b.c")
         quota.recordScan()
-        #expect(ledger.tally().total == 5)
+        #expect(ledger.tally().total == 7)
 
         entitlements.isSubscribed = false
         entitlements.entitlementJWS = nil
@@ -126,7 +126,7 @@ struct ScanQuotaTests {
 
     @Test("A free user never meets the weekly ceiling — the trial is smaller than a week's worth")
     func trialIsTheOnlyFreeGate() throws {
-        let (quota, ledger, _) = try makeQuota(tally: ScanTally(total: 4, recent: (1...4).map { now.addingTimeInterval(-Double($0) * 60) }))
+        let (quota, ledger, _) = try makeQuota(tally: ScanTally(total: 6, recent: (1...6).map { now.addingTimeInterval(-Double($0) * 60) }))
         defer { try? ledger.clear() }
         #expect(quota.canScan)
         #expect(quota.nextScanAt == nil)

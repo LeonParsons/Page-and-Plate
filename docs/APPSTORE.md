@@ -77,7 +77,7 @@ This is for books, not browsers. Page & Plate does not import recipes from websi
 
 TRY IT FREE
 
-Your first five scans are free. A scan is one photographed recipe; a failed read does not count. A monthly or yearly subscription covers everything you cook in a week, and you can cancel any time from your Apple account settings.
+Your first seven scans are free. A scan is one photographed recipe; a failed read does not count. A monthly or yearly subscription covers everything you cook in a week, and you can cancel any time from your Apple account settings.
 ```
 
 ## What's New — 4000 max (version 1.0)
