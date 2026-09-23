@@ -417,3 +417,9 @@ Not built, and not next; recorded so it is not re-argued from scratch. Leon's ca
 - **Meal rows read as one phrase** — "Chickpea arrabbiata, rated 4 of 5, LEON Happy Curries, p. 110" — instead of three separate stops. The stepper stays its own element so it is still operable.
 - **Large type checked on a real iPad at the largest accessibility size** across the recipe screen, export sheet, Settings, Review and the paywall. Nothing broke. Worth noting this is the second time the iPad has earned its keep today.
 - **Not done: a deliberate VoiceOver session.** The nomination's accessibility paragraph is a claim made to Apple, so it stays do-not-send until someone has navigated the export sheet with VoiceOver on and heard the states. The fixes above were made without hearing them.
+
+### 2026-09-23 · Phase 4 accepted, and the grocery question answered
+
+- **Accepted on the iPad**, every leg: denied permission shows guidance with Share still working, export at 1 portion, titles and notes to the SPEC §8 format, staples arriving unticked, a second export adding duplicates without error, and the document camera — the one leg no simulator can test.
+- **The Groceries-type list sections our titles correctly.** This is the open question from the Phase 4 notes above (line ~184): the conversion needs an iCloud account, so it had never been observed, and the whole "ingredient name leads the title" decision rested on it. Reminders sorts our items into its own categories as intended. **The name-first title format is now confirmed rather than assumed** — it is load-bearing, so do not reorder it.
+- Phase 4 had been open since the project had no paid account and no second device. It closed the same day the iPad arrived, alongside the Phase 3 sidebar bug the iPad also exposed — twice in one day that running on real hardware found what no test did.

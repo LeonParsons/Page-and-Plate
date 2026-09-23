@@ -217,7 +217,7 @@ struct RecipeYield: Codable, Equatable {
 
 **Phase 4 — Export**
 - Export sheet, Reminders permission flow, list picker, create "Shopping" list, add reminders, share text, settings screen.
-- ✅ On a physical iPhone: export a recipe at 1 portion; titles and notes match the formatting rules; staples arrive unticked; exporting again adds duplicates without error; denied permission shows guidance and Share still works. Grocery-list section behaviour noted in `docs/DECISIONS.md`.
+- ✅ On a physical iPhone: export a recipe at 1 portion; titles and notes match the formatting rules; staples arrive unticked; exporting again adds duplicates without error; denied permission shows guidance and Share still works. Grocery-list section behaviour noted in `docs/DECISIONS.md`. **Accepted 2026-09-23** on the iPad: all six legs passed, including the document camera and — observed for the first time — a Groceries-type list sectioning our name-first titles correctly.
 
 **Phase 5 — Planner (v0.3)**
 - `PlanDay`/`PlanWeek` in `RecipeCore`; `PlannedMeal` model with a lightweight migration of existing stores; `PlanEditor`; Plan tab (week view, add from library or scan, portions per meal, move/reorder/remove, week navigation, clear week); "Add to plan…" on the recipe; welcome and splash copy.
