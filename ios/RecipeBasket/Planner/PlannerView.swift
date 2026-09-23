@@ -287,17 +287,23 @@ struct PlannedMealRow: View {
         }
     }
 
+    /// Decorative: the title beside it says what the meal is, and a photo of a cookbook page has nothing
+    /// useful to announce.
     @ViewBuilder private var thumbnail: some View {
-        if let image = data.thumbnail {
-            PageThumbnail(data: image)
-                .frame(width: 44, height: 56)
-        } else {
-            RoundedRectangle(cornerRadius: 6)
-                .fill(Color.secondary.opacity(0.2))
-                .frame(width: 44, height: 56)
+        Group {
+            if let image = data.thumbnail {
+                PageThumbnail(data: image)
+            } else {
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(Color.secondary.opacity(0.2))
+            }
         }
+        .frame(width: 44, height: 56)
+        .accessibilityHidden(true)
     }
 
+    /// Combined, so it reads as "Chickpea arrabbiata, rated 4 of 5, LEON Happy Curries, p. 110" rather than
+    /// three separate stops.
     private var details: some View {
         VStack(alignment: .leading, spacing: 3) {
             Text(data.title)
@@ -313,6 +319,7 @@ struct PlannedMealRow: View {
                     .lineLimit(1)
             }
         }
+        .accessibilityElement(children: .combine)
     }
 
     private var portions: some View {

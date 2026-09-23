@@ -85,6 +85,7 @@ struct WelcomeView: View {
                 .font(.title2)
                 .foregroundStyle(Brand.tomato)
                 .frame(width: 32)
+                .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 3) {
                 Text(title)
                     .font(.headline)

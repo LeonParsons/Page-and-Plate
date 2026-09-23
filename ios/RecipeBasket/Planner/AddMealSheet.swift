@@ -117,8 +117,10 @@ struct RecipeLibraryRow: View {
             Image(systemName: "plus.circle")
                 .foregroundStyle(Color.accentColor)
                 .font(.title3)
+                .accessibilityHidden(true)
         }
         .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
     }
 
     private var yieldText: String {

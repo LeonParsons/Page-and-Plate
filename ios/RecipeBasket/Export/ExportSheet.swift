@@ -120,6 +120,7 @@ struct ExportSheet: View {
                                 Image(systemName: model.isTicked(row.id) ? "checkmark.circle.fill" : "circle")
                                     .foregroundStyle(model.isTicked(row.id) ? Color.accentColor : Color.secondary)
                                     .imageScale(.large)
+                                    .accessibilityHidden(true)   // the tick is the row's value, below
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(row.title)
                                         .foregroundStyle(.primary)
@@ -140,6 +141,14 @@ struct ExportSheet: View {
                         // Without .plain the Button tints its whole label, so every row reads as a link and the
                         // .primary / .secondary styles above never show.
                         .buttonStyle(.plain)
+                        // One element saying what it is and whether it is ticked. Read as four separate
+                        // pieces — circle, title, caption, "staple" — the one thing that matters, the tick,
+                        // is the part VoiceOver cannot see.
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel(accessibilityLabel(for: row))
+                        .accessibilityValue(model.isTicked(row.id) ? "Ticked" : "Not ticked")
+                        .accessibilityAddTraits(model.isTicked(row.id) ? [.isButton, .isSelected] : .isButton)
+                        .accessibilityHint("Double tap to \(model.isTicked(row.id) ? "leave out" : "include")")
                     }
                 } header: {
                     if section.name == nil {
@@ -158,6 +167,13 @@ struct ExportSheet: View {
             }
         }
         .paperBackground()
+    }
+
+    /// "Butter beans — 2 tins (400g), from Smoky butter beans (Wed), staple"
+    private func accessibilityLabel(for row: ExportContent.Row) -> String {
+        [row.title, row.caption, row.isStaple ? "staple" : nil]
+            .compactMap { $0 }
+            .joined(separator: ", ")
     }
 
     private var accessDenied: some View {
