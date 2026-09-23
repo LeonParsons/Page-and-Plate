@@ -3,10 +3,11 @@ import SwiftUI
 /// The app's two tabs: the week you're cooking, and the library it draws on.
 struct RootView: View {
     var remindersStore: any RemindersStoring = EventKitRemindersStore()
+    var guestPlan: SharedPlanContext?
 
     var body: some View {
         TabView {
-            PlannerView(remindersStore: remindersStore)
+            PlannerView(remindersStore: remindersStore, guestPlan: guestPlan)
                 .tabItem { Label("Plan", systemImage: "calendar") }
             HomeView(remindersStore: remindersStore)
                 .tabItem { Label("Recipes", systemImage: "book.closed") }

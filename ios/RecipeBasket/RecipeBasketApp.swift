@@ -9,6 +9,7 @@ struct RecipeBasketApp: App {
     @State private var subscriptions: SubscriptionStore
     @State private var quota: ScanQuota
     @State private var sharedPlan = SharedWeekPublisher()
+    private let guestPlan = SharedPlanContext.make()
     private let remindersStore = EventKitRemindersStore()
     private let container: ModelContainer
 
@@ -27,13 +28,14 @@ struct RecipeBasketApp: App {
     var body: some Scene {
         WindowGroup {
             LaunchGate {
-                RootView(remindersStore: remindersStore)
+                RootView(remindersStore: remindersStore, guestPlan: guestPlan)
             }
             .environment(exportSettings)
             .environment(subscriptions)
             .environment(quota)
             .environment(sharedPlan)
             .task { await subscriptions.start() }
+            .task { await guestPlan?.start() }
         }
         .modelContainer(container)
     }

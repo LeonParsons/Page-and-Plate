@@ -4,7 +4,15 @@ import SwiftUI
 
 /// The Plan tab: one week at a time, any number of meals per day (SPEC §4 Plan).
 struct PlannerView: View {
+    /// Whose week the Plan tab is showing. A guest has their own plan *and* the one shared with them; theirs
+    /// is never displaced (SPEC §10).
+    enum Scope: Hashable {
+        case mine
+        case shared
+    }
+
     var remindersStore: any RemindersStoring = EventKitRemindersStore()
+    var guestPlan: SharedPlanContext?
 
     @Environment(\.modelContext) private var modelContext
     @Environment(ExportSettings.self) private var exportSettings
@@ -16,6 +24,18 @@ struct PlannerView: View {
     @State private var isShopping = false
     @State private var isShowingSettings = false
     @State private var isConfirmingClear = false
+    @State private var scope: Scope = .mine
+
+    private var isGuest: Bool {
+        guestPlan?.membership.isGuest ?? false
+    }
+
+    /// "This week" on your own plan; "Leon · This week" on someone else's, so it is never ambiguous whose
+    /// meals you are looking at.
+    private var navigationTitle: String {
+        guard scope == .shared, let owner = guestPlan?.membership.ownerTitle else { return week.title }
+        return "\(owner) · \(week.title)"
+    }
 
     private var weekMeals: [PlannedMeal] {
         allMeals.filter { !$0.isDeleted && week.contains($0.day) }
@@ -28,8 +48,24 @@ struct PlannerView: View {
 
     var body: some View {
         NavigationStack {
-            WeekView(week: week, meals: weekMeals, remindersStore: remindersStore, onAdd: { addingTo = $0 }, onDeleteRecipe: deleteRecipe)
-                .navigationTitle(week.title)
+            Group {
+                if scope == .shared, let guestPlan {
+                    SharedWeekView(week: week, client: guestPlan.client)
+                        .modelContainer(guestPlan.container)
+                } else {
+                    WeekView(week: week, meals: weekMeals, remindersStore: remindersStore, onAdd: { addingTo = $0 }, onDeleteRecipe: deleteRecipe)
+                }
+            }
+                .navigationTitle(navigationTitle)
+                .toolbarTitleMenu {
+                    if isGuest {
+                        Picker("Whose week", selection: $scope) {
+                            Text("My week").tag(Scope.mine)
+                            Text("\(guestPlan?.membership.ownerTitle ?? "Shared")'s week").tag(Scope.shared)
+                        }
+                        .pickerStyle(.inline)
+                    }
+                }
                 .toolbar {
                     ToolbarItemGroup(placement: .topBarLeading) {
                         Button("Previous week", systemImage: "chevron.left") { week = week.previous() }
@@ -40,10 +76,12 @@ struct PlannerView: View {
                     }
                     ToolbarItem(placement: .primaryAction) {
                         Button("Shop", systemImage: "cart") { isShopping = true }
-                            .disabled(shoppable.isEmpty)
+                            .disabled(shoppable.isEmpty || scope == .shared)
                     }
-                    ToolbarItem(placement: .secondaryAction) {
-                        Button("Clear week…", systemImage: "calendar.badge.minus", role: .destructive) { isConfirmingClear = true }
+                    if scope == .mine {
+                        ToolbarItem(placement: .secondaryAction) {
+                            Button("Clear week…", systemImage: "calendar.badge.minus", role: .destructive) { isConfirmingClear = true }
+                        }
                     }
                     ToolbarItem(placement: .secondaryAction) {
                         Button("Settings", systemImage: "gearshape") { isShowingSettings = true }
@@ -113,7 +151,7 @@ struct WeekView: View {
                             NavigationLink {
                                 RecipeDetailView(recipe: recipe, meal: meal, remindersStore: remindersStore) { onDeleteRecipe(recipe) }
                             } label: {
-                                PlannedMealRow(meal: meal, recipe: recipe) { editor.setPortions(meal, $0) }
+                                PlannedMealRow(data: MealRowData(meal: meal, recipe: recipe)) { editor.setPortions(meal, $0) }
                             }
                             .swipeActions(edge: .trailing) {
                                 Button("Remove", systemImage: "trash", role: .destructive) { try? editor.remove(meal) }
@@ -172,12 +210,48 @@ private struct DayHeader: View {
     }
 }
 
+/// Everything a meal row draws, as plain values — so the owner's week and a guest's shared week render
+/// identically, including the accessibility-size layout, without the row knowing which store it came from.
+struct MealRowData: Equatable {
+    var title: String
+    var thumbnail: Data?
+    var rating: Int?
+    var sourceText: String?
+    var portions: Int
+    var yieldUnit: String
+    /// The owner's "added to Reminders" tick. Always false on a shared week: the export stays personal.
+    var isExported: Bool = false
+
+    @MainActor
+    init(meal: PlannedMeal, recipe: Recipe) {
+        let page = recipe.orderedPages.first
+        self.init(
+            title: recipe.title,
+            thumbnail: (page?.isDeleted == false) ? page?.imageData : nil,
+            rating: recipe.rating,
+            sourceText: recipe.sourceText,
+            portions: meal.portions,
+            yieldUnit: recipe.yield.unit,
+            isExported: meal.exportedAt != nil
+        )
+    }
+
+    init(title: String, thumbnail: Data?, rating: Int?, sourceText: String?, portions: Int, yieldUnit: String, isExported: Bool = false) {
+        self.title = title
+        self.thumbnail = thumbnail
+        self.rating = rating
+        self.sourceText = sourceText
+        self.portions = portions
+        self.yieldUnit = yieldUnit
+        self.isExported = isExported
+    }
+}
+
 /// Thumbnail, title, rating if any, the meal's own portions (with a stepper), and where the recipe lives.
 struct PlannedMealRow: View {
     @Environment(\.dynamicTypeSize) private var typeSize
 
-    let meal: PlannedMeal
-    let recipe: Recipe
+    let data: MealRowData
     let onPortions: (Int) -> Void
 
     var body: some View {
@@ -212,8 +286,8 @@ struct PlannedMealRow: View {
     }
 
     @ViewBuilder private var thumbnail: some View {
-        if let first = recipe.orderedPages.first, !first.isDeleted {
-            PageThumbnail(data: first.imageData)
+        if let image = data.thumbnail {
+            PageThumbnail(data: image)
                 .frame(width: 44, height: 56)
         } else {
             RoundedRectangle(cornerRadius: 6)
@@ -224,13 +298,13 @@ struct PlannedMealRow: View {
 
     private var details: some View {
         VStack(alignment: .leading, spacing: 3) {
-            Text(recipe.title)
+            Text(data.title)
                 .font(.headline)
                 .lineLimit(2)
-            if let rating = recipe.rating {
+            if let rating = data.rating {
                 RatingStars(rating: rating)
             }
-            if let source = recipe.sourceText {
+            if let source = data.sourceText {
                 Text(source)
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -241,9 +315,9 @@ struct PlannedMealRow: View {
 
     private var portions: some View {
         HStack(spacing: 4) {
-            Text("for \(ShoppingExport.portionsText(targetYield: meal.portions, yieldUnit: recipe.yield.unit))")
+            Text("for \(ShoppingExport.portionsText(targetYield: data.portions, yieldUnit: data.yieldUnit))")
                 .lineLimit(1)
-            if meal.exportedAt != nil {
+            if data.isExported {
                 Image(systemName: "checkmark.circle.fill")
                     .foregroundStyle(.green)
                     .accessibilityLabel("Added to Reminders")
@@ -254,7 +328,7 @@ struct PlannedMealRow: View {
     }
 
     private var stepper: some View {
-        Stepper("Portions", value: Binding(get: { meal.portions }, set: { onPortions($0) }), in: Portions.range)
+        Stepper("Portions", value: Binding(get: { data.portions }, set: { onPortions($0) }), in: Portions.range)
             .labelsHidden()
     }
 }

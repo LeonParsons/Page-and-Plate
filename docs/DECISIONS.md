@@ -381,3 +381,13 @@ Not built, and not next; recorded so it is not re-argued from scratch. Leon's ca
 - **Re-inviting reuses the existing share.** `shareForInviting()` fetches the zone's share before creating one, so "Manage sharing…" twice cannot produce two plans.
 - **`publicPermission = .none`**: invited people only, never anyone who comes by the link.
 - **Not verifiable here.** Accepting an invite needs a *second Apple Account*; Leon's iPhone and iPad share his, so sending himself an invite exercises nothing. The acceptance path stays unproven until Sara's phone is present — recorded so it is not mistaken for tested.
+
+### 2026-09-23 · Phase 10 step 3: the guest's week
+
+- **A second, local-only SwiftData store** (`shared-plan.store`, `cloudKitDatabase: .none`) holds the guest's copy. Not the guest's own store: the owner's recipes must not join the guest's library, must not sync to the guest's iCloud, and must vanish when the share ends. Keeping it in SwiftData still buys offline access and `@Query`.
+- **`SharedMeal` references its recipe by id, not by relationship.** A guest can receive a meal before the recipe it names, and a dangling relationship is worse than a lookup that comes good a second later.
+- **`PlannedMealRow` now takes `MealRowData`, plain values.** Both weeks render through the same row, so the accessibility-size two-row layout fixed earlier today serves the guest too, rather than being quietly reimplemented and quietly regressed.
+- **The guest's editing keeps the owner's invariants.** `SharedWeekClient.add/move/remove` reindex each day to 0…n-1 exactly as `PlanEditor` does, and clamp portions the same way — a guest leaving holes in the ordering would break it for both of them. Five tests hold that.
+- **`isExported` is always false on a shared week.** The row can show the owner's "added to Reminders" tick, and on the shared week it never does: the export is personal both ways.
+- **The switcher lives in `toolbarTitleMenu`** and only appears for a guest, so nothing changes for someone who has never been invited. The title reads "Leon · This week" when looking at someone else's, so whose meals you are editing is never ambiguous. Shop and Clear week stay disabled on a shared week for now — step 4's fold-back has to land before the guest's Shop is meaningful.
+- **No "Scan a recipe" in `AddSharedMealSheet`, and that is the feature** (SPEC §10). The guest's own library and scanning are untouched; they simply cannot add to the owner's, so a shared week can never spend an extraction the owner did not ask for.
