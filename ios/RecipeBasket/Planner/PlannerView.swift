@@ -174,48 +174,87 @@ private struct DayHeader: View {
 
 /// Thumbnail, title, rating if any, the meal's own portions (with a stepper), and where the recipe lives.
 struct PlannedMealRow: View {
+    @Environment(\.dynamicTypeSize) private var typeSize
+
     let meal: PlannedMeal
     let recipe: Recipe
     let onPortions: (Int) -> Void
 
     var body: some View {
-        HStack(spacing: 12) {
-            if let first = recipe.orderedPages.first, !first.isDeleted {
-                PageThumbnail(data: first.imageData)
-                    .frame(width: 44, height: 56)
-            } else {
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(Color.secondary.opacity(0.2))
-                    .frame(width: 44, height: 56)
-            }
-            VStack(alignment: .leading, spacing: 3) {
-                Text(recipe.title)
-                    .font(.headline)
-                    .lineLimit(2)
-                if let rating = recipe.rating {
-                    RatingStars(rating: rating)
+        if typeSize.isAccessibilitySize {
+            // Side by side, the portions and the stepper cannot shrink, so they crush the title to a few
+            // letters. At these sizes the row becomes two rows instead.
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .top, spacing: 12) {
+                    thumbnail
+                    details
                 }
-                HStack(spacing: 4) {
-                    Text("for \(ShoppingExport.portionsText(targetYield: meal.portions, yieldUnit: recipe.yield.unit))")
-                    if meal.exportedAt != nil {
-                        Image(systemName: "checkmark.circle.fill")
-                            .foregroundStyle(.green)
-                            .accessibilityLabel("Added to Reminders")
-                    }
-                }
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                if let source = recipe.sourceText {
-                    Text(source)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
+                HStack(spacing: 12) {
+                    portions
+                    Spacer(minLength: 4)
+                    stepper
                 }
             }
-            Spacer(minLength: 4)
-            Stepper("Portions", value: Binding(get: { meal.portions }, set: { onPortions($0) }), in: Portions.range)
-                .labelsHidden()
+        } else {
+            HStack(spacing: 12) {
+                thumbnail
+                details
+                Spacer(minLength: 4)
+                // The portions sit above the stepper rather than in the left column: they read as one
+                // control, and it takes a line out of the tallest column, so every row is shorter.
+                VStack(alignment: .trailing, spacing: 4) {
+                    portions
+                    stepper
+                }
                 .fixedSize()
+            }
         }
+    }
+
+    @ViewBuilder private var thumbnail: some View {
+        if let first = recipe.orderedPages.first, !first.isDeleted {
+            PageThumbnail(data: first.imageData)
+                .frame(width: 44, height: 56)
+        } else {
+            RoundedRectangle(cornerRadius: 6)
+                .fill(Color.secondary.opacity(0.2))
+                .frame(width: 44, height: 56)
+        }
+    }
+
+    private var details: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(recipe.title)
+                .font(.headline)
+                .lineLimit(2)
+            if let rating = recipe.rating {
+                RatingStars(rating: rating)
+            }
+            if let source = recipe.sourceText {
+                Text(source)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+        }
+    }
+
+    private var portions: some View {
+        HStack(spacing: 4) {
+            Text("for \(ShoppingExport.portionsText(targetYield: meal.portions, yieldUnit: recipe.yield.unit))")
+                .lineLimit(1)
+            if meal.exportedAt != nil {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundStyle(.green)
+                    .accessibilityLabel("Added to Reminders")
+            }
+        }
+        .font(.subheadline)
+        .foregroundStyle(.secondary)
+    }
+
+    private var stepper: some View {
+        Stepper("Portions", value: Binding(get: { meal.portions }, set: { onPortions($0) }), in: Portions.range)
+            .labelsHidden()
     }
 }
