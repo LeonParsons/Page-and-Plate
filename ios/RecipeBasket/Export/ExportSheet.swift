@@ -207,10 +207,18 @@ struct ExportSheet: View {
 }
 
 /// The user's Reminders lists grouped by account, plus "Create 'Shopping' list" (SPEC §4, §8).
+///
+/// The Groceries tip lives here and in Settings. EventKit cannot create or detect a Groceries-type list, so
+/// the conversion is the user's to make — and without it they never see the sectioning the whole
+/// "ingredient name first" title format exists to feed.
 struct ReminderListPicker: View {
     @Bindable var model: ExportModel
     @Environment(\.dismiss) private var dismiss
     @State private var errorMessage: String?
+
+    /// Confirmed on a device 2026-09-23: with the list set to Groceries, Reminders sorts our items into its
+    /// own aisles correctly.
+    static let groceriesTip = "In Reminders, open the list, tap List Info and set List Type to Groceries. Reminders then sorts the items into aisles — Produce, Canned Goods and so on — which is what \(Brand.name) names items to suit."
 
     private var bySource: [(source: String, lists: [ReminderList])] {
         let grouped = Dictionary(grouping: model.lists, by: \.sourceTitle)
@@ -253,6 +261,8 @@ struct ReminderListPicker: View {
                         } label: {
                             Label("Create “Shopping” list", systemImage: "plus")
                         }
+                    } footer: {
+                        Text(Self.groceriesTip)
                     }
                 }
             }

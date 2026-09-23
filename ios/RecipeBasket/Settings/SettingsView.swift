@@ -68,7 +68,7 @@ struct SettingsView: View {
                 } header: {
                     Text("Reminders")
                 } footer: {
-                    Text("The list chosen at export is remembered as the default.")
+                    Text("The list chosen at export is remembered as the default.\n\n\(ReminderListPicker.groceriesTip)")
                 }
 
                 Section {
