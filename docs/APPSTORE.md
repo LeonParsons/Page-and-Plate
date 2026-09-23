@@ -150,9 +150,13 @@ until you have sat with the phone and checked.
 
 ## Still outstanding
 
-1. Reserve **Page & Plate** in App Store Connect.
-2. Set `ScanAllowance.freeScans` and `FREE_SCANS` back to **20**, or the description is a lie.
-3. Real prices for both plans.
+1. ~~Reserve **Page & Plate** in App Store Connect.~~ Done 2026-09-23, against the existing bundle id
+   `com.leonparsons.RecipeBasket`. The hold lapses after 90 days without a build, so **6 January 2027**
+   is the date a build has to exist by.
+2. Set `ScanAllowance.freeScans` and `FREE_SCANS` back to **20**, or the description is a lie — and
+   reshoot frame 1, which reads "17 of 20 free scans left" from a build made at the release value.
+3. Real prices for both plans, and the two subscriptions created in App Store Connect with the product
+   ids above.
 4. Real terms and privacy URLs — `Subscription/Products.swift` still points at example.com.
-5. Screenshots, once the cookbook page is printed and photographed.
+5. ~~Screenshots.~~ Nine frames shot 2026-09-23; see `marketing/README.md` for what is still weak.
 6. A VoiceOver and large-type pass, before the accessibility paragraph goes in the nomination.

@@ -337,3 +337,9 @@ Not built, and not next; recorded so it is not re-argued from scratch. Leon's ca
 - Leon's call from looking at the screenshots: move "for N servings" out of the left column and put it above the +/− stepper. It reads as one control instead of a stray line, and it takes a line out of the *tallest* column, so the whole row shrinks. Measured: **180 → 159 pt** for a rated row, 163 → 142 pt otherwise, about 13% off every card.
 - **It broke at accessibility text sizes**, which is how the change earned its keep. Side by side, neither the portions text nor the stepper can shrink, so at `accessibility-large` they crushed the title to "Chi ck…" and the thumbnail to a sliver. The old layout was tight there too; the wider right column made it unusable.
 - `PlannedMealRow` now switches on `dynamicTypeSize.isAccessibilitySize`: two rows at accessibility sizes (thumbnail and details, then portions and stepper), side by side otherwise. The pieces are computed properties so both layouts share one definition. Checked at `large` and `accessibility-large`.
+
+### 2026-09-23 · The name is reserved
+
+- **Page & Plate** is reserved in App Store Connect, against the existing bundle id `com.leonparsons.RecipeBasket`. The App Store name and the bundle id are independent fields; Apple never shows the id to a user, so the internals keep the old name as decided above.
+- **The bundle id is now fixed.** It cannot be changed once an app record exists, only deleted and recreated before the first upload. That was the last cheap moment to rename, and we deliberately did not — the id is welded to the provisioning profile on both phones, the Keychain scan ledger and the Worker's per-device KV keys.
+- **The hold lapses after 90 days without a build: 6 January 2027.** Uploading anything to TestFlight resets it.
