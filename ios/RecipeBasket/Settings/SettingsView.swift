@@ -1,3 +1,4 @@
+import CloudKit
 import RecipeCore
 import SwiftUI
 
@@ -15,6 +16,8 @@ struct SettingsView: View {
     @State private var isShowingPaywall = false
     @State private var isManagingSubscription = false
     @State private var cloud = CloudAccount()
+    /// Owned here, not by `SharePlanSection`: the sharing sheet has to hang off the `Form`, like the paywall.
+    @State private var sharePresentation: SharePresentation?
     @AppStorage(WelcomeView.hasSeenKey) private var hasSeenWelcome = false
 
     var body: some View {
@@ -52,7 +55,7 @@ struct SettingsView: View {
                     Text(cloud.detailText)
                 }
 
-                SharePlanSection()
+                SharePlanSection(presenting: $sharePresentation)
 
                 Section {
                     if access == .fullAccess {
@@ -118,6 +121,10 @@ struct SettingsView: View {
             .task { await cloud.refresh() }
             .sheet(isPresented: $isShowingPaywall) {
                 PaywallView()
+            }
+            .sheet(item: $sharePresentation) { presentation in
+                CloudSharingSheet(share: presentation.share, container: CKContainer(identifier: AppModelContainer.cloudKitContainerID))
+                    .ignoresSafeArea()
             }
             .manageSubscriptionsSheet(isPresented: $isManagingSubscription)
         }
