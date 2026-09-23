@@ -70,6 +70,34 @@ struct ExportContent {
         )
     }
 
+    // MARK: A shared week
+
+    /// The same list, built from a guest's projection of someone else's week.
+    ///
+    /// Nothing is stamped when it is added: the export is personal (SPEC §10), so a guest's shopping must not
+    /// mark the owner's meals — and there is nothing of the owner's here to mark.
+    static func sharedWeek(_ week: PlanWeek, exports: [PlannedMealExport], staples: [String]) -> ExportContent {
+        let exportsByID = Dictionary(uniqueKeysWithValues: exports.map { ($0.id, $0) })
+        let lines = WeekShopping.lines(for: exports, staples: staples)
+        let lineByID = Dictionary(uniqueKeysWithValues: lines.map { ($0.id, $0) })
+        let rows = lines.map { line in
+            Row(id: line.id, title: line.title, notes: line.notes, isStaple: line.isStaple,
+                caption: line.contributors.compactMap { exportsByID[$0] }.map { "\($0.recipeTitle) (\($0.weekdayText))" }.joined(separator: ", "))
+        }
+        let weekTitle = week.weekOfText
+
+        return ExportContent(
+            subject: weekTitle,
+            heading: "\(exports.count == 1 ? "1 meal" : "\(exports.count) meals") · \(week.rangeText)",
+            unnamedSectionTitle: "Shopping list",
+            sections: [IngredientSection(name: nil, rows: rows)],
+            shareText: { ticked in
+                WeekShopping.shareText(weekTitle: weekTitle, meals: exports, lines: ticked.compactMap { lineByID[$0.id] })
+            },
+            onAdded: { _ in }
+        )
+    }
+
     // MARK: A planned week
 
     /// Every meal of the week merged by `WeekShopping`; one list. Adding stamps each contributing meal and its

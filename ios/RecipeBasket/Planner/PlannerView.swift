@@ -50,7 +50,7 @@ struct PlannerView: View {
         NavigationStack {
             Group {
                 if scope == .shared, let guestPlan {
-                    SharedWeekView(week: week, client: guestPlan.client)
+                    SharedWeekView(week: week, client: guestPlan.client, remindersStore: remindersStore)
                         .modelContainer(guestPlan.container)
                 } else {
                     WeekView(week: week, meals: weekMeals, remindersStore: remindersStore, onAdd: { addingTo = $0 }, onDeleteRecipe: deleteRecipe)
@@ -74,9 +74,11 @@ struct PlannerView: View {
                             Button("Today") { week = PlanWeek(containing: PlanDay(.now)) }
                         }
                     }
-                    ToolbarItem(placement: .primaryAction) {
-                        Button("Shop", systemImage: "cart") { isShopping = true }
-                            .disabled(shoppable.isEmpty || scope == .shared)
+                    if scope == .mine {
+                        ToolbarItem(placement: .primaryAction) {
+                            Button("Shop", systemImage: "cart") { isShopping = true }
+                                .disabled(shoppable.isEmpty)
+                        }
                     }
                     if scope == .mine {
                         ToolbarItem(placement: .secondaryAction) {

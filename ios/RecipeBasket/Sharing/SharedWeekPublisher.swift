@@ -38,6 +38,11 @@ final class SharedWeekPublisher: NSObject {
     private var pendingRecipes: [UUID: SharedRecipeFields] = [:]
     private var pendingMeals: [UUID: SharedMealFields] = [:]
     private var pendingThumbnails: [UUID: Data] = [:]
+    /// The owner's context, for folding guest edits back into the real plan.
+    private var context: ModelContext?
+    /// Guards the echo: applying a guest's change saves the store, and that save must not republish it.
+    private var isApplyingRemote = false
+    private var watcher: Task<Void, Never>?
 
     init(containerID: String = AppModelContainer.cloudKitContainerID) {
         self.containerID = containerID
@@ -48,6 +53,20 @@ final class SharedWeekPublisher: NSObject {
 
     private var stateURL: URL {
         URL.applicationSupportDirectory.appending(path: "shared-plan-engine-state")
+    }
+
+    /// Republishes whenever the owner's own store changes, so a guest sees new recipes and moved meals
+    /// without the owner doing anything. Republishing everything is wasteful at a large library; at the size
+    /// this app holds it is not worth the bookkeeping to send less.
+    func watchLocalChanges(context: ModelContext) {
+        self.context = context
+        guard watcher == nil else { return }
+        watcher = Task { [weak self] in
+            for await _ in NotificationCenter.default.notifications(named: ModelContext.didSave) {
+                guard let self, !self.isApplyingRemote, self.engine != nil else { continue }
+                try? self.publish(from: context)
+            }
+        }
     }
 
     /// Brings the engine up. Safe to call more than once.
@@ -178,12 +197,34 @@ extension SharedWeekPublisher: CKSyncEngineDelegate {
             // Signing out takes the shared plan with it; nothing of the owner's library is lost.
             pendingRecipes.removeAll()
             pendingMeals.removeAll()
+        case .fetchedRecordZoneChanges(let changes):
+            foldBack(changes)
         case .sentRecordZoneChanges(let sent):
             for failed in sent.failedRecordSaves {
                 log.warning("record save failed: \(failed.error.localizedDescription, privacy: .public)")
             }
         default:
             break
+        }
+    }
+
+    /// A guest's edits, applied to the owner's real plan through the same rules `PlanEditor` keeps.
+    private func foldBack(_ changes: CKSyncEngine.Event.FetchedRecordZoneChanges) {
+        guard let context else { return }
+        isApplyingRemote = true
+        defer { isApplyingRemote = false }
+
+        for modification in changes.modifications
+        where modification.record.recordType == SharedWeekZone.RecordType.meal {
+            do {
+                try SharedWeekFoldBack.apply(SharedWeekRecords.mealFields(from: modification.record), context: context)
+            } catch {
+                log.warning("could not fold back a meal: \(error.localizedDescription, privacy: .public)")
+            }
+        }
+        for deletion in changes.deletions {
+            guard let id = UUID(uuidString: deletion.recordID.recordName) else { continue }
+            try? SharedWeekFoldBack.delete(mealID: id, context: context)
         }
     }
 

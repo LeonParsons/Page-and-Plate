@@ -20,6 +20,11 @@ struct ExportSheet: View {
         _model = State(initialValue: ExportModel(week: week, meals: meals, store: store, settings: settings))
     }
 
+    /// For a shared week, whose content is built from the guest's projection rather than from `PlannedMeal`s.
+    init(content: ExportContent, store: any RemindersStoring, settings: ExportSettings) {
+        _model = State(initialValue: ExportModel(content: content, store: store, settings: settings))
+    }
+
     var body: some View {
         NavigationStack {
             Group {

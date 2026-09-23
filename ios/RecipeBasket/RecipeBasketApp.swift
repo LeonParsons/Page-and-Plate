@@ -36,6 +36,7 @@ struct RecipeBasketApp: App {
             .environment(sharedPlan)
             .task { await subscriptions.start() }
             .task { await guestPlan?.start() }
+            .task { sharedPlan.watchLocalChanges(context: container.mainContext) }
         }
         .modelContainer(container)
     }

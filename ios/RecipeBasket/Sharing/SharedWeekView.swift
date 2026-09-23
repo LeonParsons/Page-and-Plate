@@ -7,10 +7,13 @@ import SwiftUI
 struct SharedWeekView: View {
     let week: PlanWeek
     let client: SharedWeekClient
+    let remindersStore: any RemindersStoring
 
     @Query(sort: [SortDescriptor(\SharedMeal.dayKey), SortDescriptor(\SharedMeal.order)]) private var allMeals: [SharedMeal]
     @Query private var recipes: [SharedRecipe]
     @State private var addingTo: PlanDay?
+    @State private var isShopping = false
+    @Environment(ExportSettings.self) private var exportSettings
 
     private var recipesByID: [UUID: SharedRecipe] {
         Dictionary(recipes.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
@@ -63,6 +66,33 @@ struct SharedWeekView: View {
         .paperBackground()
         .sheet(item: $addingTo) { day in
             AddSharedMealSheet(day: day, client: client)
+        }
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                // SPEC §10: the export stays personal — this puts the week in *the guest's* Reminders, and
+                // marks nothing on the owner's plan.
+                Button("Shop", systemImage: "cart") { isShopping = true }
+                    .disabled(weekExports.isEmpty)
+            }
+        }
+        .sheet(isPresented: $isShopping) {
+            ExportSheet(
+                content: .sharedWeek(week, exports: weekExports, staples: exportSettings.staples),
+                store: remindersStore,
+                settings: exportSettings
+            )
+        }
+    }
+
+    /// The week's meals as `RecipeCore` sees them, so the guest's list goes through exactly the same merge
+    /// and scaling as the owner's.
+    private var weekExports: [PlannedMealExport] {
+        let recipes = recipesByID
+        return byDay.keys.sorted().flatMap { day -> [PlannedMealExport] in
+            (byDay[day] ?? []).compactMap { meal in
+                guard let recipe = recipes[meal.recipeID] else { return nil }
+                return recipe.fields.mealExport(meal: meal.fields, dayText: day.shortText, weekdayText: day.weekdayText)
+            }
         }
     }
 
