@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import type { Extractor, ExtractOptions } from "./extract.ts";
 import { errorResponse } from "./errors.ts";
+import { makeVerifier, type EntitlementVerifier, type RejectionReason } from "./entitlement.ts";
 import { checkFreeQuota, checkWeeklyQuota, consumeDailyQuota, recordFreeScan, recordWeeklyScan } from "./quota.ts";
 import { ExtractRequestSchema } from "./schema.ts";
 
@@ -18,6 +19,10 @@ export type Bindings = {
   WEEKLY_SCANS?: string;
   WEEKLY_WINDOW_DAYS?: string;
   MAX_BODY_BYTES?: string;
+  /** "true" while the app is in development and TestFlight, where every purchase is Sandbox. */
+  ALLOW_SANDBOX_ENTITLEMENTS?: string;
+  /** Xcode's local StoreKit certificate authority, so simulator purchases verify (see entitlement.ts). */
+  XCODE_ROOT_FINGERPRINT?: string;
   QUOTA: KVNamespace;
 };
 
@@ -25,6 +30,8 @@ export type AppDeps = {
   extract: Extractor;
   /** Injectable clock for the quota's UTC day. */
   now?: () => Date;
+  /** Injectable so the tests can exercise the gate without Apple's certificates. */
+  verifyEntitlement?: EntitlementVerifier;
 };
 
 export const DEFAULT_MODEL = "claude-sonnet-5";
@@ -34,8 +41,12 @@ const DEFAULT_WEEKLY_SCANS = 25;
 const DEFAULT_WEEKLY_WINDOW_DAYS = 7;
 const DEFAULT_MAX_BODY_BYTES = 8 * 1024 * 1024;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-/** A compact JWS: three base64url segments. The shape the app's signed App Store transaction has. */
-const JWS = /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/;
+const BUNDLE_ID = "com.leonparsons.RecipeBasket";
+/** The two Unlimited plans, mirrored from `Subscription/Products.swift`. */
+const PRODUCT_IDS = [
+  "com.leonparsons.RecipeBasket.unlimited.monthly",
+  "com.leonparsons.RecipeBasket.unlimited.yearly",
+] as const;
 const EFFORTS = new Set(["low", "medium", "high", "xhigh", "max"]);
 
 function timingSafeEqual(a: string, b: string): boolean {
@@ -119,12 +130,28 @@ export function createApp(deps: AppDeps) {
       return errorResponse(c, "rate_limited", { limit, retryAfterSeconds: quota.retryAfterSeconds });
     }
 
-    // 6. The scan gate, in two halves. Without the app's signed subscription transaction it is the free trial —
-    // a lifetime count, so there is nothing to wait for. With one it is the week's ceiling, which the response
+    // 6. The scan gate, in two halves. Without a subscription Apple actually sold it is the free trial — a
+    // lifetime count, so there is nothing to wait for. With one it is the week's ceiling, which the response
     // reports only as a time, never as a number: the subscription promises enough for a week's cooking, and
-    // naming the figure invites counting against it (SPEC §9). The JWS is not yet verified here — it is trusted
-    // like the app key is — so this holds only until Phase 8 verifies it.
-    const entitled = JWS.test(c.req.header("x-entitlement") ?? "");
+    // naming the figure invites counting against it (SPEC §9).
+    //
+    // A header that fails to verify is simply not a subscription; it falls to the trial rather than earning
+    // its own error, so a patched client learns nothing about what it got wrong.
+    const header = c.req.header("x-entitlement") ?? "";
+    let rejection: RejectionReason | undefined;
+    const verify =
+      deps.verifyEntitlement ??
+      makeVerifier({
+        bundleId: BUNDLE_ID,
+        productIds: PRODUCT_IDS,
+        allowSandbox: c.env.ALLOW_SANDBOX_ENTITLEMENTS === "true",
+        rootFingerprint: c.env.XCODE_ROOT_FINGERPRINT,
+        now,
+        onReject: (reason) => {
+          rejection = reason;
+        },
+      });
+    const entitled = header !== "" && (await verify(header)) !== null;
     const freeScans = intSetting(c.env.FREE_SCANS, DEFAULT_FREE_SCANS);
     const weeklyScans = intSetting(c.env.WEEKLY_SCANS, DEFAULT_WEEKLY_SCANS);
     const weeklyWindowSeconds = intSetting(c.env.WEEKLY_WINDOW_DAYS, DEFAULT_WEEKLY_WINDOW_DAYS) * 24 * 60 * 60;
@@ -171,6 +198,9 @@ export function createApp(deps: AppDeps) {
         totalLatencyMs: Date.now() - startedAt,
         quotaUsed: quota.used,
         entitled,
+        // Only present when a header was sent and refused: a real subscriber failing verification has to be
+        // visible in production, not silently demoted to the trial.
+        ...(rejection ? { entitlementRejected: rejection } : {}),
       }),
     );
 

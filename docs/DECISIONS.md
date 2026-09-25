@@ -467,3 +467,41 @@ Not built, and not next; recorded so it is not re-argued from scratch. Leon's ca
   user-facing claim has gone ("removes the limit", "Unlimited cookbook scans", the status line "Unlimited
   scans"), but the name is itself a claim and App Review reads subscription names. Recorded as blocker 2 in
   `docs/APPSTORE.md`; the product ids stay as they are either way, since they are never shown.
+
+## Phase 8a — Verified entitlements
+
+### 2026-09-25 · The Worker checks Apple's signature instead of the shape of the string
+
+- **What was wrong.** The scan gate's test for a subscription was `JWS.test(header)` — a regular expression
+  for three base64url segments separated by dots. The string `a.b.c` passed it. Anyone who read the header
+  name out of the binary had the unlimited tier, billed to Leon's Anthropic account. SPEC §6 said so plainly
+  and had said so since Phase 7; this closes it.
+- **`app-store-server-api`, not Apple's own library.** `@apple/app-store-server-library` was the obvious
+  choice and the wrong one: it pulls `node-fetch`, `jsonwebtoken` and `jsrsasign`, and it requires
+  `appAppleId` in Production, which we do not have. `app-store-server-api` depends only on `jose`, and its
+  verification is about forty readable lines — chain dates, each certificate issued and signed by the next,
+  the root pinned by SHA-256 fingerprint, then the signature checked with the leaf's key.
+- **The deciding feature is the fingerprint override.** Xcode's local StoreKit configuration signs with a
+  certificate authority it generates per machine. Without being able to point the verifier at that root,
+  nothing bought in the simulator would verify and the only way to test would be the real App Store. It goes
+  in `.dev.vars` as `XCODE_ROOT_FINGERPRINT`, unset in production.
+- **What we gave up.** Apple's library does OCSP revocation checking of the signing certificates; this one
+  does not. The case that actually matters — a refunded or revoked *subscription* — is `revocationDate` in
+  the verified payload, which we check. A revoked Apple signing certificate is a risk taken knowingly.
+- **A failed verification is not an error.** It means "not a subscription", and the free trial answers as it
+  always did. A patched client gets 402 `free_quota_exhausted` like anyone out of scans, rather than a 401
+  telling it precisely what to forge next. The request log gains `entitlementRejected` with the reason, so a
+  genuine subscriber failing verification is visible rather than silently demoted.
+- **Sandbox is allowed, for now.** Every purchase in development and TestFlight is a Sandbox transaction, so
+  `ALLOW_SANDBOX_ENTITLEMENTS` has to be true to test at all. Left true in production it is a free
+  subscription for anyone with a sandbox account, so it is a release blocker in `docs/APPSTORE.md`.
+- **Tests sign their own certificates.** `scripts/make-test-pki.sh` generates two unrelated chains plus an
+  out-of-date leaf, committed under `test/fixtures/pki`, so the suite needs neither Apple nor a network. It
+  proves each check bites: wrong root, a leaf the intermediate never issued, a payload edited after signing,
+  another app's bundle id, a product we do not sell, an expiry in the past, a revocation date, and Sandbox
+  with the switch both ways. One test runs the **real** verifier rather than an injected one, so the exact
+  regression that started this — `a.b.c` buying the unlimited tier — is pinned.
+- **App Attest is split out as 8b.** Not for size: `DCAppAttestService.isSupported` is false in the
+  Simulator and on Apple silicon Macs, so it can only be exercised on a physical device against the 7-day
+  free-provisioning treadmill. 8a needed nothing but this machine, and holding it back would have bought
+  nothing. Until 8b lands, a patched app can still rotate its device id for fresh trials.

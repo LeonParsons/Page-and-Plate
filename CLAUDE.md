@@ -61,6 +61,7 @@ swift ios/Tools/RenderAppIcon.swift   # re-render the three 1024 app-icon PNGs a
 python3 docs/appstore-counts.py       # check every App Store field against Apple's character limits
 cd api && npm run eval         # extraction accuracy against fixtures/photos (both models; ≈ $1 per run)
 cd api && npm run deploy       # after `npx wrangler login`, a KV namespace id in wrangler.jsonc and the two secrets (see docs/DECISIONS.md)
+cd api && bash scripts/make-test-pki.sh   # regenerate the certificate chains entitlement.test.ts signs with (committed; they expire in 2046)
 # StoreKit: only Xcode's own launch path syncs RecipeBasket.storekit to the simulator, so under `xcodebuild test`
 # SKTestSession stays inert (error 3, purchases .notEntitled) and SubscriptionStoreTests record a known issue.
 # To exercise the real purchase lifecycle, run the tests from Xcode (Cmd-U).
@@ -86,7 +87,7 @@ Definition of done for any task: `swift test` in RecipeCore, the Xcode test run,
 7. **Fractions are fine.** ¼ of a tin is a valid output. Never round a count up to a whole item.
 8. **`RecipeCore` stays pure.** No UI, persistence, EventKit or network imports.
 9. **Export only adds reminders.** Never read back, update or delete existing reminders.
-9b. **The scan limits live in two places that must agree:** `ScanAllowance.trialScans` / `.weeklyScans` (app) and `FREE_SCANS` / `WEEKLY_SCANS` in `api/wrangler.jsonc` (Worker). The trial is **7 scans for the life of the device** — no window, no recovery. A subscription carries **25 in any rolling 7 days**, which is a real ceiling and is **never shown to the user**: not in the app, not in the Worker's error body. Tell someone when there is room again, never how many they had. The Worker does not yet verify `x-entitlement` — don't describe the paywall as tamper-proof until Phase 8 does.
+9b. **The scan limits live in two places that must agree:** `ScanAllowance.trialScans` / `.weeklyScans` (app) and `FREE_SCANS` / `WEEKLY_SCANS` in `api/wrangler.jsonc` (Worker). The trial is **7 scans for the life of the device** — no window, no recovery. A subscription carries **25 in any rolling 7 days**, which is a real ceiling and is **never shown to the user**: not in the app, not in the Worker's error body. Tell someone when there is room again, never how many they had. The Worker verifies `x-entitlement` against Apple's certificate chain (Phase 8a); it does **not** yet verify the device, so a patched app can still rotate its device id for fresh trials — don't call the paywall tamper-proof until App Attest (8b) lands.
 9c. **Every `@Model` property must stay CloudKit-legal.** No `@Attribute(.unique)`, a default value on every non-optional attribute, and every relationship optional. Break one and the store silently stops syncing — `CloudKitSchemaTests` catches it, including by loading a real mirrored container. Read a to-many relationship through its accessor (`orderedPages`, `meals`), not the optional property.
 10. **Check current Apple, Anthropic and Cloudflare docs** rather than relying on memory. Record any deviation from this file in `docs/DECISIONS.md`.
 

@@ -169,6 +169,10 @@ until you have sat with the phone and checked.
    **Still open: a deliberate VoiceOver session.** The accessibility paragraph in the nomination claims
    VoiceOver support to Apple, so it stays marked do-not-send until someone has actually navigated the
    export sheet with it and confirmed each row announces "Ticked" / "Not ticked".
-7. **Push the CloudKit schema to production.** It is created in the development environment on first run;
+7. **Set `ALLOW_SANDBOX_ENTITLEMENTS` to `"false"` in `api/wrangler.jsonc` and redeploy.** It is `"true"`
+   so that development and TestFlight purchases — which are always Sandbox transactions — verify at all.
+   Left true in production, an Apple sandbox account is a free unlimited subscription. This is the last
+   thing to flip before a public release, *after* TestFlight is finished with.
+8. **Push the CloudKit schema to production.** It is created in the development environment on first run;
    a build shipped against it would sync into nothing. App Store Connect → the iCloud container →
    Deploy Schema Changes.

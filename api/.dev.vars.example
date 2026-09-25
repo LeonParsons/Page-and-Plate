@@ -2,3 +2,10 @@
 ANTHROPIC_API_KEY=sk-ant-...
 # Shared secret the app sends as x-app-key. Any long random string.
 APP_KEY=change-me-to-a-long-random-string
+# Only for testing a purchase made through Xcode's local StoreKit configuration. Xcode signs those
+# transactions with a certificate authority it generates per machine, so the Worker has to pin that root
+# instead of Apple's or nothing bought in the simulator will verify. Leave it unset to pin Apple's root,
+# which is what production does — the two are mutually exclusive.
+# Get it from Xcode: open RecipeBasket.storekit, Editor ▸ Save Public Certificate, then
+#   openssl x509 -in StoreKitTestCertificate.cer -inform der -noout -fingerprint -sha256
+# XCODE_ROOT_FINGERPRINT=AA:BB:CC:...

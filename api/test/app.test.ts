@@ -128,7 +128,17 @@ describe("POST /extract", () => {
 
   describe("the scan gate (SPEC §9)", () => {
     const freeEnv = { ...testEnv, FREE_SCANS: "2", DAILY_LIMIT: "10" };
-    const jws = "eyJhbGciOiJFUzI1NiJ9.eyJ0cmFuc2FjdGlvbklkIjoiMSJ9.c2ln";
+    // Which half of the gate a request takes is all these tests are about; whether a signature holds up is
+    // `entitlement.test.ts`. So the verifier is injected and answers to one sentinel.
+    const jws = "a-transaction-that-verifies";
+    const verifyEntitlement = async (header: string) =>
+      header === jws
+        ? { productId: "com.leonparsons.RecipeBasket.unlimited.monthly", expiresAt: new Date("2027-01-01"), environment: "Production" }
+        : null;
+
+    beforeEach(() => {
+      app = createApp({ extract, verifyEntitlement });
+    });
 
     it("402 free_quota_exhausted after FREE_SCANS successful scans; failures don't count", async () => {
       const device = crypto.randomUUID();
@@ -146,7 +156,7 @@ describe("POST /extract", () => {
 
     it("the trial never comes back — a year later it is still spent", async () => {
       let clock = new Date("2026-09-01T12:00:00Z");
-      app = createApp({ extract, now: () => clock });
+      app = createApp({ extract, now: () => clock, verifyEntitlement });
       const device = crypto.randomUUID();
       expect((await post(app, { env: freeEnv, device })).status).toBe(200);
       expect((await post(app, { env: freeEnv, device })).status).toBe(200);
@@ -156,7 +166,7 @@ describe("POST /extract", () => {
       expect((await post(app, { env: freeEnv, device })).headers.get("retry-after")).toBeNull();
     });
 
-    it("a well-formed x-entitlement skips the trial (unverified for now); the daily cap still applies", async () => {
+    it("a verified x-entitlement skips the trial; the daily cap still applies", async () => {
       const device = crypto.randomUUID();
       const entitled = { headers: { "x-entitlement": jws } };
       for (let i = 0; i < 5; i++) {
@@ -166,17 +176,29 @@ describe("POST /extract", () => {
       expect((await post(app, { env: capped, device, ...entitled })).status).toBe(429);
     });
 
-    it("a malformed x-entitlement is ignored", async () => {
+    it("an x-entitlement that does not verify spends the trial like anyone else", async () => {
       const device = crypto.randomUUID();
-      const bad = { headers: { "x-entitlement": "not-a-jws" } };
+      const bad = { headers: { "x-entitlement": "not-a-transaction" } };
       expect((await post(app, { env: freeEnv, device, ...bad })).status).toBe(200);
       expect((await post(app, { env: freeEnv, device, ...bad })).status).toBe(200);
+      // And no error of its own: a patched client learns nothing about what it got wrong.
       expect((await post(app, { env: freeEnv, device, ...bad })).status).toBe(402);
+    });
+
+    it("the real verifier is what runs when none is injected", async () => {
+      // The regression this phase exists for. `a.b.c` matched the old gate's regex for three base64url
+      // segments and bought the unlimited tier; with Apple's chain actually checked it buys the trial.
+      const real = createApp({ extract });
+      const device = crypto.randomUUID();
+      const forged = { headers: { "x-entitlement": "a.b.c" } };
+      expect((await post(real, { env: freeEnv, device, ...forged })).status).toBe(200);
+      expect((await post(real, { env: freeEnv, device, ...forged })).status).toBe(200);
+      expect((await post(real, { env: freeEnv, device, ...forged })).status).toBe(402);
     });
 
     it("a subscription stops at the week's ceiling, and the reply says when — never how many", async () => {
       let clock = new Date("2026-09-21T12:00:00Z");
-      app = createApp({ extract, now: () => clock });
+      app = createApp({ extract, now: () => clock, verifyEntitlement });
       const device = crypto.randomUUID();
       const env = { ...freeEnv, WEEKLY_SCANS: "3", DAILY_LIMIT: "50" };
       const entitled = { headers: { "x-entitlement": jws } };
