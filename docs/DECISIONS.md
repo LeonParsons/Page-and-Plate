@@ -481,10 +481,20 @@ Not built, and not next; recorded so it is not re-argued from scratch. Leon's ca
   `appAppleId` in Production, which we do not have. `app-store-server-api` depends only on `jose`, and its
   verification is about forty readable lines — chain dates, each certificate issued and signed by the next,
   the root pinned by SHA-256 fingerprint, then the signature checked with the leaf's key.
-- **The deciding feature is the fingerprint override.** Xcode's local StoreKit configuration signs with a
-  certificate authority it generates per machine. Without being able to point the verifier at that root,
-  nothing bought in the simulator would verify and the only way to test would be the real App Store. It goes
-  in `.dev.vars` as `XCODE_ROOT_FINGERPRINT`, unset in production.
+- **The deciding feature is the fingerprint override.** Xcode's local StoreKit configuration signs with its
+  own authority, not Apple's. Without being able to point the verifier at that root, nothing bought in the
+  simulator would verify and the only way to test would be the real App Store. It goes in `.dev.vars` as
+  `XCODE_ROOT_FINGERPRINT`, unset in production.
+- **Two things about that certificate that only the live chain revealed**, both of which cost a round trip
+  to find and are worth not rediscovering. It is **generated on the machine** — `CN=StoreKit Testing in
+  Xcode`, roughly a year's validity — and has to be exported with Editor ▸ Save Public Certificate. The
+  static `StoreKitTestCertificate.cer` inside `IDEStoreKitEditor.ideplugin` looks like the right file and
+  signs nothing. And the chain is **a single self-signed certificate**, its own leaf and root, not the
+  three links Apple sends.
+- **A local purchase carries `environment: "Xcode"`**, which is neither Production nor Sandbox, so the
+  verifier had to learn it — gated on `allowXcodeEnvironment`, which `app.ts` sets only when the fingerprint
+  override is present. Apple never issues an Xcode-environment transaction, and production sets neither
+  binding, so this cannot widen anything where it matters.
 - **What we gave up.** Apple's library does OCSP revocation checking of the signing certificates; this one
   does not. The case that actually matters — a refunded or revoked *subscription* — is `revocationDate` in
   the verified payload, which we check. A revoked Apple signing certificate is a risk taken knowingly.

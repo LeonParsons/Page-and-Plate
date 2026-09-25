@@ -9,6 +9,9 @@ import otherLeafKeyPem from "./fixtures/pki/other-leaf.key.pem?raw";
 import otherLeafPem from "./fixtures/pki/other-leaf.crt.pem?raw";
 import intermediatePem from "./fixtures/pki/intermediate.crt.pem?raw";
 import rootPem from "./fixtures/pki/root.crt.pem?raw";
+import rootKeyPem from "./fixtures/pki/root.key.pem?raw";
+import otherRootPem from "./fixtures/pki/other-root.crt.pem?raw";
+import otherRootKeyPem from "./fixtures/pki/other-root.key.pem?raw";
 
 /**
  * These sign their own certificate chains (`scripts/make-test-pki.sh`), so nothing here needs Apple, a
@@ -165,6 +168,29 @@ describe("Sandbox", () => {
 
   it("does not let anything else through, even when it is on", async () => {
     const { verify, rejections } = verifier({ allowSandbox: true });
+    expect(await verify(await sign(valid({ environment: "Xcode" })))).toBeNull();
+    expect(rejections).toEqual(["environment"]);
+  });
+});
+
+describe("Xcode's local StoreKit configuration", () => {
+  // A purchase made from Xcode is signed by a single self-signed certificate the machine generates
+  // (`CN=StoreKit Testing in Xcode`) and carries `environment: "Xcode"`. Both differ from anything Apple
+  // issues, and both have to be accommodated or the feature can only be tested against the real App Store.
+  it("verifies a one-certificate chain, when that certificate is the pinned root", async () => {
+    const { verify } = verifier({ allowXcodeEnvironment: true });
+    const jws = await sign(valid({ environment: "Xcode" }), rootKeyPem, [rootPem]);
+    expect(await verify(jws)).not.toBeNull();
+  });
+
+  it("still refuses a one-certificate chain that is not the pinned root", async () => {
+    const { verify } = verifier({ allowXcodeEnvironment: true });
+    const jws = await sign(valid({ environment: "Xcode" }), otherRootKeyPem, [otherRootPem]);
+    expect(await verify(jws)).toBeNull();
+  });
+
+  it("is off in production, where neither it nor the override is set", async () => {
+    const { verify, rejections } = verifier({ allowXcodeEnvironment: false });
     expect(await verify(await sign(valid({ environment: "Xcode" })))).toBeNull();
     expect(rejections).toEqual(["environment"]);
   });

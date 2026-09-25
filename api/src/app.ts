@@ -146,6 +146,9 @@ export function createApp(deps: AppDeps) {
         productIds: PRODUCT_IDS,
         allowSandbox: c.env.ALLOW_SANDBOX_ENTITLEMENTS === "true",
         rootFingerprint: c.env.XCODE_ROOT_FINGERPRINT,
+        // A purchase through Xcode's local StoreKit configuration is in the "Xcode" environment. Tied to
+        // the fingerprint override so it can only ever be on in development.
+        allowXcodeEnvironment: c.env.XCODE_ROOT_FINGERPRINT !== undefined,
         now,
         onReject: (reason) => {
           rejection = reason;

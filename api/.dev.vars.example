@@ -2,10 +2,15 @@
 ANTHROPIC_API_KEY=sk-ant-...
 # Shared secret the app sends as x-app-key. Any long random string.
 APP_KEY=change-me-to-a-long-random-string
-# Only for testing a purchase made through Xcode's local StoreKit configuration. Xcode signs those
-# transactions with a certificate authority it generates per machine, so the Worker has to pin that root
-# instead of Apple's or nothing bought in the simulator will verify. Leave it unset to pin Apple's root,
-# which is what production does — the two are mutually exclusive.
-# Get it from Xcode: open RecipeBasket.storekit, Editor ▸ Save Public Certificate, then
-#   openssl x509 -in StoreKitTestCertificate.cer -inform der -noout -fingerprint -sha256
-# XCODE_ROOT_FINGERPRINT=AA:BB:CC:...
+# Only for testing a purchase made through Xcode's local StoreKit configuration. Those transactions are
+# signed by a certificate Xcode generates on this machine (CN=StoreKit Testing in Xcode, about a year's
+# validity), which is its own leaf and root at once — a one-certificate chain. Pin it here or nothing
+# bought in the simulator will verify. Leave it unset to pin Apple's root, which is what production does;
+# the two are mutually exclusive, and setting this also accepts `environment: "Xcode"`.
+#
+# Export it: open ios/RecipeBasket.storekit in Xcode, then Editor > Save Public Certificate, then
+#   openssl x509 -in ~/Downloads/StoreKitTestCertificate.cer -inform der -noout -fingerprint -sha256
+# It is NOT the StoreKitTestCertificate.cer inside the Xcode bundle — that one signs nothing. The value
+# changes when Xcode regenerates the certificate, so a verification that suddenly fails with
+# `entitlementRejected: "signature"` usually means it needs exporting again.
+# XCODE_ROOT_FINGERPRINT=F4:6E:BA:...

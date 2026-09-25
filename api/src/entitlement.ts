@@ -34,11 +34,20 @@ export type VerifierOptions = {
    */
   allowSandbox: boolean;
   /**
-   * Overrides the pinned root. Xcode's local StoreKit configuration signs with a certificate authority it
-   * generates per machine, so without this nothing bought in the simulator would verify and the feature
-   * could only be tested against the real App Store.
+   * Overrides the pinned root. Xcode's local StoreKit configuration signs with a single self-signed
+   * certificate it generates on the machine — `CN=StoreKit Testing in Xcode`, about a year's validity, and
+   * its own leaf and root at once — so without this nothing bought in the simulator would verify and the
+   * feature could only be tested against the real App Store. Export it with Xcode's
+   * Editor ▸ Save Public Certificate on an open `.storekit` file; it is not the static
+   * `StoreKitTestCertificate.cer` that ships inside the Xcode bundle, which signs nothing.
    */
   rootFingerprint?: string;
+  /**
+   * Accepts `environment: "Xcode"`, which is what a purchase through the local StoreKit configuration
+   * carries. Only ever true alongside `rootFingerprint`: a transaction Apple signed is never in the Xcode
+   * environment, so this cannot widen anything in production, where neither is set.
+   */
+  allowXcodeEnvironment?: boolean;
   now?: () => Date;
   /** Called with the reason a header was refused, for the request log. Never called for an absent header. */
   onReject?: (reason: RejectionReason) => void;
@@ -79,9 +88,14 @@ export function makeVerifier(options: VerifierOptions): EntitlementVerifier {
       return reject("expired");
     }
 
-    if (payload.environment !== "Production" && !(payload.environment === "Sandbox" && options.allowSandbox)) {
-      return reject("environment");
-    }
+    // `Environment` only names Production and Sandbox; "Xcode" is real but absent from the enum, so the
+    // comparison has to go through the string.
+    const environment: string = payload.environment;
+    const environmentAllowed =
+      environment === "Production" ||
+      (environment === "Sandbox" && options.allowSandbox) ||
+      (environment === "Xcode" && options.allowXcodeEnvironment === true);
+    if (!environmentAllowed) return reject("environment");
 
     return {
       productId: payload.productId,
