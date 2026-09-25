@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// First-launch landing page: what the app is for, in four lines, then straight to the plan.
+/// First-launch landing page: what the app is for, in five lines, then straight to the plan.
 /// Shown once (`WelcomeView.hasSeenKey`), and again from Settings on request.
 struct WelcomeView: View {
     static let hasSeenKey = "welcome.hasSeen"
@@ -75,6 +75,11 @@ struct WelcomeView: View {
                 "checklist",
                 "Shop in one tap",
                 "A whole week of ingredients, merged and sent to Reminders."
+            )
+            feature(
+                "house",
+                "Share with your household",
+                "Partner, kids, whoever cooks — everyone sees and edits the same week."
             )
         }
     }
