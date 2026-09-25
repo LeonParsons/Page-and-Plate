@@ -58,8 +58,8 @@ struct WelcomeView: View {
         VStack(alignment: .leading, spacing: 26) {
             feature(
                 "camera.viewfinder",
-                "Photograph the page",
-                "Just the ingredients. The method stays in the book."
+                "Photograph the recipe book page(s)",
+                "The ingredients become a shopping list. The method stays in the book."
             )
             feature(
                 "person.2",
@@ -90,6 +90,8 @@ struct WelcomeView: View {
                 Text(title)
                     .font(.headline)
                     .foregroundStyle(Brand.ink)
+                    // The first row's title is long enough to need two lines at large type.
+                    .fixedSize(horizontal: false, vertical: true)
                 Text(detail)
                     .font(.subheadline)
                     .foregroundStyle(Brand.inkSecondary)
