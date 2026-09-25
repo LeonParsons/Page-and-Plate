@@ -16,7 +16,7 @@ A **planner** (v0.3) puts recipes on the days of a week, each meal with its own 
 - Reliable structured extraction with a mandatory review step.
 - Deterministic scaling with readable fractions (¼ tin, ¾ tsp).
 - Per-recipe export to Apple Reminders, with share-as-text as a fallback.
-- **No accounts of ours.** Identity, where it is needed at all, is the user's own Apple Account. Phase 9 syncs a user's own devices through their iCloud; §10 "Later — a shared week" adds an invited guest the same way. We never hold a user record.
+- **No accounts of ours.** Identity, where it is needed at all, is the user's own Apple Account. Phase 9 syncs a user's own devices through their iCloud; §10 adds the people you share a household plan with, the same way. We never hold a user record.
 
 **v0.3 goals (Phases 5–6)**
 - A week planner: any number of meals per day, each with its own portions; move, reorder and remove; navigate weeks; add from the library or by scanning straight onto a day.
@@ -196,7 +196,7 @@ struct RecipeYield: Codable, Equatable {
   Enforced twice: the app (StoreKit 2 entitlement + a Keychain ledger — the lifetime total and the week's dates, so a reinstall doesn't reset it) decides before calling, and the Worker keeps its own counts and answers 402 `free_quota_exhausted` or 429 `weekly_quota_exhausted`. **The Worker verifies `x-entitlement` (Phase 8a, 2026-09-25):** the JWS certificate chain is walked and pinned to Apple Root CA - G3, and the payload must carry our bundle id, one of our product ids, an expiry in the future and no revocation date. A header that fails any of those is simply not a subscription — it falls to the trial rather than earning an error of its own, so a patched client learns nothing about what it got wrong. Sandbox transactions are accepted while `ALLOW_SANDBOX_ENTITLEMENTS` is true, which it must be for TestFlight and must not be at public release. **App Attest proves the device (Phase 8b, 2026-09-25):** the app has the Secure Enclave attest a key once, and every scan then carries an assertion over `SHA-256(challenge ‖ body)` signed by it. When a request is attested **the trial and the week are counted against the attested key, not `x-device-id`** — which is the point, since the device id is a UUID the client invents. `REQUIRE_ATTESTATION` makes an assertion compulsory; it is off until every install has attested, and can never be on for the Simulator, which has no App Attest. **What it still does not close:** Apple puts no limit on how many keys one device may create, so a patched build on genuine hardware can attest a fresh key per trial. The attestation receipt is stored so the risk-metric API can close that later.
 - Set a monthly spend limit in the Anthropic Console.
 - The shared app key can be extracted from the app binary. Acceptable for personal and TestFlight use only; replace with real authentication before any public release.
-- Page images go only to the Worker and are not stored there. They are kept, downscaled, with the extracted data on the user's devices and — from Phase 9 — mirrored to **the user's own private iCloud database**. Nothing of a user's library is ever on our infrastructure; the Worker sees an image for the length of one extraction and keeps none of it. §10 "Later — a shared week" extends this to a guest, who sees a projection of the library in a shared CloudKit zone the owner can revoke.
+- Page images go only to the Worker and are not stored there. They are kept, downscaled, with the extracted data on the user's devices and — from Phase 9 — mirrored to **the user's own private iCloud database**. Nothing of a user's library is ever on our infrastructure; the Worker sees an image for the length of one extraction and keeps none of it. §10 extends this to a household, whose members see a projection of one another's libraries in a shared CloudKit zone the host can revoke.
 
 ## 10. Phases and acceptance criteria
 
@@ -241,30 +241,69 @@ struct RecipeYield: Codable, Equatable {
 - ✅ In the suite: the CloudKit rules hold for every model (including a mirrored container actually loading the schema), and a real V1 store on disk migrates to V2 with every value intact. On **two devices signed into the same iCloud account**: a recipe scanned on one appears on the other with its page images; a meal added to Thursday on one shows on the other, and a portions change travels back; deleting a recipe removes it and its planned meals on both; edits made in airplane mode land when the network returns; a fresh install pulls the existing library down rather than starting empty.
 - **Accepted 2026-09-23** on Leon's iPhone (iOS 27.0) and iPad (iPadOS 18.7.8) — a better test than two matched devices, since the same schema has to hold across two OS generations. The V1 → V2 migration ran on the phone's real store with all 5 recipes, 9 page images and 9 planned meals intact and the uniqueness constraints gone; a fresh install on the iPad pulled the whole library down from iCloud, page photos and star rating included, in about five minutes; a meal moved on the iPad appeared on the phone; deleting a recipe removed it and its planned meals on both; edits made in airplane mode landed on reconnection.
 
-**Phase 8 — Verified entitlements (before public release)**
-- ~~**8a.** The Worker verifies `x-entitlement`: JWS signature chain to Apple's root, bundle id, product id, expiry, not revoked.~~ Done 2026-09-25 (`api/src/entitlement.ts`).
-- **8b.** App Attest proves the device. Split out because `DCAppAttestService.isSupported` is false in the Simulator and on Apple silicon Macs, so every line of it has to be exercised on a physical device — 8a needed nothing but this machine.
-- Products created in App Store Connect with the same ids; real terms and privacy pages. Both are jobs in a browser, not code.
+**Phase 8 — Verified entitlements (done 2026-09-25, deployed)**
+- ~~**8a.** The Worker verifies `x-entitlement`: JWS signature chain to Apple's root, bundle id, product id, expiry, not revoked.~~ `api/src/entitlement.ts`. Verified against a real StoreKit purchase.
+- ~~**8b.** App Attest proves the device.~~ `api/src/attest.ts`, `ios/RecipeBasket/Extraction/AppAttest.swift`. Split out because `DCAppAttestService.isSupported` is false in the Simulator and on Apple silicon Macs, so it could only be exercised on a phone. Verified on Leon's iPhone against Apple's own root.
+- **Still open, and not code:** products created in App Store Connect with the same ids, and real terms and privacy pages. Both are jobs in a browser.
+- **Three switches in `api/wrangler.jsonc` are release blockers**, listed in `docs/APPSTORE.md`:
+  `ALLOW_SANDBOX_ENTITLEMENTS` → `"false"` at public release; `APPATTEST_DEVELOPMENT` → `"false"` with the first distributed build, or every attestation is refused; `REQUIRE_ATTESTATION` → `"true"` a release later, once nobody is left unattested.
 
-**Later:** on-device extraction with Apple's Foundation Models framework to remove the API cost, storing method text, and a **shared week** (below). iCloud sync moved out of "Later" and became Phase 9.
+**Phase 10 — A shared week (built 2026-09-23, superseded by Phase 11)**
+- The projection, the zone, the `CKShare`, invite and acceptance, the guest's local-only store and fold-back through `PlanEditor`. All of that stands.
+- What did not: the **switcher** model, replaced in 11a. Its acceptance run was never finished; steps 4–7 (a member adds a meal, portions and move travel both ways, Shop lands in that person's own Reminders) are still worth running, because they test the fold-back everything since sits on.
 
-### Later — a shared week
+**Phase 11 — The household plan**
+- ~~**11a.** One plan on display, several households joinable, Settings is the switcher, the owner names the household, hosting needs a subscription.~~ Done 2026-09-25 (`ios/RecipeBasket/Sharing/Household.swift`). **Not yet verified on a device.**
+- **11b.** Members scan against their own trial; the catalogue becomes the union of the members' projections; a recipe belongs to whoever scanned it and leaves with them; a meal whose recipe left stays marked unavailable.
+- **11c.** A lapsed subscription ends the household gently; paywall, welcome and App Store copy; the frames.
 
-Invite someone else to a week's plan. Both people see the same days; both can add meals, change portions, move meals between days and remove them. **The guest plans; the owner curates** — that line settles most of the rest of the design.
+**Later:** on-device extraction with Apple's Foundation Models framework to remove the API cost, storing method text, and a **shared week** (below), which left "Later" to become Phase 10 and then Phase 11. iCloud sync left it to become Phase 9.
 
-Decided (Leon, 2026-09-22), so this is the shape it takes when it is built:
+### A shared week, and then a household
 
-- **Invite by link**, accepted in the app, with no account to create. Apple Accounts carry the identity, the invite is a system share sheet, and nothing new is stored on our side. Our own accounts and backend are explicitly not the plan.
-- **Correction (2026-09-23): not `CKShare` over the SwiftData store.** That was the original wording here and it describes something that does not exist — SwiftData mirrors to the *private* database only, and Apple's DTS has confirmed the shared database is unsupported. `CKShare` shares a **custom record zone**, which SwiftData does not expose. The route chosen instead: SwiftData keeps local truth and the private mirror, and a purpose-built layer publishes a **projection** — the week, plus title, source, ingredients, rating and a thumbnail for each library recipe, never the full page scans — into a shared zone carrying the `CKShare`. Guest writes come back through the same zone. See `docs/DECISIONS.md`.
-- **The share is the week, plus read access to the owner's library.** A guest adding a meal to Thursday picks from the recipes the owner already has — the same searchable picker the owner uses, minus "Scan new recipe". The guest sees titles, photographs and ingredients so they can choose properly; they do not get a copy that outlives the share.
-- **A guest cannot scan.** No new recipes, no edits to the ones that exist. Only the owner adds to the library. This keeps the owner's collection theirs, and it means a shared week can never spend an extraction the owner did not ask for — the free tier and the API bill stay exactly as they are today.
-- **Last-writer-wins per meal.** Two people rarely touch the same meal in the same second, and a merge UI for "Sara set Wednesday to 4 while you set it to 2" costs far more than it is worth. Portions, order and the set of meals are all small independent values.
-- **The export stays personal.** Whoever taps Shop gets the week's list in *their* own Reminders. Reminders lists are already shareable if people want that; we should not try to own it.
+Invite the people you cook with to your plan. Everyone sees the same days; everyone can add meals, change
+portions, move meals between days and remove them.
 
-Two things to do at implementation time, not before:
+**Phase 10 built this as a *switcher*** (the 2026-09-22 shape): a guest kept their own plan and toggled
+between it and the owner's, and could not scan. It shipped, Leon used it, and the model was wrong — so the
+section below is what it becomes. Phase 10's design is kept only where it still holds.
 
-- ~~**Restate §2 and §9.**~~ Done in Phase 9: §2 now reads "no accounts of ours", and §9 says page images and extracted data live on the user's devices and in their own private iCloud. Neither ends up on our servers, which is the property both rewrites preserve.
-- ~~**Land iCloud sync first.**~~ Done: that is Phase 9. A shared week is a synced week plus permissions; there is no sensible order the other way round.
+**What did not change, and is load-bearing:**
+
+- **Invite by link**, accepted in the app, with no account to create. Apple Accounts carry the identity, the
+  invite is a system share sheet, and nothing new is stored on our side.
+- **Not `CKShare` over the SwiftData store** (correction, 2026-09-23). SwiftData mirrors to the *private*
+  database only; `CKShare` shares a **custom record zone** SwiftData does not expose. So SwiftData keeps
+  local truth and the private mirror, and a purpose-built layer publishes a **projection** — the week, plus
+  title, source, ingredients, rating and a thumbnail per recipe, **never the full page scans** — into a
+  shared zone carrying the `CKShare`. See `docs/DECISIONS.md`.
+- **Last-writer-wins per meal.** Two people rarely touch the same meal in the same second, and a merge UI
+  costs far more than it is worth.
+- **The export stays personal.** Whoever taps Shop gets the week's list in *their* own Reminders.
+
+**The household model (settled with Leon 2026-09-25, Phase 11):**
+
+- **One plan on display, ever.** The plan you own, or a household you have joined. Phase 10's switcher is
+  gone (11a).
+- **You can belong to several households, and Settings is where you switch** — your own plan plus each
+  household in one list, the current one marked. Leaving one is a separate act from switching away from it.
+- **Joining hides your own plan; it never deletes it.** Your library keeps mirroring to your own private
+  zone throughout, and leaving brings your week back untouched. Hosting and joining are independent: if you
+  host a household and then join someone else's, yours keeps running for the people in it.
+- **The owner names the household when they share**, and every member reads that name from the `CKShare`.
+  Phase 10 derived it from the owner's iCloud identity, which put "Shared's plan" on screen when CloudKit
+  would not say who the owner was.
+- **Hosting requires an active subscription, and keeps requiring it.** That is what the subscription is
+  *for*; membership itself is free. A lapse ends the household, honouring StoreKit's billing-retry grace
+  first, and must not word itself as though the members were removed (11c).
+- **A member can scan** (11b), against **their own** device trial — not the host's. This reverses Phase 10's
+  "a guest cannot scan", which existed to stop a shared week spending the owner's extractions; keying the
+  allowance to the person removes the reason.
+- **A recipe belongs to whoever scanned it** (11b). Every member's scans stay in their own library and are
+  *projected* into the household, so the catalogue is the union of the members' projections. Leaving stops
+  projecting; nothing changes hands. A recipe you do not own is read-only, but its **servings are yours to
+  change**, because portions live on the meal, not the recipe.
+- **A meal whose recipe left with its author stays, marked unavailable**, and Shop skips it and says so.
 
 ## 11. Fixtures
 

@@ -553,3 +553,40 @@ Not built, and not next; recorded so it is not re-argued from scratch. Leon's ca
   a real iPhone and a patched build can still farm trials. What this stops is everything cheaper: scripts,
   emulators, a leaked `APP_KEY`, and rotating a UUID in a loop. The receipt is stored, unused, so the
   risk-metric API can close the rest without re-attesting anybody.
+
+## Phase 11a — One plan on display
+
+### 2026-09-25 · The switcher was the wrong model
+
+- **What prompted it.** Phase 10 shipped a segmented switcher on the Plan tab: the guest kept their own plan
+  and toggled to the owner's. Leon used it and called the model wrong — a person wants one week, and the
+  households are the reason to subscribe, not a side feature. Everything below follows from "one plan on
+  display, ever".
+- **`Households` replaces `SharedPlanMembership`.** A list rather than a single value, plus which plan is
+  showing. It reads the Phase 10 defaults keys once and converts them into a one-element list, because
+  Leon's iPhone, the iPad and Sara's phone all carry them and nobody should have to re-accept an invite
+  they already took. The old keys are removed as they are read, so the path runs exactly once.
+- **Hidden, never deleted.** Joining a household hides your own plan; your library keeps mirroring to your
+  own private zone throughout, and leaving brings the week back untouched. Hosting and joining are
+  independent — host a household, join someone else's, and yours keeps running for the people in it.
+- **The guest store is a cache, and that is a licence.** It is local-only, and every row can be fetched
+  again from CloudKit, so adding a household column shipped as a **renamed file with the old one deleted**
+  rather than a migration plan. This is the exact opposite of the app's own store, where `SchemaV1` is
+  frozen and a migration is mandatory; the comment in `SharedStore` says which rule applies and why, because
+  the next person to touch it should not have to work it out.
+- **Leaving one household must not empty the store.** `SharedStore.empty` took everything, which was right
+  when there could only be one shared plan and silently destructive the moment there can be two. It now
+  takes a household, and the whole-store version is kept for signing out of iCloud, where nothing shared may
+  survive. Two households' weeks are also numbered separately — ordering is per household, or one week's
+  meals would renumber another's.
+- **Supporting several households was mostly deletion.** `CKSyncEngine` over `sharedCloudDatabase` already
+  fetches every shared zone; the Phase 10 code was *narrowing* it to one. What was needed was removing that
+  filter and recording which zone each record arrived from.
+- **The owner names the household.** It goes on the `CKShare`'s title, so every member reads the same name.
+  Phase 10 derived one from the owner's iCloud identity, which is how "Shared's plan" reached the screen —
+  a name the owner typed cannot fail that way.
+- **Hosting requires a subscription**, so the Settings row opens the paywall rather than sitting there
+  disabled with no explanation. Membership stays free: that is the upsell.
+- **The grey navigation bar fixed itself**, as predicted from reading the code. The `VStack` that held the
+  switcher was stopping the List running under the bar, so the paper background stopped at the top. Removing
+  the control removed the bug — which is why it was left alone rather than patched around.
