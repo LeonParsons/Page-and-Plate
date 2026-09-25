@@ -173,6 +173,11 @@ until you have sat with the phone and checked.
    so that development and TestFlight purchases — which are always Sandbox transactions — verify at all.
    Left true in production, an Apple sandbox account is a free unlimited subscription. This is the last
    thing to flip before a public release, *after* TestFlight is finished with.
-8. **Push the CloudKit schema to production.** It is created in the development environment on first run;
+8. **App Attest switches, both in `api/wrangler.jsonc`.** `APPATTEST_DEVELOPMENT` must become `"false"`
+   for any TestFlight or App Store build — a distributed build attests with a different aaguid, and every
+   attestation is refused until this matches. `REQUIRE_ATTESTATION` must become `"true"` to actually close
+   the hole it exists for, but only once every install in the wild has attested; before that it locks
+   people out. Turn the first on with the build, the second a release later.
+9. **Push the CloudKit schema to production.** It is created in the development environment on first run;
    a build shipped against it would sync into nothing. App Store Connect → the iCloud container →
    Deploy Schema Changes.

@@ -17,7 +17,15 @@
     // Every purchase in development and TestFlight is a Sandbox transaction, so this has to be true to
     // test at all. **Set it to "false" before public release** — a sandbox account is otherwise a free
     // subscription. Tracked as a release blocker in docs/APPSTORE.md.
-    "ALLOW_SANDBOX_ENTITLEMENTS": "true"
+    "ALLOW_SANDBOX_ENTITLEMENTS": "true",
+    // App Attest (Phase 8b). REQUIRE_ATTESTATION refuses any scan without a valid assertion, which makes
+    // the trial hang off a Secure Enclave key instead of a UUID the client invents. It **cannot** be true
+    // until every install has attested, and it can never be true for the Simulator, which has no App
+    // Attest at all — so simulator work needs it false. Another release-checklist item in docs/APPSTORE.md.
+    "REQUIRE_ATTESTATION": "false",
+    // A development build attests with the `appattestdevelop` aaguid; a distributed one uses `appattest`.
+    // This must become "false" for a TestFlight or App Store build, or every attestation is refused.
+    "APPATTEST_DEVELOPMENT": "true"
   },
   // Per-device daily extraction counter (SPEC §9). Replace the id with `wrangler kv namespace create QUOTA` on deploy.
   "kv_namespaces": [{ "binding": "QUOTA", "id": "a99437ed2a2940b8839ac8a803141076" }]
