@@ -107,14 +107,10 @@ struct HomeView: View {
         }
     }
 
-    /// Clear the selection first so no view is still showing the recipe, then delete, then save on the next turn
-    /// (saving synchronously detaches the pages while a row may still be rendering them).
+    /// Clear the selection first so no view is still showing the recipe, then delete.
     private func delete(_ recipe: Recipe) {
         if selection == recipe.id { selection = nil }
-        modelContext.delete(recipe)
-        Task { @MainActor in
-            try? modelContext.save()
-        }
+        RecipeDeletion.delete(recipe, from: modelContext)
     }
 }
 

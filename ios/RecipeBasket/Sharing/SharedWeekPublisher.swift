@@ -30,6 +30,8 @@ final class SharedWeekPublisher: NSObject {
     }
 
     private let containerID: String
+    /// What the owner has deleted since the last publish.
+    private let deletions: SharedPlanDeletions
     private let log = Logger(subsystem: "app.recipe-basket", category: "SharedWeek")
     private var engine: CKSyncEngine?
     /// The engine's own bookkeeping, which it asks us to persist and hand back on the next launch.
@@ -44,8 +46,12 @@ final class SharedWeekPublisher: NSObject {
     private var isApplyingRemote = false
     private var watcher: Task<Void, Never>?
 
-    init(containerID: String = AppModelContainer.cloudKitContainerID) {
+    init(
+        containerID: String = AppModelContainer.cloudKitContainerID,
+        deletions: SharedPlanDeletions = .shared
+    ) {
         self.containerID = containerID
+        self.deletions = deletions
         super.init()
     }
 
@@ -122,6 +128,21 @@ final class SharedWeekPublisher: NSObject {
 
         engine.state.add(pendingRecordZoneChanges: ids.map { .saveRecord($0) })
         log.info("staged \(ids.count, privacy: .public) records for the shared plan")
+
+        // The fetches above can only see what is still here, so a removal has to come from the journal the
+        // deleting code wrote. A deleted recipe deliberately leaves its meals alone: the owner keeps those
+        // rows and shows them as uncookable, and a guest should see the same week the owner does.
+        let gone = deletions.drain()
+        let withdrawn = gone.recipes.map { SharedWeekRecords.recordID(recipe: $0) }
+            + gone.meals.map { SharedWeekRecords.recordID(meal: $0) }
+        if !withdrawn.isEmpty {
+            for id in gone.recipes {
+                pendingRecipes[id] = nil
+                pendingThumbnails[id] = nil
+            }
+            for id in gone.meals { pendingMeals[id] = nil }
+            engine.state.add(pendingRecordZoneChanges: withdrawn.map { .deleteRecord($0) })
+        }
     }
 
     // MARK: The share
@@ -156,6 +177,8 @@ final class SharedWeekPublisher: NSObject {
     func stopSharing() async throws {
         guard let share = try await existingShare() else { return }
         _ = try await container.privateCloudDatabase.modifyRecords(saving: [], deleting: [share.recordID])
+        // No guest left to tell, so anything still owed is owed to nobody.
+        deletions.forget()
     }
 
     // MARK: Engine state
@@ -197,6 +220,7 @@ extension SharedWeekPublisher: CKSyncEngineDelegate {
             // Signing out takes the shared plan with it; nothing of the owner's library is lost.
             pendingRecipes.removeAll()
             pendingMeals.removeAll()
+            deletions.forget()
         case .fetchedRecordZoneChanges(let changes):
             foldBack(changes)
         case .sentRecordZoneChanges(let sent):

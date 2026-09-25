@@ -116,13 +116,9 @@ struct PlannerView: View {
         }
     }
 
-    /// Deleting a recipe from a detail screen reached through the plan (same rule as Recipes: the owner deletes,
-    /// the save waits a turn so no row is still rendering it).
+    /// Deleting a recipe from a detail screen reached through the plan, by the same rule as Recipes.
     private func deleteRecipe(_ recipe: Recipe) {
-        modelContext.delete(recipe)
-        Task { @MainActor in
-            try? modelContext.save()
-        }
+        RecipeDeletion.delete(recipe, from: modelContext)
     }
 }
 
