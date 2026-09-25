@@ -515,3 +515,41 @@ Not built, and not next; recorded so it is not re-argued from scratch. Leon's ca
   Simulator and on Apple silicon Macs, so it can only be exercised on a physical device against the 7-day
   free-provisioning treadmill. 8a needed nothing but this machine, and holding it back would have bought
   nothing. Until 8b lands, a patched app can still rotate its device id for fresh trials.
+
+## Phase 8b — App Attest
+
+### 2026-09-25 · The Secure Enclave signs, and the trial stops being free to farm
+
+- **What was wrong.** 8a stopped a forged subscription; nothing stopped a forged *device*. `x-device-id` is
+  a UUID the app invents, so a patched build rotated it and collected a fresh 7-scan trial each time, up to
+  `DAILY_LIMIT` a day per invented id, on Leon's Anthropic account.
+- **The rule that carries the phase.** An assertion proves nothing on its own if the quota still counts
+  against a client-chosen id: a perfectly valid signature attached to a fresh UUID would buy a fresh trial.
+  So when a request is attested, **the identity the trial and the week hang off is the attested key**.
+  `x-device-id` stays for the log. There is a test whose whole job is this, and it is the one to read first.
+- **`@peculiar/x509`, not `node:crypto`.** Apple's nonce lives in an extension identified by OID, and node's
+  `X509Certificate` — which 8a proved works in workerd — cannot read an arbitrary one. `@peculiar/x509` can,
+  is WebCrypto throughout, and needs `reflect-metadata` imported before it. CBOR is
+  `@levischuck/tiny-cbor`, which SimpleWebAuthn uses at the edge. Both verified in workerd and under
+  `wrangler deploy --dry-run` before anything was built on them; the bundle went from 250 KB to 337 KB
+  gzipped.
+- **Two things the spike taught.** openssl will emit an extension whose declared length disagrees with its
+  contents, and `@peculiar/x509` parses it without complaint — so the nonce is read by its declared length
+  rather than sliced off the end, which would have accepted it. And Apple's devices sign DER while WebCrypto
+  wants raw r‖s, so the signature is converted.
+- **Tests mint their own attestations.** The nonce inside a leaf certificate is a hash of the attestation it
+  sits in, so a committed fixture cannot exist; `test/appattest-fixtures.ts` generates an authority and a
+  leaf per attestation. Apple's nine checks and the assertion's four each fail on their own, with no device
+  and no network.
+- **A challenge is spent whether or not what follows succeeds.** It is worth one attempt, not one success.
+- **The Simulator changes how development works.** `DCAppAttestService.isSupported` is false there and on
+  Apple silicon Macs, so `REQUIRE_ATTESTATION` is not scaffolding to be removed — screenshots, the StoreKit
+  loop and most iteration happen in a simulator that can never attest. The app sends no headers there and
+  the Worker decides.
+- **Turning this on resets the trial.** An attested build counts against a key id rather than the old device
+  UUID, so the existing `free:<uuid>` counts are orphaned and every install starts fresh once. Acceptable,
+  and it happens exactly once.
+- **Honest about what it is worth.** Apple does not limit how many keys a device may create, so someone with
+  a real iPhone and a patched build can still farm trials. What this stops is everything cheaper: scripts,
+  emulators, a leaked `APP_KEY`, and rotating a UUID in a loop. The receipt is stored, unused, so the
+  risk-metric API can close the rest without re-attesting anybody.

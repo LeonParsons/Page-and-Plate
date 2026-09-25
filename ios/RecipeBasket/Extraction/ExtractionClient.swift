@@ -9,13 +9,23 @@ nonisolated final class ExtractionClient: Sendable {
     private let entitlement: String?
     private let session: URLSession
     private let timeout: TimeInterval
+    /// Proves the device (SPEC §6, Phase 8b). Absent in tests and on anything without a Secure Enclave.
+    private let attest: AppAttest?
 
-    init(configuration: AppConfiguration, deviceID: UUID, entitlement: String? = nil, session: URLSession = .shared, timeout: TimeInterval = 120) {
+    init(
+        configuration: AppConfiguration,
+        deviceID: UUID,
+        entitlement: String? = nil,
+        session: URLSession = .shared,
+        timeout: TimeInterval = 120,
+        attest: AppAttest? = nil
+    ) {
         self.configuration = configuration
         self.deviceID = deviceID
         self.entitlement = entitlement
         self.session = session
         self.timeout = timeout
+        self.attest = attest
     }
 
     struct RequestBody: Encodable {
@@ -48,7 +58,13 @@ nonisolated final class ExtractionClient: Sendable {
     }
 
     func extract(pages: [CapturedPage]) async throws(ExtractionError) -> ExtractionResponse {
-        let request = makeRequest(pages: pages)
+        var request = makeRequest(pages: pages)
+        // Signed over the body that is about to be sent, so the assertion belongs to this scan alone.
+        if let attest, let body = request.httpBody {
+            for (field, value) in await attest.headers(signing: body) {
+                request.setValue(value, forHTTPHeaderField: field)
+            }
+        }
         let data: Data
         let response: URLResponse
         do {

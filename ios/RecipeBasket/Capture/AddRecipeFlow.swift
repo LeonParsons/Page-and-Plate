@@ -42,7 +42,13 @@ final class AddRecipeFlow {
     }
 
     nonisolated static func defaultClient(entitlement: String?) throws(AppConfiguration.ConfigurationError) -> ExtractionClient {
-        ExtractionClient(configuration: try AppConfiguration.loadFromMainBundle(), deviceID: DeviceIdentity.id(), entitlement: entitlement)
+        let configuration = try AppConfiguration.loadFromMainBundle()
+        return ExtractionClient(
+            configuration: configuration,
+            deviceID: DeviceIdentity.id(),
+            entitlement: entitlement,
+            attest: AppAttest(configuration: configuration)
+        )
     }
 
     var remainingSlots: Int {
