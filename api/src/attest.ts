@@ -71,6 +71,20 @@ export function makeAttestationVerifier(options: AttestationVerifierOptions): At
   const now = options.now ?? (() => new Date());
 
   return async (keyId, challenge, attestation) => {
+    try {
+      return await verify(keyId, challenge, attestation);
+    } catch {
+      // Nothing a client sends may turn into a 500. A certificate that will not parse, a key that will not
+      // import — all of it is just an attestation we do not believe.
+      return "malformed";
+    }
+  };
+
+  async function verify(
+    keyId: string,
+    challenge: Uint8Array,
+    attestation: Uint8Array,
+  ): Promise<AttestedKey | AttestationFailure> {
     const parsed = parseAttestation(attestation);
     if (typeof parsed === "string") return parsed;
     const { credCert, intermediateCert, authData, receipt } = parsed;
@@ -113,7 +127,7 @@ export function makeAttestationVerifier(options: AttestationVerifierOptions): At
       receipt: base64(receipt),
       counter: 0,
     };
-  };
+  }
 }
 
 export type AssertionVerifier = (
@@ -124,6 +138,18 @@ export type AssertionVerifier = (
 
 export function makeAssertionVerifier(options: { appId: string }): AssertionVerifier {
   return async (assertion, clientDataHash, key) => {
+    try {
+      return await verify(assertion, clientDataHash, key);
+    } catch {
+      return "malformed";
+    }
+  };
+
+  async function verify(
+    assertion: Uint8Array,
+    clientDataHash: Uint8Array,
+    key: AttestedKey,
+  ): Promise<{ counter: number } | AssertionFailure> {
     const parsed = parseAssertion(assertion);
     if (typeof parsed === "string") return parsed;
     const { signature, authData } = parsed;
@@ -141,7 +167,7 @@ export function makeAssertionVerifier(options: { appId: string }): AssertionVeri
     if (counter <= key.counter) return "replay";
 
     return { counter };
-  };
+  }
 }
 
 // MARK: Parsing
