@@ -4,13 +4,6 @@ import SwiftUI
 
 /// The Plan tab: one week at a time, any number of meals per day (SPEC §4 Plan).
 struct PlannerView: View {
-    /// Whose week the Plan tab is showing. A guest has their own plan *and* the one shared with them; theirs
-    /// is never displaced (SPEC §10).
-    enum Scope: Hashable {
-        case mine
-        case shared
-    }
-
     var remindersStore: any RemindersStoring = EventKitRemindersStore()
     var guestPlan: SharedPlanContext?
 
@@ -24,22 +17,18 @@ struct PlannerView: View {
     @State private var isShopping = false
     @State private var isShowingSettings = false
     @State private var isConfirmingClear = false
-    @State private var scope: Scope = .mine
 
-    private var isGuest: Bool {
-        guestPlan?.membership.isGuest ?? false
+    /// The household on display, or nil for this person's own plan. There is no switcher here any more:
+    /// one plan is on display at a time and Settings is where it changes (Phase 11a).
+    private var household: Household? {
+        guestPlan?.households.current
     }
 
-    /// "This week" on your own plan; "Leon · This week" on someone else's, so it is never ambiguous whose
-    /// meals you are looking at. CloudKit often won't name the owner, hence the fallback.
+    /// "This week" on your own plan; "The Parsons · This week" on a household's, so it is never ambiguous
+    /// whose meals you are looking at.
     private var navigationTitle: String {
-        guard scope == .shared else { return week.title }
-        return "\(guestPlan?.membership.ownerTitle ?? "Shared") · \(week.title)"
-    }
-
-    /// "Leon's week", or just "Shared week" when CloudKit won't say who they are.
-    private var sharedWeekLabel: String {
-        guestPlan?.membership.ownerTitle.map { "\($0)'s week" } ?? "Shared week"
+        guard let household else { return week.title }
+        return "\(household.title) · \(week.title)"
     }
 
     private var weekMeals: [PlannedMeal] {
@@ -53,26 +42,15 @@ struct PlannerView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                // A guest gets a visible switcher, not a menu hidden behind the title: the first person to
-                // accept an invite could not find `toolbarTitleMenu` at all, and there is no affordance on a
-                // large title to tell them it is there.
-                if isGuest {
-                    Picker("Whose week", selection: $scope) {
-                        Text("My week").tag(Scope.mine)
-                        Text(sharedWeekLabel).tag(Scope.shared)
-                    }
-                    .pickerStyle(.segmented)
-                    .padding(.horizontal)
-                    .padding(.bottom, 8)
-                }
-                Group {
-                    if scope == .shared, let guestPlan {
-                        SharedWeekView(week: week, client: guestPlan.client, remindersStore: remindersStore)
-                            .modelContainer(guestPlan.container)
-                    } else {
-                        WeekView(week: week, meals: weekMeals, remindersStore: remindersStore, onAdd: { addingTo = $0 }, onDeleteRecipe: deleteRecipe)
-                    }
+            Group {
+                // No switcher: exactly one plan is on display, and it changes in Settings. The `VStack` a
+                // switcher needed also stopped the List running under the navigation bar, which is why the
+                // top of this screen used to turn system grey.
+                if let household, let guestPlan {
+                    SharedWeekView(week: week, household: household, client: guestPlan.client, remindersStore: remindersStore)
+                        .modelContainer(guestPlan.container)
+                } else {
+                    WeekView(week: week, meals: weekMeals, remindersStore: remindersStore, onAdd: { addingTo = $0 }, onDeleteRecipe: deleteRecipe)
                 }
             }
                 .navigationTitle(navigationTitle)
@@ -84,13 +62,13 @@ struct PlannerView: View {
                             Button("Today") { week = PlanWeek(containing: PlanDay(.now)) }
                         }
                     }
-                    if scope == .mine {
+                    if household == nil {
                         ToolbarItem(placement: .primaryAction) {
                             Button("Shop", systemImage: "cart") { isShopping = true }
                                 .disabled(shoppable.isEmpty)
                         }
                     }
-                    if scope == .mine {
+                    if household == nil {
                         ToolbarItem(placement: .secondaryAction) {
                             Button("Clear week…", systemImage: "calendar.badge.minus", role: .destructive) { isConfirmingClear = true }
                         }

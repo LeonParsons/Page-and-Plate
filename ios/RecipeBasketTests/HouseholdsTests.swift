@@ -1,0 +1,177 @@
+import CloudKit
+import Foundation
+import Testing
+@testable import RecipeBasket
+
+/// One plan on display, several joinable, and nothing that can strand someone on a plan that no longer
+/// exists. Phase 10's switcher kept the guest's own plan alongside the owner's; this replaces it.
+@Suite("Households")
+@MainActor
+struct HouseholdsTests {
+
+    private func makeDefaults() -> UserDefaults {
+        let name = "households-tests-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: name)!
+        defaults.removePersistentDomain(forName: name)
+        return defaults
+    }
+
+    private func zone(_ name: String, owner: String = "_owner") -> CKRecordZone.ID {
+        CKRecordZone.ID(zoneName: name, ownerName: owner)
+    }
+
+    @Test("A new person belongs to nothing and sees their own plan")
+    func empty() {
+        let households = Households(defaults: makeDefaults())
+        #expect(households.joined.isEmpty)
+        #expect(households.selection == .mine)
+        #expect(households.current == nil)
+        #expect(!households.isShowingHousehold)
+    }
+
+    @Test("Joining shows the household, because accepting an invite is an act of intent")
+    func joining() {
+        let households = Households(defaults: makeDefaults())
+        households.join(zoneID: zone("a"), title: "The Parsons")
+
+        #expect(households.joined.map(\.title) == ["The Parsons"])
+        #expect(households.current?.title == "The Parsons")
+    }
+
+    @Test("Two households can be joined, and only one is ever on display")
+    func several() {
+        let households = Households(defaults: makeDefaults())
+        households.join(zoneID: zone("a"), title: "The Parsons")
+        households.join(zoneID: zone("b"), title: "Sunday lunch")
+
+        #expect(households.joined.count == 2)
+        #expect(households.current?.title == "Sunday lunch")
+
+        households.select(.mine)
+        #expect(households.current == nil)
+
+        let first = households.joined[0]
+        households.select(.household(first.id))
+        #expect(households.current?.title == "The Parsons")
+    }
+
+    @Test("Re-accepting an invite renames the household rather than joining it twice")
+    func rejoining() {
+        let households = Households(defaults: makeDefaults())
+        households.join(zoneID: zone("a"), title: "The Parsons")
+        households.join(zoneID: zone("a"), title: "Parsons kitchen")
+
+        #expect(households.joined.count == 1)
+        #expect(households.joined[0].title == "Parsons kitchen")
+    }
+
+    @Test("Leaving the household on display falls back to your own plan")
+    func leavingTheCurrent() {
+        let households = Households(defaults: makeDefaults())
+        households.join(zoneID: zone("a"), title: "The Parsons")
+        households.leave(households.joined[0])
+
+        #expect(households.joined.isEmpty)
+        #expect(households.selection == .mine)
+    }
+
+    @Test("Leaving one you are not looking at leaves the display alone")
+    func leavingAnother() {
+        let households = Households(defaults: makeDefaults())
+        households.join(zoneID: zone("a"), title: "The Parsons")
+        households.join(zoneID: zone("b"), title: "Sunday lunch")
+        let notShown = households.joined[0]
+
+        households.leave(notShown)
+
+        #expect(households.joined.map(\.title) == ["Sunday lunch"])
+        #expect(households.current?.title == "Sunday lunch")
+    }
+
+    @Test("A household you do not belong to cannot be selected")
+    func selectingNonsense() {
+        let households = Households(defaults: makeDefaults())
+        households.select(.household("a|_owner"))
+        #expect(households.selection == .mine)
+    }
+
+    @Test("Everything survives a relaunch")
+    func persistence() {
+        let defaults = makeDefaults()
+        let households = Households(defaults: defaults)
+        households.join(zoneID: zone("a"), title: "The Parsons")
+        households.join(zoneID: zone("b"), title: "Sunday lunch")
+        households.select(.household(households.joined[0].id))
+
+        let reopened = Households(defaults: defaults)
+        #expect(reopened.joined.map(\.title) == ["The Parsons", "Sunday lunch"])
+        #expect(reopened.current?.title == "The Parsons")
+    }
+
+    @Test("Leaving removes every trace, including after a relaunch")
+    func leavingSurvivesARelaunch() {
+        let defaults = makeDefaults()
+        let households = Households(defaults: defaults)
+        households.join(zoneID: zone("a"), title: "The Parsons")
+        households.leave(households.joined[0])
+
+        let reopened = Households(defaults: defaults)
+        #expect(reopened.joined.isEmpty)
+        #expect(reopened.selection == .mine)
+    }
+
+    @Test("A household revoked while the app was closed does not strand anyone on it")
+    func selectionOutlivesItsHousehold() {
+        let defaults = makeDefaults()
+        let households = Households(defaults: defaults)
+        households.join(zoneID: zone("a"), title: "The Parsons")
+        // As if the share had been revoked and the household removed behind our back.
+        defaults.set(try? JSONEncoder().encode([Household]()), forKey: "household.joined")
+
+        let reopened = Households(defaults: defaults)
+        #expect(reopened.selection == .mine)
+        #expect(reopened.current == nil)
+    }
+
+    @Test("A Phase 10 membership becomes a household, so nobody re-accepts an invite they already took")
+    func phase10Migration() {
+        let defaults = makeDefaults()
+        defaults.set("plan-zone", forKey: "sharedPlan.zoneName")
+        defaults.set("_abc123", forKey: "sharedPlan.ownerName")
+        defaults.set("Leon", forKey: "sharedPlan.ownerTitle")
+
+        let households = Households(defaults: defaults)
+
+        #expect(households.joined.count == 1)
+        #expect(households.joined[0].zoneName == "plan-zone")
+        #expect(households.joined[0].ownerName == "_abc123")
+        // Phase 10 had no household name; the owner's name is the best that was recorded.
+        #expect(households.joined[0].title == "Leon's plan")
+        // The old keys are gone, so the next launch reads the new shape and not this path again.
+        #expect(defaults.string(forKey: "sharedPlan.zoneName") == nil)
+    }
+
+    @Test("A Phase 10 membership with no owner name still migrates")
+    func phase10MigrationWithoutAName() {
+        let defaults = makeDefaults()
+        defaults.set("plan-zone", forKey: "sharedPlan.zoneName")
+        defaults.set("_abc123", forKey: "sharedPlan.ownerName")
+
+        let households = Households(defaults: defaults)
+        #expect(households.joined.count == 1)
+        // Never "Shared's plan", which is what Phase 10 put on screen.
+        #expect(households.joined[0].title == "Shared plan")
+    }
+
+    @Test("Migration does not run once there are real households to read")
+    func migrationDoesNotOverwrite() {
+        let defaults = makeDefaults()
+        let households = Households(defaults: defaults)
+        households.join(zoneID: zone("a"), title: "The Parsons")
+        defaults.set("plan-zone", forKey: "sharedPlan.zoneName")
+        defaults.set("_abc123", forKey: "sharedPlan.ownerName")
+
+        let reopened = Households(defaults: defaults)
+        #expect(reopened.joined.map(\.title) == ["The Parsons"])
+    }
+}

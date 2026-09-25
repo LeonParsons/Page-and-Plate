@@ -6,6 +6,8 @@ import SwiftUI
 /// local copy of the shared zone.
 struct SharedWeekView: View {
     let week: PlanWeek
+    /// Which household's week this is. One store holds several now, so every query filters by it.
+    let household: Household
     let client: SharedWeekClient
     let remindersStore: any RemindersStoring
 
@@ -16,11 +18,12 @@ struct SharedWeekView: View {
     @Environment(ExportSettings.self) private var exportSettings
 
     private var recipesByID: [UUID: SharedRecipe] {
-        Dictionary(recipes.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        let mine = recipes.filter { $0.zoneName == household.zoneName }
+        return Dictionary(mine.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
     }
 
     private var byDay: [PlanDay: [SharedMeal]] {
-        let inWeek = allMeals.filter { !$0.isDeleted && week.contains($0.day) }
+        let inWeek = allMeals.filter { !$0.isDeleted && $0.zoneName == household.zoneName && week.contains($0.day) }
         return Dictionary(grouping: inWeek, by: \.day).mapValues { $0.sorted { $0.order < $1.order } }
     }
 
@@ -65,7 +68,7 @@ struct SharedWeekView: View {
         }
         .paperBackground()
         .sheet(item: $addingTo) { day in
-            AddSharedMealSheet(day: day, client: client)
+            AddSharedMealSheet(day: day, household: household, client: client)
         }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {

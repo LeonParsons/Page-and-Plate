@@ -159,12 +159,16 @@ final class SharedWeekPublisher: NSObject {
 
     /// The share to hand to `UICloudSharingController` — the existing one, or a new one. Re-inviting someone
     /// must never make a second share, or the owner ends up with two plans they cannot tell apart.
-    func shareForInviting() async throws -> CKShare {
+    /// - Parameter name: what the owner called the household. Every participant reads it from the share, so
+    ///   a household is named once by the person who made it rather than derived from an iCloud identity —
+    ///   which is how Phase 10 managed to put "Shared's plan" on screen.
+    func shareForInviting(named name: String? = nil) async throws -> CKShare {
         try await start()
         if let existing = try await existingShare() { return existing }
 
         let share = CKShare(recordZoneID: SharedWeekZone.id)
-        share[CKShare.SystemFieldKey.title] = "\(Brand.name) — my plan"
+        let trimmed = (name ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        share[CKShare.SystemFieldKey.title] = trimmed.isEmpty ? "\(Brand.name) — our plan" : trimmed
         share.publicPermission = .none   // invited people only, never anyone with the link
         let result = try await container.privateCloudDatabase.modifyRecords(saving: [share], deleting: [])
         guard let saved = try result.saveResults[share.recordID]?.get() as? CKShare else {

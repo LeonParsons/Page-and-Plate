@@ -35,9 +35,10 @@ struct RecipeBasketApp: App {
             .environment(quota)
             .environment(sharedPlan)
             .task { await subscriptions.start() }
-            // Keyed on `isGuest`, not a bare `.task`: an invite is accepted long after launch, and a
-            // one-shot task has already run and bailed by then — which left the guest with an empty week.
-            .task(id: guestPlan?.membership.isGuest ?? false) { await guestPlan?.start() }
+            // Keyed on the number of households, not a bare `.task`: an invite is accepted long after
+            // launch, and a one-shot task has already run and bailed by then — which left the guest with an
+            // empty week. Keying on the count also starts sync for a *second* household.
+            .task(id: guestPlan?.households.joined.count ?? 0) { await guestPlan?.start() }
             .task { sharedPlan.watchLocalChanges(context: container.mainContext) }
         }
         .modelContainer(container)

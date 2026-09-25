@@ -9,16 +9,22 @@ import SwiftUI
 /// free tier and the API bill stay exactly as they are.
 struct AddSharedMealSheet: View {
     let day: PlanDay
+    let household: Household
     let client: SharedWeekClient
 
     @Query(sort: \SharedRecipe.title) private var recipes: [SharedRecipe]
     @Environment(\.dismiss) private var dismiss
     @State private var search = ""
 
+    /// Only this household's catalogue: the store holds every household this person belongs to.
+    private var catalogue: [SharedRecipe] {
+        recipes.filter { $0.zoneName == household.zoneName }
+    }
+
     private var filtered: [SharedRecipe] {
         let needle = search.trimmingCharacters(in: .whitespaces)
-        guard !needle.isEmpty else { return recipes }
-        return recipes.filter {
+        guard !needle.isEmpty else { return catalogue }
+        return catalogue.filter {
             $0.title.localizedCaseInsensitiveContains(needle) || ($0.book ?? "").localizedCaseInsensitiveContains(needle)
         }
     }
@@ -26,7 +32,7 @@ struct AddSharedMealSheet: View {
     var body: some View {
         NavigationStack {
             Group {
-                if recipes.isEmpty {
+                if catalogue.isEmpty {
                     ContentUnavailableView {
                         Label("No recipes yet", systemImage: "book.closed")
                     } description: {
@@ -35,7 +41,12 @@ struct AddSharedMealSheet: View {
                 } else {
                     List(filtered) { recipe in
                         Button {
-                            try? client.add(recipeID: recipe.id, to: day, portions: Int(recipe.yield.quantity ?? 2))
+                            try? client.add(
+                                recipeID: recipe.id,
+                                to: day,
+                                portions: Int(recipe.yield.quantity ?? 2),
+                                in: household.zoneName
+                            )
                             dismiss()
                         } label: {
                             SharedRecipeRow(recipe: recipe)

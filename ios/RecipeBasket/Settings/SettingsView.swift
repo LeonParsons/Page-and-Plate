@@ -55,7 +55,7 @@ struct SettingsView: View {
                     Text(cloud.detailText)
                 }
 
-                SharePlanSection(presenting: $sharePresentation)
+                SharePlanSection(presenting: $sharePresentation, onPaywall: { isShowingPaywall = true })
 
                 Section {
                     if access == .fullAccess {

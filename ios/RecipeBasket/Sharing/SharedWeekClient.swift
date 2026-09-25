@@ -15,16 +15,16 @@ final class SharedWeekClient: NSObject {
     private(set) var lastError: String?
 
     private let containerID: String
-    private let membership: SharedPlanMembership
+    private let households: Households
     private let log = Logger(subsystem: "app.recipe-basket", category: "SharedWeek")
     private var engine: CKSyncEngine?
     private var context: ModelContext?
     /// Staged by the editing methods, read when the engine asks for the next batch.
     private var pendingMeals: [UUID: SharedMealFields] = [:]
 
-    init(containerID: String = AppModelContainer.cloudKitContainerID, membership: SharedPlanMembership = .shared) {
+    init(containerID: String = AppModelContainer.cloudKitContainerID, households: Households = .shared) {
         self.containerID = containerID
-        self.membership = membership
+        self.households = households
         super.init()
     }
 
@@ -40,7 +40,7 @@ final class SharedWeekClient: NSObject {
     }
 
     func start(context: ModelContext) async {
-        guard engine == nil, membership.isGuest else { return }
+        guard engine == nil, !households.joined.isEmpty else { return }
         attach(context: context)
 
         var configuration = CKSyncEngine.Configuration(
@@ -56,16 +56,16 @@ final class SharedWeekClient: NSObject {
     // MARK: Editing — the guest plans
 
     /// The same invariants as the owner's `PlanEditor`: each day's `order` stays dense, 0…n-1.
-    func add(recipeID: UUID, to day: PlanDay, portions: Int) throws {
+    func add(recipeID: UUID, to day: PlanDay, portions: Int, in zoneName: String) throws {
         guard let context else { return }
-        let existing = try meals(on: day)
+        let existing = try meals(on: day, in: zoneName)
         let meal = SharedMeal(SharedMealFields(
             id: UUID(),
             recipeID: recipeID,
             dayKey: day.isoString,
             order: existing.count,
             portions: Portions.clamp(portions)
-        ))
+        ), zoneName: zoneName)
         context.insert(meal)
         try context.save()
         stage(meal)
@@ -79,8 +79,8 @@ final class SharedWeekClient: NSObject {
 
     func move(_ meal: SharedMeal, to day: PlanDay) throws {
         guard let context, meal.day != day else { return }
-        let source = try meals(on: meal.day).filter { $0.id != meal.id }
-        var target = try meals(on: day)
+        let source = try meals(on: meal.day, in: meal.zoneName).filter { $0.id != meal.id }
+        var target = try meals(on: day, in: meal.zoneName)
         meal.day = day
         target.append(meal)
         reindex(source)
@@ -93,16 +93,21 @@ final class SharedWeekClient: NSObject {
         guard let context else { return }
         let day = meal.day
         let id = meal.id
+        let zoneName = meal.zoneName
         context.delete(meal)
-        reindex(try meals(on: day).filter { $0.id != id })
+        reindex(try meals(on: day, in: zoneName).filter { $0.id != id })
         try context.save()
-        engine?.state.add(pendingRecordZoneChanges: [.deleteRecord(recordID(id))])
+        engine?.state.add(pendingRecordZoneChanges: [.deleteRecord(recordID(id, in: zoneName))])
     }
 
-    private func meals(on day: PlanDay) throws -> [SharedMeal] {
+    /// One household's meals on a day. Ordering is per household: two households' weeks share a store but
+    /// never a numbering.
+    private func meals(on day: PlanDay, in zoneName: String) throws -> [SharedMeal] {
         guard let context else { return [] }
         let key = day.isoString
-        let all = try context.fetch(FetchDescriptor<SharedMeal>(predicate: #Predicate { $0.dayKey == key }))
+        let all = try context.fetch(
+            FetchDescriptor<SharedMeal>(predicate: #Predicate { $0.dayKey == key && $0.zoneName == zoneName })
+        )
         return all.filter { !$0.isDeleted }.sorted { $0.order < $1.order }
     }
 
@@ -114,12 +119,14 @@ final class SharedWeekClient: NSObject {
 
     private func stage(_ meal: SharedMeal) {
         pendingMeals[meal.id] = meal.fields
-        engine?.state.add(pendingRecordZoneChanges: [.saveRecord(recordID(meal.id))])
+        engine?.state.add(pendingRecordZoneChanges: [.saveRecord(recordID(meal.id, in: meal.zoneName))])
     }
 
-    /// The guest writes into the owner's zone, so the record id carries the owner's zone, not ours.
-    private func recordID(_ id: UUID) -> CKRecord.ID {
-        CKRecord.ID(recordName: id.uuidString, zoneID: membership.zoneID ?? SharedWeekZone.id)
+    /// A member writes into the household's zone, so the record id carries that zone, not ours — and with
+    /// several households joined, which one depends on the meal being written.
+    private func recordID(_ id: UUID, in zoneName: String) -> CKRecord.ID {
+        let zone = households.joined.first { $0.zoneName == zoneName }?.zoneID
+        return CKRecord.ID(recordName: id.uuidString, zoneID: zone ?? SharedWeekZone.id)
     }
 
     // MARK: Applying what the owner sent
@@ -136,14 +143,14 @@ final class SharedWeekClient: NSObject {
                 if let existing = try recipe(id: fields.id) {
                     existing.apply(fields, thumbnail: thumbnail)
                 } else {
-                    context.insert(SharedRecipe(fields, thumbnail: thumbnail))
+                    context.insert(SharedRecipe(fields, zoneName: record.recordID.zoneID.zoneName, thumbnail: thumbnail))
                 }
             case SharedWeekZone.RecordType.meal:
                 let fields = try SharedWeekRecords.mealFields(from: record)
                 if let existing = try meal(id: fields.id) {
                     existing.apply(fields)
                 } else {
-                    context.insert(SharedMeal(fields))
+                    context.insert(SharedMeal(fields, zoneName: record.recordID.zoneID.zoneName))
                 }
             default:
                 break
@@ -169,14 +176,19 @@ final class SharedWeekClient: NSObject {
         try context?.fetch(FetchDescriptor<SharedMeal>(predicate: #Predicate { $0.id == id })).first
     }
 
-    /// The owner revoked, or the guest left. SPEC §10: no copy outlives the share.
-    private func shareEnded() {
+    /// One household's share ended — revoked by its owner, or left. SPEC §10: no copy outlives the share.
+    /// Only that household's rows go; the others are still live.
+    private func shareEnded(zoneName: String) {
         guard let context else { return }
-        try? SharedStore.empty(context)
-        membership.forget()
-        engine = nil
-        isRunning = false
-        try? FileManager.default.removeItem(at: stateURL)
+        try? SharedStore.empty(context, household: zoneName)
+        if let household = households.joined.first(where: { $0.zoneName == zoneName }) {
+            households.leave(household)
+        }
+        if households.joined.isEmpty {
+            engine = nil
+            isRunning = false
+            try? FileManager.default.removeItem(at: stateURL)
+        }
     }
 
     // MARK: Engine state
@@ -206,8 +218,8 @@ extension SharedWeekClient: CKSyncEngineDelegate {
             }
         case .fetchedDatabaseChanges(let changes):
             // The zone going is how a revoked share reaches the guest.
-            if changes.deletions.contains(where: { $0.zoneID == membership.zoneID }) {
-                shareEnded()
+            for zone in changes.deletions.map(\.zoneID.zoneName) where households.joined.contains(where: { $0.zoneName == zone }) {
+                shareEnded(zoneName: zone)
             }
         case .sentRecordZoneChanges(let sent):
             for failure in sent.failedRecordSaves {
@@ -215,7 +227,12 @@ extension SharedWeekClient: CKSyncEngineDelegate {
                 log.warning("guest save failed: \(failure.error.localizedDescription, privacy: .public)")
             }
         case .accountChange:
-            shareEnded()
+            // Signing out takes every household with it, not just one.
+            if let context { try? SharedStore.empty(context) }
+            for household in households.joined { households.leave(household) }
+            engine = nil
+            isRunning = false
+            try? FileManager.default.removeItem(at: stateURL)
         default:
             break
         }
