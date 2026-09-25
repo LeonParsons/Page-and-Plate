@@ -5,6 +5,8 @@ import Foundation
 nonisolated enum ExtractionError: Error, Equatable, Sendable {
     case notConfigured(String)
     case unauthorized
+    /// The Worker refused the request because it could not prove the device (SPEC §6, Phase 8b).
+    case unattested
     case badRequest(String?)
     case payloadTooLarge
     case noRecipeFound(String?)
@@ -27,6 +29,7 @@ nonisolated enum ExtractionError: Error, Equatable, Sendable {
         switch self {
         case .notConfigured: "App not configured"
         case .unauthorized: "App key rejected"
+        case .unattested: "Couldn't verify this app"
         case .badRequest: "Request rejected"
         case .payloadTooLarge: "Pages too large"
         case .noRecipeFound: "No recipe found"
@@ -50,6 +53,11 @@ nonisolated enum ExtractionError: Error, Equatable, Sendable {
             "Set the API URL and app key in ios/Config/Secrets.xcconfig and rebuild. (\(detail))"
         case .unauthorized:
             "The app key doesn't match the server's. Check RB_APP_KEY in Secrets.xcconfig against the Worker's APP_KEY."
+        case .unattested:
+            // Reached only where App Attest exists and failed, so the advice is the one that works: a
+            // reinstall generates a fresh key. Never says "patched" or "jailbroken" — the honest cases are
+            // a restored device or a key Apple has invalidated.
+            "This copy of the app couldn't prove it's genuine, so scanning is off. Reinstalling it usually fixes this."
         case let .badRequest(detail):
             detail ?? "The server didn't accept the request."
         case .payloadTooLarge:

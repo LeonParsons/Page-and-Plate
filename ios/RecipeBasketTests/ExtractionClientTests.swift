@@ -77,6 +77,8 @@ struct ExtractionClientTests {
 
     @Test("Every Worker error code maps to a typed error", arguments: [
         (401, #"{"error":"unauthorized"}"#, [:], ExtractionError.unauthorized),
+        // A device that cannot prove itself is told something it can act on, not to check an xcconfig.
+        (401, #"{"error":"unattested"}"#, [:], ExtractionError.unattested),
         (400, #"{"error":"bad_request","message":"x-device-id must be a UUID"}"#, [:], .badRequest("x-device-id must be a UUID")),
         (413, #"{"error":"payload_too_large","maxBodyBytes":8388608}"#, [:], .payloadTooLarge),
         (422, #"{"error":"no_recipe_found","message":"Only a photograph"}"#, [:], .noRecipeFound("Only a photograph")),
@@ -143,7 +145,7 @@ struct ExtractionClientTests {
     @Test("User-facing copy exists for every error and retryability is sensible")
     func messages() {
         let cases: [(ExtractionError, Bool)] = [
-            (.notConfigured("RBAppKey"), false), (.unauthorized, false), (.badRequest(nil), false), (.payloadTooLarge, false),
+            (.notConfigured("RBAppKey"), false), (.unauthorized, false), (.unattested, false), (.badRequest(nil), false), (.payloadTooLarge, false),
             (.noRecipeFound(nil), false), (.unreadable("blurred"), false), (.rateLimited(retryAfterSeconds: 90), false),
             (.modelInvalidOutput, true), (.upstreamUnavailable, true), (.offline, true), (.network("x"), true),
             (.unexpectedStatus(500), true), (.decoding("x"), true), (.cancelled, false),

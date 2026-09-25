@@ -5,6 +5,8 @@ import type { ContentfulStatusCode } from "hono/utils/http-status";
 export type ErrorCode =
   | "bad_request"
   | "unauthorized"
+  /** 401, but specifically: this device could not prove itself with App Attest. */
+  | "unattested"
   | "payload_too_large"
   | "no_recipe_found"
   | "unreadable"
@@ -19,6 +21,7 @@ export type ErrorCode =
 export const ERROR_STATUS: Record<ErrorCode, ContentfulStatusCode> = {
   bad_request: 400,
   unauthorized: 401,
+  unattested: 401,
   payload_too_large: 413,
   no_recipe_found: 422,
   unreadable: 422,

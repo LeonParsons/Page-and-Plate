@@ -92,7 +92,9 @@ nonisolated final class ExtractionClient: Sendable {
         let retryAfter = body?.retryAfterSeconds ?? http.value(forHTTPHeaderField: "Retry-After").flatMap { Int($0) }
         switch http.statusCode {
         case 400: throw .badRequest(body?.message)
-        case 401: throw .unauthorized
+        // The Worker uses 401 for both a wrong app key and a device it will not accept; only the second
+        // is something a user can act on.
+        case 401: throw body?.error == "unattested" ? .unattested : .unauthorized
         case 402: throw .freeQuotaExhausted(retryAfterSeconds: retryAfter)
         case 413: throw .payloadTooLarge
         case 422: throw body?.error == "unreadable" ? .unreadable(body?.message) : .noRecipeFound(body?.message)

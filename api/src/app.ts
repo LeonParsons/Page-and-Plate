@@ -211,7 +211,7 @@ export function createApp(deps: AppDeps) {
       console.log(
         JSON.stringify({ event: "extract", requestId, outcome: "unattested", reason: attestationRejected ?? "absent" }),
       );
-      return errorResponse(c, "unauthorized", { message: "this build must attest before it can scan" });
+      return errorResponse(c, "unattested", { message: "this build must attest before it can scan" });
     }
 
     // The whole point of the phase: what the trial and the week are counted against. An attested key comes
