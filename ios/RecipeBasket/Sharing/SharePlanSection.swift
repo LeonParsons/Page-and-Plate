@@ -4,11 +4,11 @@ import SwiftUI
 
 /// The Settings entry for households (SPEC §10, reshaped 2026-09-25 — Phase 11a).
 ///
-/// Two sections. **Your plans** is the only switcher in the app: your own plan plus every household you
-/// belong to, the one on display ticked. **Your household** is the owner's side — naming it, inviting, and
-/// seeing who is in.
+/// Two sections. **Your plans** is the only switcher in the app: the plan that is yours to run plus every
+/// household you belong to, the one on display ticked. **Your household** is the hosting side — naming it,
+/// inviting, and seeing who is in and what each of them has put in.
 struct SharePlanSection: View {
-    @Environment(SharedWeekPublisher.self) private var publisher
+    let plan: SharedPlanContext
     @Environment(ScanQuota.self) private var quota
     @Environment(\.modelContext) private var modelContext
     /// The sheet is presented by `SettingsView` on the `Form`, not here. A presentation modifier on a `Section`
@@ -17,7 +17,6 @@ struct SharePlanSection: View {
     @Binding var presenting: SharePresentation?
     var onPaywall: () -> Void = {}
 
-    @State private var households = Households.shared
     @State private var share: CKShare?
     @State private var isPreparing = false
     @State private var errorMessage: String?
@@ -25,6 +24,12 @@ struct SharePlanSection: View {
     @State private var leaving: Household?
     @State private var isNaming = false
     @State private var householdName = ""
+    /// What each member has contributed, so removing them can say what goes with them. Read when the share is
+    /// read, because it needs the participant list to key on.
+    @State private var contributions: [String: HouseholdContribution] = [:]
+
+    private var households: Households { plan.households }
+    private var publisher: SharedWeekPublisher { plan.publisher }
 
     var body: some View {
         plansSection
@@ -82,12 +87,12 @@ struct SharePlanSection: View {
                 titleVisibility: .visible
             ) {
                 Button("Leave", role: .destructive) {
-                    if let leaving { households.leave(leaving) }
+                    if let leaving { leave(leaving) }
                     leaving = nil
                 }
                 Button("Cancel", role: .cancel) { leaving = nil }
             } message: {
-                Text("Their week and recipes go from this iPhone. Your own plan is untouched, and you can be invited again.")
+                Text("Their week goes from this iPhone, and your recipes go from their catalogue — you keep every one of them. Your own plan is untouched, and you can be invited again.")
             }
         }
     }
@@ -140,13 +145,11 @@ struct SharePlanSection: View {
                 }
             }
             .disabled(isPreparing)
-            if participantCount > 0 {
-                LabeledContent("Members", value: participantCount == 1 ? "1 person" : "\(participantCount) people")
-            }
+            memberRows
         } header: {
             Text("Your household")
         } footer: {
-            Text("Everyone you invite sees and edits the same week, and can cook from your recipes. Your page photos are never shared.")
+            Text("Everyone you invite sees and edits the same week, and cooks from everyone's recipes. Each person's recipes stay theirs and go with them if they leave. Page photos are never shared.")
         }
         .alert("Name your household", isPresented: $isNaming) {
             TextField("The Parsons", text: $householdName)
@@ -167,14 +170,66 @@ struct SharePlanSection: View {
         }
     }
 
-    private var participantCount: Int {
-        // The owner is in the list too, and is not someone it is "shared with".
-        max(0, (share?.participants.count ?? 0) - 1)
+    private var participantCount: Int { otherParticipants.count }
+
+    /// Leaving a household: stop projecting this device's recipes into it, *then* forget it.
+    ///
+    /// Order matters. The withdrawal needs the membership to still be there — it is what resolves the zone to
+    /// write the deletions into — and `Households.leave` is what takes it away. The recipes themselves are
+    /// untouched in this person's own library: ownership is maintained, everybody keeps their own.
+    private func leave(_ household: Household) {
+        try? plan.withdrawLibrary(from: household)
+        households.leave(household)
+        try? SharedStore.empty(ModelContext(plan.container), household: household.id)
     }
 
-    /// Fetches the existing share quietly, so the section can say whether anyone is already in.
+    /// Fetches the existing share quietly, so the section can say who is in and what each of them brought.
     private func refreshShare() async {
         share = try? await publisher.existingShare()
+        guard let household = households.hosted, let share else { return contributions = [:] }
+        var found: [String: HouseholdContribution] = [:]
+        for participant in share.participants {
+            guard let id = participant.userIdentity.userRecordID?.recordName else { continue }
+            found[id] = try? plan.contribution(of: id, to: household)
+        }
+        contributions = found
+        // A member removed from the share cannot withdraw their own recipes — they have lost write access to
+        // the zone. Only the owner can, so the owner does: anything authored by someone no longer in the share
+        // goes, which is what "their recipes leave with them" means from this side.
+        try? plan.pruneDepartedAuthors(stillIn: Set(found.keys), from: household)
+    }
+
+    /// The other members, with what each has put in. Removing someone is `UICloudSharingController`'s own
+    /// screen, which the app cannot change — so the counts are shown here, *before* that screen opens, which
+    /// is the last moment the app controls. Leon asked for "removing B also removes 6 recipes, 2 of them in
+    /// your plan", and this is where it can honestly be said.
+    @ViewBuilder
+    private var memberRows: some View {
+        ForEach(otherParticipants, id: \.userIdentity.userRecordID?.recordName) { participant in
+            // Bound first: inside an optional chain, `.flatMap` would be `String`'s own and iterate characters.
+            let id = participant.userIdentity.userRecordID?.recordName
+            let contribution = id.flatMap { contributions[$0] }
+            VStack(alignment: .leading, spacing: 2) {
+                Text(name(of: participant))
+                Text(contribution.map { $0.isEmpty ? "No recipes yet" : $0.summary } ?? "No recipes yet")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private var otherParticipants: [CKShare.Participant] {
+        // The owner is in the list too, and is not someone it is "shared with".
+        (share?.participants ?? []).filter { $0.role != .owner }
+    }
+
+    private func name(of participant: CKShare.Participant) -> String {
+        let components = participant.userIdentity.nameComponents
+        if let components, let name = try? components.formatted(.name(style: .medium)), !name.isEmpty {
+            return name
+        }
+        // CloudKit withholds the name until the invite is accepted, and sometimes after.
+        return participant.acceptanceStatus == .pending ? "Invited" : "Someone in your household"
     }
 
     private func prepareShare(named name: String?) async {
@@ -190,7 +245,7 @@ struct SharePlanSection: View {
             // Then the contents, before anyone is invited: an invite that arrives before the recipes looks
             // broken. The seed runs once, and only for a household that has no week yet — re-inviting must
             // never overwrite what the household has planned since with the owner's stale personal plan.
-            try publisher.publishLibrary(from: modelContext)
+            try plan.projectLibrary()
             if isNewHousehold {
                 try publisher.seedWeek(from: modelContext)
             }

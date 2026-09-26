@@ -9,6 +9,9 @@ struct SettingsView: View {
     @Environment(ScanQuota.self) private var quota
     @Environment(\.dismiss) private var dismiss
     let store: any RemindersStoring
+    /// Households. Optional for the same reason it is everywhere else: the app works without the household
+    /// store, it simply cannot share.
+    var plan: SharedPlanContext?
 
     @State private var lists: [ReminderList] = []
     @State private var access: RemindersAccess = .notDetermined
@@ -55,7 +58,9 @@ struct SettingsView: View {
                     Text(cloud.detailText)
                 }
 
-                SharePlanSection(presenting: $sharePresentation, onPaywall: { isShowingPaywall = true })
+                if let plan {
+                    SharePlanSection(plan: plan, presenting: $sharePresentation, onPaywall: { isShowingPaywall = true })
+                }
 
                 Section {
                     if access == .fullAccess {

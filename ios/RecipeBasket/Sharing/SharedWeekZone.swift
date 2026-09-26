@@ -34,6 +34,9 @@ enum SharedWeekZone {
         /// `[Ingredient]` as JSON. The guest needs these in full: it is what makes their own Shop work.
         nonisolated static let ingredients = "ingredients"
         nonisolated static let rating = "rating"
+        /// Who scanned it: their CloudKit user record name. A recipe belongs to its author and leaves the
+        /// household with them, so this is what a departure is measured in. See `HouseholdAuthor`.
+        nonisolated static let authorID = "authorID"
         /// A small JPEG, as a `CKAsset`. Never the page scan.
         nonisolated static let thumbnail = "thumbnail"
     }

@@ -23,6 +23,8 @@ final class SharedWeekClient: NSObject {
     private var context: ModelContext?
     /// Staged by the editing methods, read when the engine asks for the next batch.
     private var pendingMeals: [UUID: SharedMealFields] = [:]
+    private var pendingRecipes: [UUID: SharedRecipeFields] = [:]
+    private var pendingThumbnails: [UUID: Data] = [:]
 
     init(containerID: String = AppModelContainer.cloudKitContainerID, households: Households = .shared) {
         self.containerID = containerID
@@ -82,6 +84,24 @@ final class SharedWeekClient: NSObject {
         ])
     }
 
+    /// One of this person's own recipes, contributed to a household they joined. Writing a recipe into
+    /// somebody else's zone is new in 11b: before it, recipes only ever flowed the other way.
+    func stage(recipe fields: SharedRecipeFields, thumbnail: Data?, in household: Household) {
+        pendingRecipes[fields.id] = fields
+        pendingThumbnails[fields.id] = thumbnail
+        engine?.state.add(pendingRecordZoneChanges: [
+            .saveRecord(SharedWeekRecords.recordID(recipe: fields.id, in: household.zoneID))
+        ])
+    }
+
+    func withdraw(recipeID: UUID, in household: Household) {
+        pendingRecipes[recipeID] = nil
+        pendingThumbnails[recipeID] = nil
+        engine?.state.add(pendingRecordZoneChanges: [
+            .deleteRecord(SharedWeekRecords.recordID(recipe: recipeID, in: household.zoneID))
+        ])
+    }
+
     /// The household a record came from, by the zone it arrived in.
     private func household(for zoneID: CKRecordZone.ID) -> Household? {
         households.joined.first { $0.zoneName == zoneID.zoneName && $0.ownerName == zoneID.ownerName }
@@ -116,7 +136,9 @@ final class SharedWeekClient: NSObject {
     }
 }
 
-extension SharedWeekClient: HouseholdSyncing {}
+extension SharedWeekClient: HouseholdSyncing {
+    var isReady: Bool { engine != nil }
+}
 
 extension SharedWeekClient: CKSyncEngineDelegate {
 
@@ -163,15 +185,34 @@ extension SharedWeekClient: CKSyncEngineDelegate {
     ) async -> CKSyncEngine.RecordZoneChangeBatch? {
         let changes = syncEngine.state.pendingRecordZoneChanges.filter { context.options.scope.contains($0) }
         return await CKSyncEngine.RecordZoneChangeBatch(pendingChanges: changes) { recordID in
-            await self.mealRecord(for: recordID)
+            await self.record(for: recordID)
         }
     }
 
-    /// A member writes meals. Recipes are projected by their author, which in 11b-i is still only the owner.
-    private func mealRecord(for recordID: CKRecord.ID) -> CKRecord? {
-        guard let id = UUID(uuidString: recordID.recordName), let fields = pendingMeals[id] else { return nil }
-        let record = CKRecord(recordType: SharedWeekZone.RecordType.meal, recordID: recordID)
-        SharedWeekRecords.apply(fields, to: record)
-        return record
+    /// A member writes both: the household's meals, and their own library's recipes into its catalogue.
+    private func record(for recordID: CKRecord.ID) -> CKRecord? {
+        guard let id = UUID(uuidString: recordID.recordName) else { return nil }
+
+        if let fields = pendingMeals[id] {
+            let record = CKRecord(recordType: SharedWeekZone.RecordType.meal, recordID: recordID)
+            SharedWeekRecords.apply(fields, to: record)
+            return record
+        }
+
+        if let fields = pendingRecipes[id] {
+            let record = CKRecord(recordType: SharedWeekZone.RecordType.recipe, recordID: recordID)
+            do {
+                try SharedWeekRecords.apply(fields, to: record)
+            } catch {
+                log.warning("could not encode recipe \(id, privacy: .public): \(error.localizedDescription, privacy: .public)")
+                return nil
+            }
+            if let jpeg = pendingThumbnails[id] {
+                record[SharedWeekZone.RecipeKey.thumbnail] = SharedWeekAssets.file(for: id, jpeg: jpeg)
+            }
+            return record
+        }
+
+        return nil
     }
 }

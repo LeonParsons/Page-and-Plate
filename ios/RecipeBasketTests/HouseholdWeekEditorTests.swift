@@ -20,6 +20,7 @@ struct HouseholdWeekEditorTests {
     /// Records what the editor asked the engine to send, so the tests can check the week *and* the wire.
     @MainActor
     final class SyncSpy: HouseholdSyncing {
+        var isReady = true
         var staged: [(fields: SharedMealFields, household: Household)] = []
         var withdrawn: [(id: UUID, household: Household)] = []
 
@@ -29,6 +30,20 @@ struct HouseholdWeekEditorTests {
 
         func withdraw(mealID: UUID, in household: Household) {
             withdrawn.append((mealID, household))
+        }
+
+        /// The recipe half of the protocol is the library fan-out's, not the week editor's — it is exercised in
+        /// `HouseholdCatalogueTests`. Recorded here so the spy is a whole implementation rather than a stub
+        /// that would hide a call the editor should not be making.
+        var stagedRecipes: [(fields: SharedRecipeFields, household: Household)] = []
+        var withdrawnRecipes: [(id: UUID, household: Household)] = []
+
+        func stage(recipe fields: SharedRecipeFields, thumbnail: Data?, in household: Household) {
+            stagedRecipes.append((fields, household))
+        }
+
+        func withdraw(recipeID: UUID, in household: Household) {
+            withdrawnRecipes.append((recipeID, household))
         }
     }
 
@@ -196,6 +211,21 @@ struct HouseholdWeekEditorTests {
 
         #expect(try meals(context, on: monday, in: parsons).first?.recipeTitle == "Smoky butter beans")
         #expect(spy.staged.last?.fields.recipeTitle == "Smoky butter beans")
+    }
+
+    @Test("Planning a meal never touches the catalogue — a recipe is its author's alone")
+    func planningDoesNotWriteRecipes() throws {
+        let (editor, context, spy) = try makeEditor()
+        insertRecipe(context, title: "Rendang", in: parsons)
+        try add(editor, 1, to: monday, in: parsons)
+        let meal = try #require(try meals(context, on: monday, in: parsons).first)
+        try editor.setPortions(meal, 6, in: parsons)
+        try editor.move(meal, to: friday, in: parsons)
+        try editor.remove(meal, in: parsons)
+
+        // Read-only, except servings: everything above is a week edit, and none of it may project a recipe.
+        #expect(spy.stagedRecipes.isEmpty)
+        #expect(spy.withdrawnRecipes.isEmpty)
     }
 
     @discardableResult

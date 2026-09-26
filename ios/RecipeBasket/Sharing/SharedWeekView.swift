@@ -9,6 +9,9 @@ struct SharedWeekView: View {
     /// Which household's week this is. One store holds several, so every query filters by it.
     let household: Household
     let plan: SharedPlanContext
+    /// This person's **own** library. Everything inside this view draws on the household store, so a scan has
+    /// to be handed the right container explicitly — `Recipe` is not even in the household schema.
+    let library: ModelContainer
     let remindersStore: any RemindersStoring
 
     @Query(sort: [SortDescriptor(\SharedMeal.dayKey), SortDescriptor(\SharedMeal.order)]) private var allMeals: [SharedMeal]
@@ -59,7 +62,7 @@ struct SharedWeekView: View {
         }
         .paperBackground()
         .sheet(item: $addingTo) { day in
-            AddSharedMealSheet(day: day, household: household, plan: plan)
+            AddSharedMealSheet(day: day, household: household, plan: plan, library: library)
         }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -87,7 +90,7 @@ struct SharedWeekView: View {
     @ViewBuilder
     private func plannedRow(meal: SharedMeal, recipe: SharedRecipe, on day: PlanDay) -> some View {
         NavigationLink {
-            SharedRecipeView(recipe: recipe, portions: meal.portions)
+            SharedRecipeView(recipe: recipe, isMine: plan.author.wroteIt(recipe.authorID), portions: meal.portions)
         } label: {
             PlannedMealRow(data: rowData(meal: meal, recipe: recipe)) {
                 try? editor?.setPortions(meal, $0, in: household)

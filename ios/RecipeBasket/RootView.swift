@@ -9,7 +9,7 @@ struct RootView: View {
         TabView {
             PlannerView(remindersStore: remindersStore, guestPlan: guestPlan)
                 .tabItem { Label("Plan", systemImage: "calendar") }
-            HomeView(remindersStore: remindersStore)
+            HomeView(remindersStore: remindersStore, guestPlan: guestPlan)
                 .tabItem { Label("Recipes", systemImage: "book.closed") }
         }
     }

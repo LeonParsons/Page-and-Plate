@@ -45,7 +45,7 @@ struct RecipeBasketApp: App {
             // empty week. Keying on the count also starts sync for a *second* household, and for the one this
             // person creates themselves.
             .task(id: householdCount) { await guestPlan?.start() }
-            .task { sharedPlan.watchLocalChanges(context: container.mainContext) }
+            .task { guestPlan?.watchLibraryChanges(library: container.mainContext) }
         }
         .modelContainer(container)
     }

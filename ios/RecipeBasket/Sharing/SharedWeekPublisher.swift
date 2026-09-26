@@ -48,13 +48,8 @@ final class SharedWeekPublisher: NSObject {
     private var pendingRecipes: [UUID: SharedRecipeFields] = [:]
     private var pendingMeals: [UUID: SharedMealFields] = [:]
     private var pendingThumbnails: [UUID: Data] = [:]
-    /// The owner's own library, which is what gets projected.
-    private var context: ModelContext?
     /// The household store, which is where the week lives.
     private var householdContext: ModelContext?
-    /// Guards the echo: applying a member's change saves the store, and that save must not republish it.
-    private var isApplyingRemote = false
-    private var watcher: Task<Void, Never>?
 
     init(
         containerID: String = AppModelContainer.cloudKitContainerID,
@@ -89,23 +84,6 @@ final class SharedWeekPublisher: NSObject {
         householdContext.map { HouseholdInbox(context: $0) }
     }
 
-    /// Reprojects the owner's library whenever their own store changes, so members see a new or renamed
-    /// recipe without the owner doing anything. Reprojecting everything is wasteful at a large library; at the
-    /// size this app holds it is not worth the bookkeeping to send less.
-    ///
-    /// The **week** is not republished from here: after the seed it belongs to the household, and a local
-    /// `PlannedMeal` save must not overwrite what a member planned.
-    func watchLocalChanges(context: ModelContext) {
-        self.context = context
-        guard watcher == nil else { return }
-        watcher = Task { [weak self] in
-            for await _ in NotificationCenter.default.notifications(named: ModelContext.didSave) {
-                guard let self, !self.isApplyingRemote, self.engine != nil else { continue }
-                try? self.publishLibrary(from: context)
-            }
-        }
-    }
-
     /// Brings the engine up. Safe to call more than once.
     func start() async throws {
         guard engine == nil else { return }
@@ -135,41 +113,6 @@ final class SharedWeekPublisher: NSObject {
     private func ensureZone() async throws {
         let zone = CKRecordZone(zoneID: SharedWeekZone.id)
         _ = try await container.privateCloudDatabase.modifyRecordZones(saving: [zone], deleting: [])
-    }
-
-    /// Stages the owner's whole library into their household, and writes it into the household store so they
-    /// see their own contribution without waiting for CloudKit to echo it back.
-    ///
-    /// Called on first share and on every local save. Recipes only — the week is seeded once by `seedWeek`.
-    func publishLibrary(from context: ModelContext) throws {
-        guard let engine, let household = households.hosted else { return }
-
-        var ids: [CKRecord.ID] = []
-        for recipe in try context.fetch(FetchDescriptor<Recipe>()) where !recipe.isDeleted {
-            let fields = SharedWeekProjection.fields(for: recipe)
-            let thumbnail = SharedWeekProjection.thumbnailJPEG(for: recipe)
-            pendingRecipes[fields.id] = fields
-            pendingThumbnails[fields.id] = thumbnail
-            ids.append(SharedWeekRecords.recordID(recipe: fields.id, in: household.zoneID))
-            try? inbox?.upsert(recipe: fields, thumbnail: thumbnail, in: household)
-        }
-
-        engine.state.add(pendingRecordZoneChanges: ids.map { .saveRecord($0) })
-        log.info("staged \(ids.count, privacy: .public) recipes for \(household.title, privacy: .public)")
-
-        // The fetch above can only see what is still here, so a removal has to come from the journal the
-        // deleting code wrote. A deleted recipe deliberately leaves its meals alone: they stay in the week and
-        // say they cannot be cooked, which is the same thing that happens when a member's recipe leaves.
-        let gone = deletions.drain()
-        guard !gone.recipes.isEmpty else { return }
-        for id in gone.recipes {
-            pendingRecipes[id] = nil
-            pendingThumbnails[id] = nil
-            inbox?.delete(SharedWeekRecords.recordID(recipe: id, in: household.zoneID), in: household)
-        }
-        engine.state.add(pendingRecordZoneChanges: gone.recipes.map {
-            .deleteRecord(SharedWeekRecords.recordID(recipe: $0, in: household.zoneID))
-        })
     }
 
     /// The owner's personal week, copied into the household **once**, when the household is created.
@@ -255,20 +198,11 @@ final class SharedWeekPublisher: NSObject {
         }
     }
 
-    /// Writes a thumbnail somewhere `CKAsset` can read it from.
-    private func assetFile(for id: UUID, jpeg: Data) -> CKAsset? {
-        let url = URL.temporaryDirectory.appending(path: "shared-thumb-\(id.uuidString).jpg")
-        do {
-            try jpeg.write(to: url, options: .atomic)
-            return CKAsset(fileURL: url)
-        } catch {
-            log.warning("could not stage a thumbnail: \(error.localizedDescription, privacy: .public)")
-            return nil
-        }
-    }
 }
 
 extension SharedWeekPublisher: HouseholdSyncing {
+
+    var isReady: Bool { engine != nil }
 
     /// The owner writes into their own zone, so this is the one case where the household's zone and
     /// `SharedWeekZone.id` are the same thing. It still goes through the household, because the alternative is
@@ -284,6 +218,22 @@ extension SharedWeekPublisher: HouseholdSyncing {
         pendingMeals[mealID] = nil
         engine?.state.add(pendingRecordZoneChanges: [
             .deleteRecord(SharedWeekRecords.recordID(meal: mealID, in: household.zoneID))
+        ])
+    }
+
+    func stage(recipe fields: SharedRecipeFields, thumbnail: Data?, in household: Household) {
+        pendingRecipes[fields.id] = fields
+        pendingThumbnails[fields.id] = thumbnail
+        engine?.state.add(pendingRecordZoneChanges: [
+            .saveRecord(SharedWeekRecords.recordID(recipe: fields.id, in: household.zoneID))
+        ])
+    }
+
+    func withdraw(recipeID: UUID, in household: Household) {
+        pendingRecipes[recipeID] = nil
+        pendingThumbnails[recipeID] = nil
+        engine?.state.add(pendingRecordZoneChanges: [
+            .deleteRecord(SharedWeekRecords.recordID(recipe: recipeID, in: household.zoneID))
         ])
     }
 }
@@ -318,9 +268,6 @@ extension SharedWeekPublisher: CKSyncEngineDelegate {
     /// week is the household's.
     private func receive(_ changes: CKSyncEngine.Event.FetchedRecordZoneChanges) {
         guard let inbox, let household = households.hosted else { return }
-        isApplyingRemote = true
-        defer { isApplyingRemote = false }
-
         for modification in changes.modifications {
             inbox.apply(modification.record, in: household)
         }
@@ -352,7 +299,7 @@ extension SharedWeekPublisher: CKSyncEngineDelegate {
                 return nil
             }
             if let jpeg = pendingThumbnails[id] {
-                record[SharedWeekZone.RecipeKey.thumbnail] = assetFile(for: id, jpeg: jpeg)
+                record[SharedWeekZone.RecipeKey.thumbnail] = SharedWeekAssets.file(for: id, jpeg: jpeg)
             }
             return record
         }

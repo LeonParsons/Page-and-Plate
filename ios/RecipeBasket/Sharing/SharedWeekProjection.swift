@@ -7,8 +7,10 @@ import RecipeCore
 /// Page scans in particular are replaced by a small thumbnail.
 enum SharedWeekProjection {
 
+    /// - Parameter authorID: this device's iCloud identity. A recipe belongs to whoever scanned it, and that
+    ///   is what lets a household say whose it is and what leaves when they do.
     @MainActor
-    static func fields(for recipe: Recipe) -> SharedRecipeFields {
+    static func fields(for recipe: Recipe, authorID: String = "") -> SharedRecipeFields {
         SharedRecipeFields(
             id: recipe.id,
             title: recipe.title,
@@ -16,7 +18,8 @@ enum SharedWeekProjection {
             page: recipe.page,
             yield: recipe.yield,
             ingredients: recipe.ingredients,
-            rating: recipe.rating
+            rating: recipe.rating,
+            authorID: authorID
         )
     }
 

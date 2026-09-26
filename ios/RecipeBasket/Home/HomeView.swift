@@ -5,6 +5,8 @@ import SwiftUI
 /// Recipes (home), SPEC §4: list on the left and the recipe on the right on iPad; a stack on iPhone.
 struct HomeView: View {
     var remindersStore: any RemindersStoring = EventKitRemindersStore()
+    /// Only to hand on to Settings, which is where households are managed.
+    var guestPlan: SharedPlanContext?
 
     @Query(sort: \Recipe.createdAt, order: .reverse) private var recipes: [Recipe]
     @Environment(\.modelContext) private var modelContext
@@ -77,7 +79,7 @@ struct HomeView: View {
                 AddRecipeView(lastBook: settings.lastBook, quota: quota)
             }
             .sheet(isPresented: $isShowingSettings) {
-                SettingsView(store: remindersStore)
+                SettingsView(store: remindersStore, plan: guestPlan)
             }
         } detail: {
             if let id = selection, let recipe = recipes.first(where: { $0.id == id }) {

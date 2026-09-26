@@ -9,8 +9,15 @@ import SwiftData
 /// rules are written once and both sides obey them.
 @MainActor
 protocol HouseholdSyncing: AnyObject {
+    /// Whether this engine is running. Staging into one that is not is a silent no-op, so anything that treats
+    /// a stage as proof the household has been told has to ask first.
+    var isReady: Bool { get }
     func stage(meal: SharedMealFields, in household: Household)
     func withdraw(mealID: UUID, in household: Household)
+    /// A recipe from **this device's own library**, contributed to the household's catalogue. Every member
+    /// projects their own, which is what makes the catalogue a union rather than a copy of the owner's.
+    func stage(recipe: SharedRecipeFields, thumbnail: Data?, in household: Household)
+    func withdraw(recipeID: UUID, in household: Household)
 }
 
 /// Editing a household's week (SPEC §10, reshaped for Phase 11b).

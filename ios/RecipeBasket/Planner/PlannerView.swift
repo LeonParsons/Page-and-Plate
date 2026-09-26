@@ -48,7 +48,7 @@ struct PlannerView: View {
                 // switcher needed also stopped the List running under the navigation bar, which is why the
                 // top of this screen used to turn system grey.
                 if let household, let guestPlan {
-                    SharedWeekView(week: week, household: household, plan: guestPlan, remindersStore: remindersStore)
+                    SharedWeekView(week: week, household: household, plan: guestPlan, library: modelContext.container, remindersStore: remindersStore)
                         .modelContainer(guestPlan.container)
                 } else {
                     WeekView(week: week, meals: weekMeals, remindersStore: remindersStore, onAdd: { addingTo = $0 }, onDeleteRecipe: deleteRecipe)
@@ -85,7 +85,7 @@ struct PlannerView: View {
                     ExportSheet(week: week, meals: shoppable, store: remindersStore, settings: exportSettings)
                 }
                 .sheet(isPresented: $isShowingSettings) {
-                    SettingsView(store: remindersStore)
+                    SettingsView(store: remindersStore, plan: guestPlan)
                 }
                 .confirmationDialog("Clear \(week.title.lowercased())?", isPresented: $isConfirmingClear, titleVisibility: .visible) {
                     Button("Clear \(week.rangeText)", role: .destructive) { try? PlanEditor(context: modelContext).clear(week) }

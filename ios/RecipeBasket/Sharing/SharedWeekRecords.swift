@@ -1,5 +1,6 @@
 import CloudKit
 import Foundation
+import OSLog
 import RecipeCore
 
 /// What a guest sees of one of the owner's recipes. Deliberately **not** the recipe: no page scans, no
@@ -15,6 +16,9 @@ struct SharedRecipeFields: Equatable, Sendable {
     var yield: RecipeYield
     var ingredients: [Ingredient]
     var rating: Int?
+    /// Who scanned it. Empty when this device does not yet know its own iCloud identity, or for a recipe
+    /// projected before 11b — either way it reads as somebody else's, so it stays read-only.
+    var authorID: String = ""
 }
 
 /// One planned meal, projected. `exportedAt` is absent on purpose: the export stays personal (SPEC §10), so
@@ -56,8 +60,11 @@ enum SharedWeekRecords {
         record[SharedWeekZone.RecipeKey.yield] = try JSONEncoder().encode(fields.yield)
         record[SharedWeekZone.RecipeKey.ingredients] = try JSONEncoder().encode(fields.ingredients)
         record[SharedWeekZone.RecipeKey.rating] = fields.rating
+        record[SharedWeekZone.RecipeKey.authorID] = fields.authorID
     }
 
+    /// - Parameter record: read back from CloudKit, so `creatorUserRecordID` is populated and can stand in for
+    ///   an author that was never written — see `HouseholdAuthor` for why the explicit field wins when present.
     nonisolated static func recipeFields(from record: CKRecord) throws -> SharedRecipeFields {
         guard let id = UUID(uuidString: record.recordID.recordName) else {
             throw SharedWeekError.badRecord("recipe record name is not a UUID")
@@ -73,7 +80,10 @@ enum SharedWeekRecords {
             page: record[SharedWeekZone.RecipeKey.page] as? Int,
             yield: try JSONDecoder().decode(RecipeYield.self, from: yieldData),
             ingredients: try JSONDecoder().decode([Ingredient].self, from: ingredientsData),
-            rating: record[SharedWeekZone.RecipeKey.rating] as? Int
+            rating: record[SharedWeekZone.RecipeKey.rating] as? Int,
+            authorID: record[SharedWeekZone.RecipeKey.authorID] as? String
+                ?? record.creatorUserRecordID?.recordName
+                ?? ""
         )
     }
 
@@ -111,4 +121,23 @@ enum SharedWeekRecords {
 
 enum SharedWeekError: Error, Equatable {
     case badRecord(String)
+}
+
+/// Staging a thumbnail where `CKAsset` can read it from — a file on disk, which is the only thing it accepts.
+///
+/// Shared, because both engines project recipes now: the household you host through your private database, the
+/// ones you joined through the shared one.
+enum SharedWeekAssets {
+    nonisolated private static let log = Logger(subsystem: "app.recipe-basket", category: "SharedWeek")
+
+    nonisolated static func file(for id: UUID, jpeg: Data) -> CKAsset? {
+        let url = URL.temporaryDirectory.appending(path: "shared-thumb-\(id.uuidString).jpg")
+        do {
+            try jpeg.write(to: url, options: .atomic)
+            return CKAsset(fileURL: url)
+        } catch {
+            log.warning("could not stage a thumbnail: \(error.localizedDescription, privacy: .public)")
+            return nil
+        }
+    }
 }

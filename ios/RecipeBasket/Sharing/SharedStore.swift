@@ -23,7 +23,10 @@ final class SharedRecipe {
     var yield: RecipeYield = RecipeYield(unit: RecipeYield.servingsUnit)
     var ingredients: [Ingredient] = []
     var rating: Int?
-    /// The 240 px projection, never the owner's page scan.
+    /// Who scanned it; see `HouseholdAuthor`. Empty means "not established", which is treated as somebody
+    /// else's rather than as this device's.
+    var authorID: String = ""
+    /// The 240 px projection, never the author's page scan.
     @Attribute(.externalStorage) var thumbnail: Data?
 
     init(_ fields: SharedRecipeFields, householdID: String, thumbnail: Data? = nil) {
@@ -39,11 +42,13 @@ final class SharedRecipe {
         yield = fields.yield
         ingredients = fields.ingredients
         rating = fields.rating
+        authorID = fields.authorID
         if let thumbnail { self.thumbnail = thumbnail }
     }
 
     var fields: SharedRecipeFields {
-        SharedRecipeFields(id: id, title: title, book: book, page: page, yield: yield, ingredients: ingredients, rating: rating)
+        SharedRecipeFields(id: id, title: title, book: book, page: page, yield: yield,
+                           ingredients: ingredients, rating: rating, authorID: authorID)
     }
 
     var sourceText: String? {

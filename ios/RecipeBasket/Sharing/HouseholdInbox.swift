@@ -77,11 +77,19 @@ struct HouseholdInbox {
     // Scoped to the household, always. The same recipe id can legitimately be in two households — one library
     // projected into both — and a lookup that ignored the household would update the wrong row.
 
-    private func recipe(id: UUID, in household: Household) throws -> SharedRecipe? {
+    func recipe(id: UUID, in household: Household) throws -> SharedRecipe? {
         let householdID = household.id
         return try context.fetch(
             FetchDescriptor<SharedRecipe>(predicate: #Predicate { $0.id == id && $0.householdID == householdID })
         ).first
+    }
+
+    /// Every recipe this device contributed to a household, for withdrawing them when it leaves.
+    func recipes(authoredBy authorID: String, in household: Household) throws -> [SharedRecipe] {
+        let householdID = household.id
+        return try context.fetch(
+            FetchDescriptor<SharedRecipe>(predicate: #Predicate { $0.householdID == householdID && $0.authorID == authorID })
+        ).filter { !$0.isDeleted }
     }
 
     private func meal(id: UUID, in household: Household) throws -> SharedMeal? {
