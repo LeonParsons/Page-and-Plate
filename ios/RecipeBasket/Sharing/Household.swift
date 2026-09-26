@@ -28,6 +28,10 @@ struct Household: Codable, Hashable, Identifiable, Sendable {
 }
 
 /// Which plan is on display. Exactly one, always (SPEC §10, reshaped 2026-09-25).
+///
+/// `.mine` means "the plan that is mine to run" — which is the household you host once you host one, and your
+/// personal week before that. Hosting **replaces** your own plan rather than sitting beside it (Leon,
+/// 2026-09-26): a row you would never tap is worse than a rule to explain.
 enum PlanSelection: Codable, Hashable, Sendable {
     case mine
     case household(String)
@@ -51,6 +55,7 @@ final class Households {
 
     private enum Key {
         static let households = "household.joined"
+        static let hosted = "household.hosted"
         static let selection = "household.selection"
         /// Phase 10 stored a single membership under these. Read once, then removed.
         static let legacyZoneName = "sharedPlan.zoneName"
@@ -60,30 +65,42 @@ final class Households {
 
     private let defaults: UserDefaults
     private(set) var joined: [Household]
+    /// The household this person runs, once they have created one. Their own week is projected into it and
+    /// then belongs to it; before that there is no household and `current` is nil.
+    private(set) var hosted: Household?
     private(set) var selection: PlanSelection
 
     init(defaults: UserDefaults = .standard) {
-        var joined = Self.load(from: defaults) ?? []
+        var joined = Self.load([Household].self, Key.households, from: defaults) ?? []
         if joined.isEmpty, let inherited = Self.adoptPhase10Membership(from: defaults) {
             joined = [inherited]
         }
-        var selection = Self.loadSelection(from: defaults)
+        let hosted = Self.load(Household.self, Key.hosted, from: defaults)
+        var selection = Self.load(PlanSelection.self, Key.selection, from: defaults) ?? .mine
         // A selection can outlive the household it names — the share was revoked while the app was closed.
         if case .household(let id) = selection, !joined.contains(where: { $0.id == id }) {
             selection = .mine
         }
         self.defaults = defaults
         self.joined = joined
+        self.hosted = hosted
         self.selection = selection
     }
 
-    /// The household on display, or nil when it is the person's own plan.
+    /// The household on display, or nil when this person has no household at all and is looking at their own
+    /// personal week. `.mine` resolves to the household they host, which is what makes hosting *replace*
+    /// their own plan rather than sit beside it.
     var current: Household? {
-        guard case .household(let id) = selection else { return nil }
-        return joined.first { $0.id == id }
+        switch selection {
+        case .mine: hosted
+        case .household(let id): joined.first { $0.id == id }
+        }
     }
 
     var isShowingHousehold: Bool { current != nil }
+
+    /// What the "My plan" row reads. Naming the household there is the whole of how hosting announces itself.
+    var mineTitle: String { hosted?.title ?? "My plan" }
 
     /// Accepting an invite. Re-accepting one already joined updates its name rather than adding it twice.
     func join(zoneID: CKRecordZone.ID, title: String) {
@@ -102,6 +119,25 @@ final class Households {
         join(zoneID: share.recordID.zoneID, title: Self.title(for: share))
     }
 
+    /// Creating your own household, or re-reading the share on a later launch in case it was renamed.
+    ///
+    /// Recording it does not change what is on display: `.mine` was already the selection, and it now
+    /// resolves to this household. That is deliberate — the owner's week is seeded from their personal week,
+    /// so the screen looks the same the moment before and the moment after.
+    func host(zoneID: CKRecordZone.ID, title: String) {
+        if var existing = hosted, existing.id == Household(zoneID: zoneID, title: title).id {
+            existing.title = title
+            hosted = existing
+        } else {
+            hosted = Household(zoneID: zoneID, title: title)
+        }
+        persist()
+    }
+
+    func host(_ share: CKShare) {
+        host(zoneID: share.recordID.zoneID, title: Self.title(for: share))
+    }
+
     /// Leaving, or being removed. Only this household goes; the person's own plan is never touched.
     func leave(_ household: Household) {
         leave(id: household.id)
@@ -112,6 +148,17 @@ final class Households {
         if case .household(let shown) = selection, shown == id {
             selection = .mine
         }
+        persist()
+    }
+
+    /// Signing out of iCloud, and nothing else.
+    ///
+    /// **Stopping sharing does not call this.** Removing the participants leaves the zone, the week and the
+    /// name alone, so the household simply has one member — lossless, and re-sharing picks it straight back
+    /// up. Leon accepted (2026-09-26) that there is therefore no way back to the personal week while a
+    /// household exists; giving the owner the equivalent of Leave is 11c's job.
+    func stopHosting() {
+        hosted = nil
         persist()
     }
 
@@ -126,18 +173,16 @@ final class Households {
     private func persist() {
         defaults.set(try? JSONEncoder().encode(joined), forKey: Key.households)
         defaults.set(try? JSONEncoder().encode(selection), forKey: Key.selection)
+        if let hosted {
+            defaults.set(try? JSONEncoder().encode(hosted), forKey: Key.hosted)
+        } else {
+            defaults.removeObject(forKey: Key.hosted)
+        }
     }
 
-    private static func load(from defaults: UserDefaults) -> [Household]? {
-        guard let data = defaults.data(forKey: Key.households) else { return nil }
-        return try? JSONDecoder().decode([Household].self, from: data)
-    }
-
-    private static func loadSelection(from defaults: UserDefaults) -> PlanSelection {
-        guard let data = defaults.data(forKey: Key.selection),
-              let selection = try? JSONDecoder().decode(PlanSelection.self, from: data)
-        else { return .mine }
-        return selection
+    private static func load<T: Decodable>(_ type: T.Type, _ key: String, from defaults: UserDefaults) -> T? {
+        guard let data = defaults.data(forKey: key) else { return nil }
+        return try? JSONDecoder().decode(type, from: data)
     }
 
     /// Phase 10's single membership becomes the first household, so nobody who had accepted an invite has

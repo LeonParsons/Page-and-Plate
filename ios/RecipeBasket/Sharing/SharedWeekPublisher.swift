@@ -3,10 +3,17 @@ import Foundation
 import OSLog
 import SwiftData
 
-/// Publishes the owner's library and plan into the shared zone (SPEC §10).
+/// The household this person hosts: their library projected into it, and its week read and written (SPEC §10,
+/// reshaped for Phase 11b).
 ///
 /// Runs a `CKSyncEngine` over the owner's **private** database, scoped to `SharedWeekZone`. SwiftData is
 /// mirroring the same database into its own zone at the same time; the two never touch the same records.
+///
+/// **What changed in 11b.** The library still flows from the owner's real store continuously — it is theirs,
+/// and it is what they contribute to the catalogue. The *week* does not: it is seeded from their personal plan
+/// once, when the household is created, and from then on it belongs to the household and is edited through
+/// `HouseholdWeekEditor` like any member's. Phase 10 folded members' meals back into `PlannedMeal`, which
+/// stopped being possible the moment a member could plan from a recipe the owner has never had.
 @Observable
 @MainActor
 final class SharedWeekPublisher: NSObject {
@@ -30,7 +37,8 @@ final class SharedWeekPublisher: NSObject {
     }
 
     private let containerID: String
-    /// What the owner has deleted since the last publish.
+    private let households: Households
+    /// Which recipes the owner has deleted since the last publish.
     private let deletions: SharedPlanDeletions
     private let log = Logger(subsystem: "app.recipe-basket", category: "SharedWeek")
     private var engine: CKSyncEngine?
@@ -40,37 +48,60 @@ final class SharedWeekPublisher: NSObject {
     private var pendingRecipes: [UUID: SharedRecipeFields] = [:]
     private var pendingMeals: [UUID: SharedMealFields] = [:]
     private var pendingThumbnails: [UUID: Data] = [:]
-    /// The owner's context, for folding guest edits back into the real plan.
+    /// The owner's own library, which is what gets projected.
     private var context: ModelContext?
-    /// Guards the echo: applying a guest's change saves the store, and that save must not republish it.
+    /// The household store, which is where the week lives.
+    private var householdContext: ModelContext?
+    /// Guards the echo: applying a member's change saves the store, and that save must not republish it.
     private var isApplyingRemote = false
     private var watcher: Task<Void, Never>?
 
     init(
         containerID: String = AppModelContainer.cloudKitContainerID,
+        households: Households = .shared,
         deletions: SharedPlanDeletions = .shared
     ) {
         self.containerID = containerID
+        self.households = households
         self.deletions = deletions
         super.init()
     }
 
     private var container: CKContainer { CKContainer(identifier: containerID) }
 
+    /// Named by the store's generation, so discarding the cached rows discards these change tokens with them.
+    /// See `SharedStore.generation`.
     private var stateURL: URL {
-        URL.applicationSupportDirectory.appending(path: "shared-plan-engine-state")
+        SharedStore.engineStateURL(role: "host")
     }
 
-    /// Republishes whenever the owner's own store changes, so a guest sees new recipes and moved meals
-    /// without the owner doing anything. Republishing everything is wasteful at a large library; at the size
-    /// this app holds it is not worth the bookkeeping to send less.
+    /// The household store this engine reads into and writes from.
+    func attach(householdContext: ModelContext) {
+        self.householdContext = householdContext
+    }
+
+    /// Editing the week of the household this person hosts.
+    var editor: HouseholdWeekEditor? {
+        householdContext.map { HouseholdWeekEditor(context: $0, sync: self) }
+    }
+
+    private var inbox: HouseholdInbox? {
+        householdContext.map { HouseholdInbox(context: $0) }
+    }
+
+    /// Reprojects the owner's library whenever their own store changes, so members see a new or renamed
+    /// recipe without the owner doing anything. Reprojecting everything is wasteful at a large library; at the
+    /// size this app holds it is not worth the bookkeeping to send less.
+    ///
+    /// The **week** is not republished from here: after the seed it belongs to the household, and a local
+    /// `PlannedMeal` save must not overwrite what a member planned.
     func watchLocalChanges(context: ModelContext) {
         self.context = context
         guard watcher == nil else { return }
         watcher = Task { [weak self] in
             for await _ in NotificationCenter.default.notifications(named: ModelContext.didSave) {
                 guard let self, !self.isApplyingRemote, self.engine != nil else { continue }
-                try? self.publish(from: context)
+                try? self.publishLibrary(from: context)
             }
         }
     }
@@ -106,43 +137,58 @@ final class SharedWeekPublisher: NSObject {
         _ = try await container.privateCloudDatabase.modifyRecordZones(saving: [zone], deleting: [])
     }
 
-    /// Stages the whole library and plan. Called on first share and whenever the owner's data changes.
-    func publish(from context: ModelContext) throws {
-        guard let engine else { return }
-
-        let recipes = try context.fetch(FetchDescriptor<Recipe>())
-        let meals = try context.fetch(FetchDescriptor<PlannedMeal>())
+    /// Stages the owner's whole library into their household, and writes it into the household store so they
+    /// see their own contribution without waiting for CloudKit to echo it back.
+    ///
+    /// Called on first share and on every local save. Recipes only — the week is seeded once by `seedWeek`.
+    func publishLibrary(from context: ModelContext) throws {
+        guard let engine, let household = households.hosted else { return }
 
         var ids: [CKRecord.ID] = []
-        for recipe in recipes where !recipe.isDeleted {
+        for recipe in try context.fetch(FetchDescriptor<Recipe>()) where !recipe.isDeleted {
             let fields = SharedWeekProjection.fields(for: recipe)
+            let thumbnail = SharedWeekProjection.thumbnailJPEG(for: recipe)
             pendingRecipes[fields.id] = fields
-            pendingThumbnails[fields.id] = SharedWeekProjection.thumbnailJPEG(for: recipe)
-            ids.append(SharedWeekRecords.recordID(recipe: fields.id))
-        }
-        for meal in meals where !meal.isDeleted {
-            guard let fields = SharedWeekProjection.fields(for: meal) else { continue }
-            pendingMeals[fields.id] = fields
-            ids.append(SharedWeekRecords.recordID(meal: fields.id))
+            pendingThumbnails[fields.id] = thumbnail
+            ids.append(SharedWeekRecords.recordID(recipe: fields.id, in: household.zoneID))
+            try? inbox?.upsert(recipe: fields, thumbnail: thumbnail, in: household)
         }
 
         engine.state.add(pendingRecordZoneChanges: ids.map { .saveRecord($0) })
-        log.info("staged \(ids.count, privacy: .public) records for the shared plan")
+        log.info("staged \(ids.count, privacy: .public) recipes for \(household.title, privacy: .public)")
 
-        // The fetches above can only see what is still here, so a removal has to come from the journal the
-        // deleting code wrote. A deleted recipe deliberately leaves its meals alone: the owner keeps those
-        // rows and shows them as uncookable, and a guest should see the same week the owner does.
+        // The fetch above can only see what is still here, so a removal has to come from the journal the
+        // deleting code wrote. A deleted recipe deliberately leaves its meals alone: they stay in the week and
+        // say they cannot be cooked, which is the same thing that happens when a member's recipe leaves.
         let gone = deletions.drain()
-        let withdrawn = gone.recipes.map { SharedWeekRecords.recordID(recipe: $0) }
-            + gone.meals.map { SharedWeekRecords.recordID(meal: $0) }
-        if !withdrawn.isEmpty {
-            for id in gone.recipes {
-                pendingRecipes[id] = nil
-                pendingThumbnails[id] = nil
-            }
-            for id in gone.meals { pendingMeals[id] = nil }
-            engine.state.add(pendingRecordZoneChanges: withdrawn.map { .deleteRecord($0) })
+        guard !gone.recipes.isEmpty else { return }
+        for id in gone.recipes {
+            pendingRecipes[id] = nil
+            pendingThumbnails[id] = nil
+            inbox?.delete(SharedWeekRecords.recordID(recipe: id, in: household.zoneID), in: household)
         }
+        engine.state.add(pendingRecordZoneChanges: gone.recipes.map {
+            .deleteRecord(SharedWeekRecords.recordID(recipe: $0, in: household.zoneID))
+        })
+    }
+
+    /// The owner's personal week, copied into the household **once**, when the household is created.
+    ///
+    /// Hosting replaces "My plan" (Leon, 2026-09-26), so without this the owner would appear to lose their
+    /// week the instant they shared. After this the household owns the week: their personal `PlannedMeal`
+    /// rows are left exactly as they are and are never read again while the household exists.
+    func seedWeek(from context: ModelContext) throws {
+        guard let engine, let household = households.hosted, let inbox else { return }
+
+        var ids: [CKRecord.ID] = []
+        for meal in try context.fetch(FetchDescriptor<PlannedMeal>()) where !meal.isDeleted {
+            guard let fields = SharedWeekProjection.fields(for: meal) else { continue }
+            pendingMeals[fields.id] = fields
+            ids.append(SharedWeekRecords.recordID(meal: fields.id, in: household.zoneID))
+            try inbox.upsert(meal: fields, in: household)
+        }
+        engine.state.add(pendingRecordZoneChanges: ids.map { .saveRecord($0) })
+        log.info("seeded \(ids.count, privacy: .public) meals into \(household.title, privacy: .public)")
     }
 
     // MARK: The share
@@ -164,7 +210,11 @@ final class SharedWeekPublisher: NSObject {
     ///   which is how Phase 10 managed to put "Shared's plan" on screen.
     func shareForInviting(named name: String? = nil) async throws -> CKShare {
         try await start()
-        if let existing = try await existingShare() { return existing }
+        if let existing = try await existingShare() {
+            // Re-read the name in case it was renamed in the sharing sheet since the household was recorded.
+            households.host(existing)
+            return existing
+        }
 
         let share = CKShare(recordZoneID: SharedWeekZone.id)
         let trimmed = (name ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
@@ -174,14 +224,19 @@ final class SharedWeekPublisher: NSObject {
         guard let saved = try result.saveResults[share.recordID]?.get() as? CKShare else {
             throw SharedWeekError.badRecord("the share came back without a record")
         }
+        households.host(saved)
         return saved
     }
 
-    /// Ends the share for everyone. The guest's copy goes with it (SPEC §10: no copy outlives the share).
+    /// Ends the share for everyone. Every member's copy goes with it (SPEC §10: no copy outlives the share).
+    ///
+    /// **The household itself survives.** Only the participants go: the zone, the week and the name stay, so
+    /// the owner keeps the plan they have been using and can invite people again without rebuilding it.
+    /// Deleting the household outright — and getting the personal week back — is 11c's.
     func stopSharing() async throws {
         guard let share = try await existingShare() else { return }
         _ = try await container.privateCloudDatabase.modifyRecords(saving: [], deleting: [share.recordID])
-        // No guest left to tell, so anything still owed is owed to nobody.
+        // Nobody left to tell, so anything still owed is owed to nobody.
         deletions.forget()
     }
 
@@ -213,6 +268,26 @@ final class SharedWeekPublisher: NSObject {
     }
 }
 
+extension SharedWeekPublisher: HouseholdSyncing {
+
+    /// The owner writes into their own zone, so this is the one case where the household's zone and
+    /// `SharedWeekZone.id` are the same thing. It still goes through the household, because the alternative is
+    /// a special case that only works while there is exactly one.
+    func stage(meal fields: SharedMealFields, in household: Household) {
+        pendingMeals[fields.id] = fields
+        engine?.state.add(pendingRecordZoneChanges: [
+            .saveRecord(SharedWeekRecords.recordID(meal: fields.id, in: household.zoneID))
+        ])
+    }
+
+    func withdraw(mealID: UUID, in household: Household) {
+        pendingMeals[mealID] = nil
+        engine?.state.add(pendingRecordZoneChanges: [
+            .deleteRecord(SharedWeekRecords.recordID(meal: mealID, in: household.zoneID))
+        ])
+    }
+}
+
 extension SharedWeekPublisher: CKSyncEngineDelegate {
 
     func handleEvent(_ event: CKSyncEngine.Event, syncEngine: CKSyncEngine) async {
@@ -221,12 +296,14 @@ extension SharedWeekPublisher: CKSyncEngineDelegate {
             stateSerialization = update.stateSerialization
             save(update.stateSerialization)
         case .accountChange:
-            // Signing out takes the shared plan with it; nothing of the owner's library is lost.
+            // Signing out takes the household with it; nothing of the owner's own library is lost.
             pendingRecipes.removeAll()
             pendingMeals.removeAll()
             deletions.forget()
+            if let householdContext { try? SharedStore.empty(householdContext) }
+            households.stopHosting()
         case .fetchedRecordZoneChanges(let changes):
-            foldBack(changes)
+            receive(changes)
         case .sentRecordZoneChanges(let sent):
             for failed in sent.failedRecordSaves {
                 log.warning("record save failed: \(failed.error.localizedDescription, privacy: .public)")
@@ -236,23 +313,19 @@ extension SharedWeekPublisher: CKSyncEngineDelegate {
         }
     }
 
-    /// A guest's edits, applied to the owner's real plan through the same rules `PlanEditor` keeps.
-    private func foldBack(_ changes: CKSyncEngine.Event.FetchedRecordZoneChanges) {
-        guard let context else { return }
+    /// What the members have changed, written into the household store — the same store, the same way, as a
+    /// member's own engine does it. Nothing reaches the owner's `PlannedMeal` plan any more: the household's
+    /// week is the household's.
+    private func receive(_ changes: CKSyncEngine.Event.FetchedRecordZoneChanges) {
+        guard let inbox, let household = households.hosted else { return }
         isApplyingRemote = true
         defer { isApplyingRemote = false }
 
-        for modification in changes.modifications
-        where modification.record.recordType == SharedWeekZone.RecordType.meal {
-            do {
-                try SharedWeekFoldBack.apply(SharedWeekRecords.mealFields(from: modification.record), context: context)
-            } catch {
-                log.warning("could not fold back a meal: \(error.localizedDescription, privacy: .public)")
-            }
+        for modification in changes.modifications {
+            inbox.apply(modification.record, in: household)
         }
         for deletion in changes.deletions {
-            guard let id = UUID(uuidString: deletion.recordID.recordName) else { continue }
-            try? SharedWeekFoldBack.delete(mealID: id, context: context)
+            inbox.delete(deletion.recordID, in: household)
         }
     }
 

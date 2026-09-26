@@ -70,13 +70,24 @@ struct ExportContent {
         )
     }
 
-    // MARK: A shared week
+    // MARK: A household week
 
-    /// The same list, built from a guest's projection of someone else's week.
+    /// The same list, built from this device's copy of a household's week.
     ///
-    /// Nothing is stamped when it is added: the export is personal (SPEC §10), so a guest's shopping must not
-    /// mark the owner's meals — and there is nothing of the owner's here to mark.
-    static func sharedWeek(_ week: PlanWeek, exports: [PlannedMealExport], staples: [String]) -> ExportContent {
+    /// The tick that gets stamped is **`SharedMeal.exportedAt`, which is never projected** — the export is
+    /// personal (SPEC §10), so one member's shopping marks their own row and nobody else's. Nothing on a
+    /// recipe is stamped at all: `lastExportedAt` belongs to the author's own library, not to whoever shopped.
+    ///
+    /// - Parameter skipped: meals in the week whose recipe is not in the catalogue. They contribute nothing to
+    ///   the list, so the count is said out loud rather than leaving someone to notice a missing dinner.
+    static func sharedWeek(
+        _ week: PlanWeek,
+        meals: [SharedMeal],
+        exports: [PlannedMealExport],
+        skipped: Int,
+        staples: [String]
+    ) -> ExportContent {
+        let mealsByID = Dictionary(meals.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         let exportsByID = Dictionary(uniqueKeysWithValues: exports.map { ($0.id, $0) })
         let lines = WeekShopping.lines(for: exports, staples: staples)
         let lineByID = Dictionary(uniqueKeysWithValues: lines.map { ($0.id, $0) })
@@ -85,16 +96,29 @@ struct ExportContent {
                 caption: line.contributors.compactMap { exportsByID[$0] }.map { "\($0.recipeTitle) (\($0.weekdayText))" }.joined(separator: ", "))
         }
         let weekTitle = week.weekOfText
+        let count = exports.count == 1 ? "1 meal" : "\(exports.count) meals"
+        let skippedText = switch skipped {
+        case 0: ""
+        case 1: " · 1 meal skipped, its recipe isn't shared"
+        default: " · \(skipped) meals skipped, their recipes aren't shared"
+        }
 
         return ExportContent(
             subject: weekTitle,
-            heading: "\(exports.count == 1 ? "1 meal" : "\(exports.count) meals") · \(week.rangeText)",
+            heading: "\(count) · \(week.rangeText)\(skippedText)",
             unnamedSectionTitle: "Shopping list",
             sections: [IngredientSection(name: nil, rows: rows)],
             shareText: { ticked in
                 WeekShopping.shareText(weekTitle: weekTitle, meals: exports, lines: ticked.compactMap { lineByID[$0.id] })
             },
-            onAdded: { _ in }
+            onAdded: { ticked in
+                let now = Date.now
+                let contributing = Set(ticked.compactMap { lineByID[$0.id] }.flatMap(\.contributors))
+                for id in contributing {
+                    guard let meal = mealsByID[id], !meal.isDeleted else { continue }
+                    meal.exportedAt = now
+                }
+            }
         )
     }
 

@@ -2,15 +2,15 @@ import RecipeCore
 import SwiftData
 import SwiftUI
 
-/// The owner's library, as the guest picks from it.
+/// The household's catalogue, as any member picks from it.
 ///
-/// **There is no "Scan a recipe" here, and that is the feature.** A guest plans; the owner curates
-/// (SPEC §10). It also means a shared week can never spend an extraction the owner did not ask for, so the
-/// free tier and the API bill stay exactly as they are.
+/// In 11b-i this is still only the owner's library; 11b-ii makes it the union of every member's. Either way
+/// the rule is the same: a member plans from what the household has, and scaling a meal for their own table
+/// never touches the author's recipe.
 struct AddSharedMealSheet: View {
     let day: PlanDay
     let household: Household
-    let client: SharedWeekClient
+    let plan: SharedPlanContext
 
     @Query(sort: \SharedRecipe.title) private var recipes: [SharedRecipe]
     @Environment(\.dismiss) private var dismiss
@@ -18,7 +18,7 @@ struct AddSharedMealSheet: View {
 
     /// Only this household's catalogue: the store holds every household this person belongs to.
     private var catalogue: [SharedRecipe] {
-        recipes.filter { $0.zoneName == household.zoneName }
+        recipes.filter { $0.householdID == household.id }
     }
 
     private var filtered: [SharedRecipe] {
@@ -36,16 +36,17 @@ struct AddSharedMealSheet: View {
                     ContentUnavailableView {
                         Label("No recipes yet", systemImage: "book.closed")
                     } description: {
-                        Text("Recipes appear here as they arrive from the person who shared this plan.")
+                        Text("Recipes appear here as they arrive from the household.")
                     }
                 } else {
                     List(filtered) { recipe in
                         Button {
-                            try? client.add(
+                            try? plan.editor(for: household)?.add(
                                 recipeID: recipe.id,
+                                title: recipe.title,
                                 to: day,
                                 portions: Int(recipe.yield.quantity ?? 2),
-                                in: household.zoneName
+                                in: household
                             )
                             dismiss()
                         } label: {

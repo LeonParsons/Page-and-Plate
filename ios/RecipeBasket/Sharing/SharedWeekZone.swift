@@ -8,6 +8,10 @@ import Foundation
 /// this is a second zone in the same private database holding a projection of what a guest needs to see.
 enum SharedWeekZone {
     /// One shared plan per user, created on the first invite and alive until it is revoked.
+    ///
+    /// **The same string in every owner's database**, so it does not identify a household — only
+    /// `(zoneName, ownerName)` does, which is what `Household.id` is. Anything keyed on this name alone
+    /// merges two households into one; `SharedRecipe.householdID` carries the pair for that reason.
     nonisolated static let zoneName = "SharedPlan"
 
     nonisolated static var id: CKRecordZone.ID {
@@ -36,6 +40,9 @@ enum SharedWeekZone {
 
     enum MealKey {
         nonisolated static let recipeID = "recipeID"
+        /// The recipe's title, so a member without that recipe can still name the meal. There is no
+        /// `exportedAt` here and there must never be: the export is personal (SPEC §10).
+        nonisolated static let recipeTitle = "recipeTitle"
         nonisolated static let dayKey = "dayKey"
         nonisolated static let order = "order"
         nonisolated static let portions = "portions"

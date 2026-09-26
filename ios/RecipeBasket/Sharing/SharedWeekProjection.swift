@@ -20,13 +20,15 @@ enum SharedWeekProjection {
         )
     }
 
-    /// Meals whose recipe has gone are skipped rather than projected with a dangling reference.
+    /// Meals whose recipe has gone are skipped rather than projected with a dangling reference. Used only for
+    /// the one-time seed of a new household's week, since after that the week is the household's own.
     @MainActor
     static func fields(for meal: PlannedMeal) -> SharedMealFields? {
         guard let recipe = meal.recipe, !recipe.isDeleted else { return nil }
         return SharedMealFields(
             id: meal.id,
             recipeID: recipe.id,
+            recipeTitle: recipe.title,
             dayKey: meal.dayKey,
             order: meal.order,
             portions: meal.portions

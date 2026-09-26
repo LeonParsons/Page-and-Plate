@@ -18,13 +18,14 @@ struct PlannerView: View {
     @State private var isShowingSettings = false
     @State private var isConfirmingClear = false
 
-    /// The household on display, or nil for this person's own plan. There is no switcher here any more:
-    /// one plan is on display at a time and Settings is where it changes (Phase 11a).
+    /// The household on display, or nil when this person has no household and is looking at their own
+    /// personal week. There is no switcher here: one plan is on display and Settings is where it changes
+    /// (Phase 11a). Hosting a household makes it what `.mine` resolves to, so an owner lands here too.
     private var household: Household? {
         guestPlan?.households.current
     }
 
-    /// "This week" on your own plan; "The Parsons · This week" on a household's, so it is never ambiguous
+    /// "This week" on a personal plan; "The Parsons · This week" on a household's, so it is never ambiguous
     /// whose meals you are looking at.
     private var navigationTitle: String {
         guard let household else { return week.title }
@@ -47,7 +48,7 @@ struct PlannerView: View {
                 // switcher needed also stopped the List running under the navigation bar, which is why the
                 // top of this screen used to turn system grey.
                 if let household, let guestPlan {
-                    SharedWeekView(week: week, household: household, client: guestPlan.client, remindersStore: remindersStore)
+                    SharedWeekView(week: week, household: household, plan: guestPlan, remindersStore: remindersStore)
                         .modelContainer(guestPlan.container)
                 } else {
                     WeekView(week: week, meals: weekMeals, remindersStore: remindersStore, onAdd: { addingTo = $0 }, onDeleteRecipe: deleteRecipe)

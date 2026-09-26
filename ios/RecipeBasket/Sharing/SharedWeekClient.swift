@@ -4,10 +4,12 @@ import OSLog
 import RecipeCore
 import SwiftData
 
-/// The guest's side: reads the owner's shared zone and writes the guest's meal changes back into it.
+/// The member's side: every household this person has **joined**, read and written through one engine.
 ///
-/// A `CKSyncEngine` over `sharedCloudDatabase`, which is where an accepted zone appears. The owner's engine
-/// is a separate instance over their own private database — same records, opposite ends.
+/// A `CKSyncEngine` over `sharedCloudDatabase`, which is where an accepted zone appears, and which fetches
+/// *every* shared zone without being asked — so several households cost no extra machinery, only care about
+/// which one a record belongs to. The household you host is the other engine, `SharedWeekPublisher`, over
+/// your own private database; `HouseholdWeekEditor` and `HouseholdInbox` are what both have in common.
 @Observable
 @MainActor
 final class SharedWeekClient: NSObject {
@@ -30,13 +32,21 @@ final class SharedWeekClient: NSObject {
 
     private var container: CKContainer { CKContainer(identifier: containerID) }
 
+    /// Named by the store's generation, so discarding the cached rows discards these change tokens with them.
+    /// See `SharedStore.generation` — keeping one without the other empties a household for good.
     private var stateURL: URL {
-        URL.applicationSupportDirectory.appending(path: "shared-plan-guest-state")
+        SharedStore.engineStateURL(role: "member")
     }
 
     /// Split from `start` so the editing rules can be tested without CloudKit.
     func attach(context: ModelContext) {
         self.context = context
+    }
+
+    /// Editing any household this person has joined. Which household is a parameter of each edit, not of the
+    /// editor: one engine serves every joined zone.
+    var editor: HouseholdWeekEditor? {
+        context.map { HouseholdWeekEditor(context: $0, sync: self) }
     }
 
     func start(context: ModelContext) async {
@@ -53,137 +63,40 @@ final class SharedWeekClient: NSObject {
         isRunning = true
     }
 
-    // MARK: Editing — the guest plans
+    // MARK: HouseholdSyncing
 
-    /// The same invariants as the owner's `PlanEditor`: each day's `order` stays dense, 0…n-1.
-    func add(recipeID: UUID, to day: PlanDay, portions: Int, in zoneName: String) throws {
-        guard let context else { return }
-        let existing = try meals(on: day, in: zoneName)
-        let meal = SharedMeal(SharedMealFields(
-            id: UUID(),
-            recipeID: recipeID,
-            dayKey: day.isoString,
-            order: existing.count,
-            portions: Portions.clamp(portions)
-        ), zoneName: zoneName)
-        context.insert(meal)
-        try context.save()
-        stage(meal)
+    /// Writing into somebody else's zone, which is what a membership *is*. With several households joined,
+    /// which zone depends on the household being written — resolving it by zone name alone picked whichever
+    /// was joined first, and every owner's zone is called `"SharedPlan"`.
+    func stage(meal fields: SharedMealFields, in household: Household) {
+        pendingMeals[fields.id] = fields
+        engine?.state.add(pendingRecordZoneChanges: [
+            .saveRecord(SharedWeekRecords.recordID(meal: fields.id, in: household.zoneID))
+        ])
     }
 
-    func setPortions(_ meal: SharedMeal, _ portions: Int) throws {
-        meal.portions = Portions.clamp(portions)
-        try context?.save()
-        stage(meal)
+    func withdraw(mealID: UUID, in household: Household) {
+        pendingMeals[mealID] = nil
+        engine?.state.add(pendingRecordZoneChanges: [
+            .deleteRecord(SharedWeekRecords.recordID(meal: mealID, in: household.zoneID))
+        ])
     }
 
-    func move(_ meal: SharedMeal, to day: PlanDay) throws {
-        guard let context, meal.day != day else { return }
-        let source = try meals(on: meal.day, in: meal.zoneName).filter { $0.id != meal.id }
-        var target = try meals(on: day, in: meal.zoneName)
-        meal.day = day
-        target.append(meal)
-        reindex(source)
-        reindex(target)
-        try context.save()
-        for changed in source + target { stage(changed) }
+    /// The household a record came from, by the zone it arrived in.
+    private func household(for zoneID: CKRecordZone.ID) -> Household? {
+        households.joined.first { $0.zoneName == zoneID.zoneName && $0.ownerName == zoneID.ownerName }
     }
 
-    func remove(_ meal: SharedMeal) throws {
-        guard let context else { return }
-        let day = meal.day
-        let id = meal.id
-        let zoneName = meal.zoneName
-        context.delete(meal)
-        reindex(try meals(on: day, in: zoneName).filter { $0.id != id })
-        try context.save()
-        engine?.state.add(pendingRecordZoneChanges: [.deleteRecord(recordID(id, in: zoneName))])
-    }
-
-    /// One household's meals on a day. Ordering is per household: two households' weeks share a store but
-    /// never a numbering.
-    private func meals(on day: PlanDay, in zoneName: String) throws -> [SharedMeal] {
-        guard let context else { return [] }
-        let key = day.isoString
-        let all = try context.fetch(
-            FetchDescriptor<SharedMeal>(predicate: #Predicate { $0.dayKey == key && $0.zoneName == zoneName })
-        )
-        return all.filter { !$0.isDeleted }.sorted { $0.order < $1.order }
-    }
-
-    private func reindex(_ meals: [SharedMeal]) {
-        for (index, meal) in meals.enumerated() where meal.order != index {
-            meal.order = index
-        }
-    }
-
-    private func stage(_ meal: SharedMeal) {
-        pendingMeals[meal.id] = meal.fields
-        engine?.state.add(pendingRecordZoneChanges: [.saveRecord(recordID(meal.id, in: meal.zoneName))])
-    }
-
-    /// A member writes into the household's zone, so the record id carries that zone, not ours — and with
-    /// several households joined, which one depends on the meal being written.
-    private func recordID(_ id: UUID, in zoneName: String) -> CKRecord.ID {
-        let zone = households.joined.first { $0.zoneName == zoneName }?.zoneID
-        return CKRecord.ID(recordName: id.uuidString, zoneID: zone ?? SharedWeekZone.id)
-    }
-
-    // MARK: Applying what the owner sent
-
-    private func apply(_ record: CKRecord) {
-        guard let context else { return }
-        do {
-            switch record.recordType {
-            case SharedWeekZone.RecordType.recipe:
-                let fields = try SharedWeekRecords.recipeFields(from: record)
-                let thumbnail = (record[SharedWeekZone.RecipeKey.thumbnail] as? CKAsset)
-                    .flatMap { $0.fileURL }
-                    .flatMap { try? Data(contentsOf: $0) }
-                if let existing = try recipe(id: fields.id) {
-                    existing.apply(fields, thumbnail: thumbnail)
-                } else {
-                    context.insert(SharedRecipe(fields, zoneName: record.recordID.zoneID.zoneName, thumbnail: thumbnail))
-                }
-            case SharedWeekZone.RecordType.meal:
-                let fields = try SharedWeekRecords.mealFields(from: record)
-                if let existing = try meal(id: fields.id) {
-                    existing.apply(fields)
-                } else {
-                    context.insert(SharedMeal(fields, zoneName: record.recordID.zoneID.zoneName))
-                }
-            default:
-                break
-            }
-            try context.save()
-        } catch {
-            log.warning("could not apply \(record.recordType, privacy: .public): \(error.localizedDescription, privacy: .public)")
-        }
-    }
-
-    private func delete(_ recordID: CKRecord.ID) {
-        guard let context, let id = UUID(uuidString: recordID.recordName) else { return }
-        if let meal = try? meal(id: id) { context.delete(meal) }
-        if let recipe = try? recipe(id: id) { context.delete(recipe) }
-        try? context.save()
-    }
-
-    private func recipe(id: UUID) throws -> SharedRecipe? {
-        try context?.fetch(FetchDescriptor<SharedRecipe>(predicate: #Predicate { $0.id == id })).first
-    }
-
-    private func meal(id: UUID) throws -> SharedMeal? {
-        try context?.fetch(FetchDescriptor<SharedMeal>(predicate: #Predicate { $0.id == id })).first
+    private var inbox: HouseholdInbox? {
+        context.map { HouseholdInbox(context: $0) }
     }
 
     /// One household's share ended — revoked by its owner, or left. SPEC §10: no copy outlives the share.
     /// Only that household's rows go; the others are still live.
-    private func shareEnded(zoneName: String) {
+    private func shareEnded(_ household: Household) {
         guard let context else { return }
-        try? SharedStore.empty(context, household: zoneName)
-        if let household = households.joined.first(where: { $0.zoneName == zoneName }) {
-            households.leave(household)
-        }
+        try? SharedStore.empty(context, household: household.id)
+        households.leave(household)
         if households.joined.isEmpty {
             engine = nil
             isRunning = false
@@ -203,6 +116,8 @@ final class SharedWeekClient: NSObject {
     }
 }
 
+extension SharedWeekClient: HouseholdSyncing {}
+
 extension SharedWeekClient: CKSyncEngineDelegate {
 
     func handleEvent(_ event: CKSyncEngine.Event, syncEngine: CKSyncEngine) async {
@@ -210,21 +125,25 @@ extension SharedWeekClient: CKSyncEngineDelegate {
         case .stateUpdate(let update):
             save(update.stateSerialization)
         case .fetchedRecordZoneChanges(let changes):
+            guard let inbox else { break }
             for modification in changes.modifications {
-                apply(modification.record)
+                guard let household = household(for: modification.record.recordID.zoneID) else { continue }
+                inbox.apply(modification.record, in: household)
             }
             for deletion in changes.deletions {
-                delete(deletion.recordID)
+                guard let household = household(for: deletion.recordID.zoneID) else { continue }
+                inbox.delete(deletion.recordID, in: household)
             }
         case .fetchedDatabaseChanges(let changes):
-            // The zone going is how a revoked share reaches the guest.
-            for zone in changes.deletions.map(\.zoneID.zoneName) where households.joined.contains(where: { $0.zoneName == zone }) {
-                shareEnded(zoneName: zone)
+            // The zone going is how a revoked share reaches a member.
+            for deleted in changes.deletions {
+                guard let household = household(for: deleted.zoneID) else { continue }
+                shareEnded(household)
             }
         case .sentRecordZoneChanges(let sent):
             for failure in sent.failedRecordSaves {
                 lastError = failure.error.localizedDescription
-                log.warning("guest save failed: \(failure.error.localizedDescription, privacy: .public)")
+                log.warning("member save failed: \(failure.error.localizedDescription, privacy: .public)")
             }
         case .accountChange:
             // Signing out takes every household with it, not just one.
@@ -248,7 +167,7 @@ extension SharedWeekClient: CKSyncEngineDelegate {
         }
     }
 
-    /// A guest only ever writes meals. Recipes are the owner's, and the projection is read-only to them.
+    /// A member writes meals. Recipes are projected by their author, which in 11b-i is still only the owner.
     private func mealRecord(for recordID: CKRecord.ID) -> CKRecord? {
         guard let id = UUID(uuidString: recordID.recordName), let fields = pendingMeals[id] else { return nil }
         let record = CKRecord(recordType: SharedWeekZone.RecordType.meal, recordID: recordID)

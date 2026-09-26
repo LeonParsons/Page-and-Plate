@@ -5,10 +5,15 @@ import SwiftData
 import Testing
 @testable import RecipeBasket
 
-/// The projection is the boundary the SPEC §9 promise rests on: what is not built here never reaches a guest.
+/// The projection is the boundary the SPEC §9 promise rests on: what is not built here never reaches another
+/// member of the household.
 @Suite("Shared week projection (SPEC §10)")
 @MainActor
 struct SharedWeekRecordsTests {
+
+    /// A household's zone. Explicit everywhere now: a member projects into somebody else's, and every
+    /// owner's zone carries the same name, so the zone can never be implied.
+    private let zone = CKRecordZone.ID(zoneName: SharedWeekZone.zoneName, ownerName: "_leon")
 
     private func makeRecipe(pages: [Data] = [Data([0xFF, 0xD8, 0xFF])]) throws -> Recipe {
         let response = try Fixtures.expected("beef-rendang")
@@ -28,7 +33,7 @@ struct SharedWeekRecordsTests {
         let recipe = try makeRecipe()
         let fields = SharedWeekProjection.fields(for: recipe)
 
-        let record = CKRecord(recordType: SharedWeekZone.RecordType.recipe, recordID: SharedWeekRecords.recordID(recipe: fields.id))
+        let record = CKRecord(recordType: SharedWeekZone.RecordType.recipe, recordID: SharedWeekRecords.recordID(recipe: fields.id, in: zone))
         try SharedWeekRecords.apply(fields, to: record)
         let decoded = try SharedWeekRecords.recipeFields(from: record)
 
@@ -48,7 +53,7 @@ struct SharedWeekRecordsTests {
         let recipe = try makeRecipe(pages: [bigPage])
         let fields = SharedWeekProjection.fields(for: recipe)
 
-        let record = CKRecord(recordType: SharedWeekZone.RecordType.recipe, recordID: SharedWeekRecords.recordID(recipe: fields.id))
+        let record = CKRecord(recordType: SharedWeekZone.RecordType.recipe, recordID: SharedWeekRecords.recordID(recipe: fields.id, in: zone))
         try SharedWeekRecords.apply(fields, to: record)
 
         for key in record.allKeys() {
@@ -67,7 +72,7 @@ struct SharedWeekRecordsTests {
         meal.exportedAt = .now
 
         let fields = try #require(SharedWeekProjection.fields(for: meal))
-        let record = CKRecord(recordType: SharedWeekZone.RecordType.meal, recordID: SharedWeekRecords.recordID(meal: fields.id))
+        let record = CKRecord(recordType: SharedWeekZone.RecordType.meal, recordID: SharedWeekRecords.recordID(meal: fields.id, in: zone))
         SharedWeekRecords.apply(fields, to: record)
         let decoded = try SharedWeekRecords.mealFields(from: record)
 
@@ -76,7 +81,9 @@ struct SharedWeekRecordsTests {
         #expect(decoded.order == 2)
         #expect(decoded.portions == 6)
         #expect(decoded.recipeID == recipe.id)
-        // SPEC §10: the export stays personal, so the guest must not see the owner's meals as already added.
+        // Carried from 11b so a member without this recipe can still name the meal.
+        #expect(decoded.recipeTitle == recipe.title)
+        // SPEC §10: the export stays personal, so nobody sees anyone else's meals as already added.
         #expect(!record.allKeys().contains { $0.localizedCaseInsensitiveContains("export") })
     }
 
@@ -93,13 +100,13 @@ struct SharedWeekRecordsTests {
         let record = CKRecord(recordType: SharedWeekZone.RecordType.recipe, recordID: CKRecord.ID(recordName: "not-a-uuid", zoneID: SharedWeekZone.id))
         #expect(throws: SharedWeekError.self) { try SharedWeekRecords.recipeFields(from: record) }
 
-        let noIngredients = CKRecord(recordType: SharedWeekZone.RecordType.recipe, recordID: SharedWeekRecords.recordID(recipe: UUID()))
+        let noIngredients = CKRecord(recordType: SharedWeekZone.RecordType.recipe, recordID: SharedWeekRecords.recordID(recipe: UUID(), in: zone))
         noIngredients[SharedWeekZone.RecipeKey.title] = "Orphan"
         #expect(throws: SharedWeekError.self) { try SharedWeekRecords.recipeFields(from: noIngredients) }
     }
 
-    @Test("The guest's week export agrees with the owner's, from the same data")
-    func guestExportMatchesOwner() throws {
+    @Test("A household member's week export agrees with a personal one, from the same data")
+    func householdExportMatchesPersonal() throws {
         let recipe = try makeRecipe()
         let day = PlanDay(isoString: "2026-09-24")!
         let meal = PlannedMeal(recipe: recipe, day: day, order: 0, portions: 6)
@@ -119,11 +126,11 @@ struct SharedWeekRecordsTests {
 
         let fields = SharedWeekProjection.fields(for: recipe)
         let mealFields = try #require(SharedWeekProjection.fields(for: meal))
-        let guestLines = WeekShopping.lines(for: [
+        let householdLines = WeekShopping.lines(for: [
             fields.mealExport(meal: mealFields, dayText: day.shortText, weekdayText: day.weekdayText)
         ])
 
-        #expect(guestLines == ownerLines)
-        #expect(!guestLines.isEmpty)
+        #expect(householdLines == ownerLines)
+        #expect(!householdLines.isEmpty)
     }
 }

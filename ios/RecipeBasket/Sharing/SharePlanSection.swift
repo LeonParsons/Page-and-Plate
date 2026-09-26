@@ -37,17 +37,19 @@ struct SharePlanSection: View {
     private var plansSection: some View {
         if !households.joined.isEmpty {
             Section {
-                planRow(title: "My plan", isCurrent: !households.isShowingHousehold) {
+                // Named for the household once there is one: hosting *replaces* your own plan rather than
+                // sitting beside it (Leon, 2026-09-26), so "My plan" would be a second name for the same week.
+                planRow(title: households.mineTitle, isCurrent: households.selection == .mine, hostedHint: households.hosted != nil) {
                     households.select(.mine)
                 }
                 ForEach(households.joined) { household in
-                    planRow(title: household.title, isCurrent: households.current?.id == household.id) {
+                    planRow(title: household.title, isCurrent: households.selection == .household(household.id)) {
                         // Only leaving your own plan needs saying out loud; moving between households does
                         // not, because nothing of yours is hidden that was not already.
-                        if households.isShowingHousehold {
-                            households.select(.household(household.id))
-                        } else {
+                        if households.selection == .mine {
                             confirmingJoin = household
+                        } else {
+                            households.select(.household(household.id))
                         }
                     }
                     .swipeActions {
@@ -57,7 +59,9 @@ struct SharePlanSection: View {
             } header: {
                 Text("Your plans")
             } footer: {
-                Text("One plan at a time. While you're in a household, your own plan and recipes are hidden — leave it and they come back.")
+                // Recipes are **not** hidden — they go into the household's catalogue, which is the feature.
+                // Saying otherwise, as this did before 11b, describes the opposite of what happens.
+                Text("One plan at a time. Your recipes go with you into every household you're in; your own week is hidden while you're looking at someone else's, and comes back when you leave.")
             }
             .confirmationDialog(
                 confirmingJoin.map { "Switch to \($0.title)?" } ?? "",
@@ -70,7 +74,7 @@ struct SharePlanSection: View {
                 }
                 Button("Cancel", role: .cancel) { confirmingJoin = nil }
             } message: {
-                Text("Your own plan and recipes are hidden while you're in this household. Nothing is deleted — leave it and your week comes back exactly as it was.")
+                Text("Your own week is hidden while you're in this household. Your recipes aren't — they stay in every household you're in. Nothing is deleted: leave and your week comes back exactly as it was.")
             }
             .confirmationDialog(
                 leaving.map { "Leave \($0.title)?" } ?? "",
@@ -88,11 +92,18 @@ struct SharePlanSection: View {
         }
     }
 
-    private func planRow(title: String, isCurrent: Bool, select: @escaping () -> Void) -> some View {
+    private func planRow(title: String, isCurrent: Bool, hostedHint: Bool = false, select: @escaping () -> Void) -> some View {
         Button(action: select) {
             HStack {
-                Text(title)
-                    .foregroundStyle(Brand.ink)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .foregroundStyle(Brand.ink)
+                    if hostedHint {
+                        Text("You share this one")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
                 Spacer()
                 if isCurrent {
                     Image(systemName: "checkmark")
@@ -168,11 +179,21 @@ struct SharePlanSection: View {
 
     private func prepareShare(named name: String?) async {
         isPreparing = true
+        // Read before the share exists: `shareForInviting` is what records the household, so afterwards there
+        // is no way to tell a first share from a re-invite.
+        let isNewHousehold = households.hosted == nil
         do {
-            // Publish first: an invite that arrives before the recipes do looks broken.
             try await publisher.start()
-            try publisher.publish(from: modelContext)
+            // The share first, because it is what records the household — and `publishLibrary` and `seedWeek`
+            // both need to know which household they are writing into.
             let ready = try await publisher.shareForInviting(named: name)
+            // Then the contents, before anyone is invited: an invite that arrives before the recipes looks
+            // broken. The seed runs once, and only for a household that has no week yet — re-inviting must
+            // never overwrite what the household has planned since with the owner's stale personal plan.
+            try publisher.publishLibrary(from: modelContext)
+            if isNewHousehold {
+                try publisher.seedWeek(from: modelContext)
+            }
             share = ready
             // The spinner goes *before* the sheet is asked for, never in a `defer` afterwards: the row must be
             // settled by the time the presentation starts.

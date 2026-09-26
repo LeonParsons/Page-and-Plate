@@ -24,9 +24,72 @@ struct HouseholdsTests {
     func empty() {
         let households = Households(defaults: makeDefaults())
         #expect(households.joined.isEmpty)
+        #expect(households.hosted == nil)
         #expect(households.selection == .mine)
         #expect(households.current == nil)
         #expect(!households.isShowingHousehold)
+        #expect(households.mineTitle == "My plan")
+    }
+
+    // MARK: The household you host
+    //
+    // Hosting *replaces* your own plan rather than sitting beside it (Leon, 2026-09-26): `.mine` resolves to
+    // the household, and the week it shows is the one seeded from the personal plan when it was created.
+
+    @Test("Creating a household makes it what your own plan is, without changing what is on screen")
+    func hosting() {
+        let households = Households(defaults: makeDefaults())
+        households.host(zoneID: zone("SharedPlan", owner: "__defaultOwner__"), title: "The Parsons")
+
+        #expect(households.selection == .mine)
+        #expect(households.current?.title == "The Parsons")
+        #expect(households.isShowingHousehold)
+        #expect(households.mineTitle == "The Parsons")
+    }
+
+    @Test("Re-sharing renames the household rather than making a second one")
+    func rehosting() {
+        let households = Households(defaults: makeDefaults())
+        households.host(zoneID: zone("SharedPlan", owner: "__defaultOwner__"), title: "The Parsons")
+        households.host(zoneID: zone("SharedPlan", owner: "__defaultOwner__"), title: "Parsons kitchen")
+
+        #expect(households.hosted?.title == "Parsons kitchen")
+    }
+
+    @Test("Hosting and joining are independent: looking at theirs does not stop yours")
+    func hostingAndJoining() {
+        let households = Households(defaults: makeDefaults())
+        households.host(zoneID: zone("SharedPlan", owner: "__defaultOwner__"), title: "The Parsons")
+        households.join(zoneID: zone("SharedPlan", owner: "_grandma"), title: "Sunday lunch")
+
+        #expect(households.current?.title == "Sunday lunch")
+        // Still hosting: the people in it keep their week, it is simply not the one on display.
+        #expect(households.hosted?.title == "The Parsons")
+
+        households.select(.mine)
+        #expect(households.current?.title == "The Parsons")
+    }
+
+    @Test("The household you host survives a relaunch")
+    func hostingSurvivesARelaunch() {
+        let defaults = makeDefaults()
+        let households = Households(defaults: defaults)
+        households.host(zoneID: zone("SharedPlan", owner: "__defaultOwner__"), title: "The Parsons")
+
+        #expect(Households(defaults: defaults).hosted?.title == "The Parsons")
+    }
+
+    @Test("Signing out of iCloud ends the hosting, and your own plan is what is left")
+    func signingOut() {
+        let defaults = makeDefaults()
+        let households = Households(defaults: defaults)
+        households.host(zoneID: zone("SharedPlan", owner: "__defaultOwner__"), title: "The Parsons")
+
+        households.stopHosting()
+
+        #expect(households.hosted == nil)
+        #expect(households.current == nil)
+        #expect(Households(defaults: defaults).hosted == nil)
     }
 
     @Test("Joining shows the household, because accepting an invite is an act of intent")

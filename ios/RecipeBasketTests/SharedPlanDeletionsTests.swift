@@ -40,13 +40,10 @@ struct SharedPlanDeletionsTests {
     func drainOnce() {
         let (journal, _) = makeJournal()
         let recipe = UUID()
-        let meal = UUID()
         journal.recordRecipe(recipe)
-        journal.recordMeal(meal)
 
         let first = journal.drain()
         #expect(first.recipes == [recipe])
-        #expect(first.meals == [meal])
         // Forgotten at once: the sync engine persists and retries these itself, so keeping them here as
         // well would send every deletion twice.
         #expect(journal.drain().isEmpty)
@@ -55,32 +52,32 @@ struct SharedPlanDeletionsTests {
     @Test("A deletion survives the app being killed before it is sent")
     func survivesRelaunch() {
         let (journal, defaults) = makeJournal()
-        let meal = UUID()
-        journal.recordMeal(meal)
+        let recipe = UUID()
+        journal.recordRecipe(recipe)
 
         let afterRelaunch = SharedPlanDeletions(defaults: defaults)
-        #expect(afterRelaunch.pending.meals == [meal])
+        #expect(afterRelaunch.pending.recipes == [recipe])
     }
 
     @Test("The same id is never queued twice")
     func noDuplicates() {
         let (journal, _) = makeJournal()
-        let meal = UUID()
-        journal.recordMeal(meal)
-        journal.recordMeal(meal)
-        #expect(journal.pending.meals == [meal])
+        let recipe = UUID()
+        journal.recordRecipe(recipe)
+        journal.recordRecipe(recipe)
+        #expect(journal.pending.recipes == [recipe])
     }
 
     @Test("Past the cap the oldest go, not the newest")
     func capDropsTheOldest() {
         let (journal, _) = makeJournal()
         let ids = (0..<(SharedPlanDeletions.limit + 3)).map { _ in UUID() }
-        for id in ids { journal.recordMeal(id) }
+        for id in ids { journal.recordRecipe(id) }
 
         let pending = journal.pending
-        #expect(pending.meals.count == SharedPlanDeletions.limit)
-        #expect(pending.meals.first == ids[3])
-        #expect(pending.meals.last == ids.last)
+        #expect(pending.recipes.count == SharedPlanDeletions.limit)
+        #expect(pending.recipes.first == ids[3])
+        #expect(pending.recipes.last == ids.last)
     }
 
     @Test("Sharing ending owes nobody anything")
@@ -91,36 +88,9 @@ struct SharedPlanDeletionsTests {
         #expect(journal.pending.isEmpty)
     }
 
-    @Test("Removing a meal notes it for the shared plan")
-    func removingAMealIsNoted() throws {
-        let (journal, _) = makeJournal()
-        let context = ModelContext(try TestContainer.make())
-        context.autosaveEnabled = false
-        let recipe = try makeRecipe(context)
-        let editor = PlanEditor(context: context, deletions: journal)
-        let meal = try editor.add(recipe, to: monday)
-        let id = meal.id
 
-        try editor.remove(meal)
-        #expect(journal.pending.meals == [id])
-    }
-
-    @Test("Clearing a week notes every meal in it")
-    func clearingAWeekIsNoted() throws {
-        let (journal, _) = makeJournal()
-        let context = ModelContext(try TestContainer.make())
-        context.autosaveEnabled = false
-        let recipe = try makeRecipe(context)
-        let editor = PlanEditor(context: context, deletions: journal)
-        let ids = [
-            try editor.add(recipe, to: monday).id,
-            try editor.add(recipe, to: wednesday).id,
-        ]
-
-        try editor.clear(week)
-        #expect(Set(journal.pending.meals) == Set(ids))
-    }
-
+    /// A meal whose recipe is gone keeps its place in the week and says it cannot be cooked, which is the
+    /// same thing that happens when another member's recipe leaves — so only the recipe is withdrawn.
     @Test("Deleting a recipe notes the recipe and leaves its meals alone")
     func deletingARecipeIsNoted() throws {
         let (journal, _) = makeJournal()
@@ -128,15 +98,10 @@ struct SharedPlanDeletionsTests {
         context.autosaveEnabled = false
         let recipe = try makeRecipe(context)
         let id = recipe.id
-        let editor = PlanEditor(context: context, deletions: journal)
-        _ = try editor.add(recipe, to: monday)
+        _ = try PlanEditor(context: context).add(recipe, to: monday)
 
         RecipeDeletion.delete(recipe, from: context, deletions: journal)
 
-        let pending = journal.pending
-        #expect(pending.recipes == [id])
-        // The owner keeps the meal row and shows it as uncookable, so the guest must keep it too — the two
-        // weeks have to look the same.
-        #expect(pending.meals.isEmpty)
+        #expect(journal.pending.recipes == [id])
     }
 }

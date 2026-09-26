@@ -23,12 +23,9 @@ nonisolated enum PlanOrdering {
 /// The only writer of planned meals. Every mutation leaves each day's `order` dense (0…n-1) and saves.
 struct PlanEditor {
     let context: ModelContext
-    /// Removals are noted here so the shared plan can withdraw them; see `SharedPlanDeletions`.
-    let deletions: SharedPlanDeletions
 
-    init(context: ModelContext, deletions: SharedPlanDeletions = .shared) {
+    init(context: ModelContext) {
         self.context = context
-        self.deletions = deletions
     }
 
     /// The week's meals in day order, then plan order.
@@ -78,7 +75,6 @@ struct PlanEditor {
 
     func remove(_ meal: PlannedMeal) throws {
         let remaining = try meals(on: meal.day).filter { $0 !== meal }
-        deletions.recordMeal(meal.id)
         context.delete(meal)
         PlanOrdering.reindex(remaining)
         try context.save()
@@ -86,7 +82,6 @@ struct PlanEditor {
 
     func clear(_ week: PlanWeek) throws {
         for meal in try meals(in: week) {
-            deletions.recordMeal(meal.id)
             context.delete(meal)
         }
         try context.save()

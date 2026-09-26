@@ -18,10 +18,14 @@ struct SharedRecipeFields: Equatable, Sendable {
 }
 
 /// One planned meal, projected. `exportedAt` is absent on purpose: the export stays personal (SPEC §10), so
-/// the guest shopping must never mark the owner's meals as added, or the other way round.
+/// one member's shopping must never mark another's meals as added. `SharedMeal` holds a local one; it never
+/// reaches a record, and `SharedStoreTests` asserts that absence rather than trusting it.
 struct SharedMealFields: Equatable, Sendable {
     var id: UUID
     var recipeID: UUID
+    /// Carried so a member who does not have this recipe can still name the meal. The author's title wins on
+    /// every update, which is what makes a renamed recipe rename its meals.
+    var recipeTitle: String
     var dayKey: String
     var order: Int
     var portions: Int
@@ -33,12 +37,15 @@ enum SharedWeekRecords {
 
     // MARK: Recipes
 
-    nonisolated static func recordID(recipe id: UUID) -> CKRecord.ID {
-        CKRecord.ID(recordName: id.uuidString, zoneID: SharedWeekZone.id)
+    /// A record lives in the zone of the household it belongs to — which, for a member projecting their own
+    /// library, is somebody else's zone. Defaulting to `SharedWeekZone.id` (your own) is why every caller
+    /// passes this explicitly.
+    nonisolated static func recordID(recipe id: UUID, in zone: CKRecordZone.ID) -> CKRecord.ID {
+        CKRecord.ID(recordName: id.uuidString, zoneID: zone)
     }
 
-    nonisolated static func recordID(meal id: UUID) -> CKRecord.ID {
-        CKRecord.ID(recordName: id.uuidString, zoneID: SharedWeekZone.id)
+    nonisolated static func recordID(meal id: UUID, in zone: CKRecordZone.ID) -> CKRecord.ID {
+        CKRecord.ID(recordName: id.uuidString, zoneID: zone)
     }
 
     /// Fills `record` from `fields`. Takes an existing record so an update keeps its change tag.
@@ -74,6 +81,7 @@ enum SharedWeekRecords {
 
     nonisolated static func apply(_ fields: SharedMealFields, to record: CKRecord) {
         record[SharedWeekZone.MealKey.recipeID] = fields.recipeID.uuidString
+        record[SharedWeekZone.MealKey.recipeTitle] = fields.recipeTitle
         record[SharedWeekZone.MealKey.dayKey] = fields.dayKey
         record[SharedWeekZone.MealKey.order] = fields.order
         record[SharedWeekZone.MealKey.portions] = fields.portions
@@ -91,6 +99,9 @@ enum SharedWeekRecords {
         return SharedMealFields(
             id: id,
             recipeID: recipeID,
+            // A meal planned before 11b has no title on its record. Empty is right: the row falls back to the
+            // catalogue, which is where it was reading the title from anyway.
+            recipeTitle: record[SharedWeekZone.MealKey.recipeTitle] as? String ?? "",
             dayKey: dayKey,
             order: record[SharedWeekZone.MealKey.order] as? Int ?? 0,
             portions: Portions.clamp(record[SharedWeekZone.MealKey.portions] as? Int ?? 1)
