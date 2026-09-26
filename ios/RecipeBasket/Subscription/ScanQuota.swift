@@ -19,6 +19,7 @@ final class ScanQuota {
 
     init(ledger: ScanLedger = ScanLedger(), entitlements: any EntitlementSource,
          trialScans: Int = ScanAllowance.trialScans, weeklyScans: Int = ScanAllowance.weeklyScans,
+         defaults: UserDefaults = .standard,
          now: @escaping () -> Date = { .now }) {
         self.ledger = ledger
         self.entitlements = entitlements
@@ -26,10 +27,17 @@ final class ScanQuota {
         self.weeklyScans = weeklyScans
         self.now = now
         tally = ledger.tally()
+        #if DEBUG
+        self.defaults = defaults
+        pretendsSubscribed = defaults.bool(forKey: Self.pretendKey)
+        #endif
     }
 
     var isSubscribed: Bool {
-        entitlements.isSubscribed
+        #if DEBUG
+        if pretendsSubscribed { return true }
+        #endif
+        return entitlements.isSubscribed
     }
 
     var entitlementJWS: String? {
@@ -75,6 +83,28 @@ final class ScanQuota {
     }
 
     #if DEBUG
+    private static let pretendKey = "debug.pretendSubscribed"
+    private let defaults: UserDefaults
+
+    /// Debug builds only: act as though a subscription were active.
+    ///
+    /// **Why it has to exist.** Hosting a household needs a subscription, and until the products are created in
+    /// App Store Connect there is nothing to buy on a real device — so the household feature could not be
+    /// exercised on a phone at all. A local StoreKit configuration only works when Xcode launches the app,
+    /// which a `devicectl` install is not.
+    ///
+    /// **What it does not do: grant scans.** `entitlementJWS` stays nil, so the Worker sees no `x-entitlement`,
+    /// verifies nothing (Phase 8a) and applies the free trial exactly as before. That is deliberate — an
+    /// override that forged an entitlement would be testing a lie, and the Worker would reject it anyway.
+    /// The visible consequence is that this device stops showing the paywall while the Worker can still answer
+    /// 402 once the trial is spent.
+    private(set) var pretendsSubscribed: Bool
+
+    func setPretendSubscribed(_ on: Bool) {
+        pretendsSubscribed = on
+        defaults.set(on, forKey: Self.pretendKey)
+    }
+
     /// Settings (debug builds only): spend both limits, or clear them, to exercise the paywall and the ceiling.
     func useUpScans() {
         let now = now()

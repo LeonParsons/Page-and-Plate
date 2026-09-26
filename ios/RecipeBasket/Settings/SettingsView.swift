@@ -43,6 +43,12 @@ struct SettingsView: View {
                     #if DEBUG
                     Button("Use up scans (debug)") { quota.useUpScans() }
                     Button("Reset scans (debug)") { quota.resetScans() }
+                    // Lets a device host a household before the products exist in App Store Connect. It does
+                    // not grant scans: the Worker still sees no entitlement and still applies the free trial.
+                    Toggle("Pretend subscribed (debug)", isOn: Binding(
+                        get: { quota.pretendsSubscribed },
+                        set: { quota.setPretendSubscribed($0) }
+                    ))
                     #endif
                 } header: {
                     Text("Scans")

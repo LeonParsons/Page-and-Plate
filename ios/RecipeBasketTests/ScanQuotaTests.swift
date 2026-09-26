@@ -135,3 +135,62 @@ struct ScanQuotaTests {
         #expect(quota.statusText == "No free scans left")
     }
 }
+
+/// The debug subscription override. It exists so a household can be hosted on a real device before the
+/// products are created in App Store Connect — and it must never become a way to scan for free.
+@Suite("Pretend subscribed (debug builds only)")
+@MainActor
+struct PretendSubscribedTests {
+
+    private func makeDefaults() -> UserDefaults {
+        let name = "pretend-tests-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: name)!
+        defaults.removePersistentDomain(forName: name)
+        return defaults
+    }
+
+    private func makeQuota(_ defaults: UserDefaults, entitlements: FakeEntitlements = FakeEntitlements()) -> ScanQuota {
+        ScanQuota(
+            ledger: ScanLedger(store: KeychainStore(service: "app.recipe-basket.tests"), key: "pretend-\(UUID().uuidString)"),
+            entitlements: entitlements,
+            defaults: defaults
+        )
+    }
+
+    @Test("Off by default, and turning it on makes the app treat this device as subscribed")
+    func overriding() {
+        let quota = makeQuota(makeDefaults())
+        #expect(!quota.isSubscribed)
+
+        quota.setPretendSubscribed(true)
+        #expect(quota.isSubscribed)
+
+        quota.setPretendSubscribed(false)
+        #expect(!quota.isSubscribed)
+    }
+
+    @Test("It survives a relaunch, because the household it unlocks has to survive one too")
+    func persists() {
+        let defaults = makeDefaults()
+        makeQuota(defaults).setPretendSubscribed(true)
+        #expect(makeQuota(defaults).isSubscribed)
+    }
+
+    @Test("It never fabricates an entitlement, so the Worker still sees an unsubscribed device")
+    func grantsNoScans() {
+        let quota = makeQuota(makeDefaults())
+        quota.setPretendSubscribed(true)
+
+        // The Worker verifies `x-entitlement` against Apple's chain (Phase 8a). Sending a made-up one would be
+        // rejected, and sending a real one is impossible — so there is nothing to send, and the trial still
+        // applies server-side. That is the whole point: this unlocks hosting, not scanning.
+        #expect(quota.entitlementJWS == nil)
+    }
+
+    @Test("A real subscription still counts when the override is off")
+    func realSubscriptionUnaffected() {
+        let quota = makeQuota(makeDefaults(), entitlements: FakeEntitlements(isSubscribed: true, entitlementJWS: "a.b.c"))
+        #expect(quota.isSubscribed)
+        #expect(quota.entitlementJWS == "a.b.c")
+    }
+}
