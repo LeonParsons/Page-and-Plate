@@ -590,3 +590,81 @@ Not built, and not next; recorded so it is not re-argued from scratch. Leon's ca
 - **The grey navigation bar fixed itself**, as predicted from reading the code. The `VStack` that held the
   switcher was stopping the List running under the bar, so the paper background stopped at the top. Removing
   the control removed the bug — which is why it was left alone rather than patched around.
+
+### 2026-09-26 · The household's week belongs to the household, not to the owner (Phase 11b-i)
+
+Phase 10 kept the shared week in the **owner's** `PlannedMeal` store and folded members' edits back into it.
+That works while the catalogue is a copy of the owner's library. It stops working the moment the catalogue
+becomes the union of everyone's, which is what 11b is for: a member can plan a meal from *another member's*
+recipe, `SharedWeekFoldBack` looks that recipe up in the owner's library, misses, and returns nil — so the
+meal reaches every member except the owner. A household where one person's week differs from everyone
+else's is not a household.
+
+The alternative was to give the owner read-only shadow copies of other members' recipes, which needs a
+migration of the app's own frozen schema and contradicts "a recipe belongs to whoever scanned it". So the
+week moved instead: it lives in the household zone, and everybody — the owner included — reads and writes it
+through one local store (`SharedStore`) and one editor (`HouseholdWeekEditor`). `SharedWeekFoldBack` and its
+tests are deleted; nothing folds into SwiftData any more. The asymmetry *was* the complexity.
+
+**Hosting replaces "My plan"** (Leon's call). The alternative was a third row in Settings — your own plan,
+the household you host, the households you joined — which is more uniform but adds a row most people would
+never tap. So `.mine` resolves to the hosted household, and the household's week is **seeded once** from the
+personal week when it is created, so the screen looks the same either side of sharing. The personal
+`PlannedMeal` week is kept and hidden, per rule 9d. The cost, accepted knowingly: the owner has no way back
+to their personal week while the household exists. Stopping sharing removes only the participants — the
+zone, week and name survive, so it is lossless — and "delete the household and give me my week back" is 11c.
+
+**Three defects in 11a, found by reading it rather than by running it.** None had been seen, because 11a
+never reached a device:
+
+- **Rows keyed on the zone name.** `SharedWeekZone.zoneName` is the constant `"SharedPlan"` in *every*
+  owner's database; only the owner tells two households apart. `Household.id` knew that, the store did not.
+  Two joined households merged into one week and one catalogue, and a write resolved to whichever household
+  was joined first — so an edit could be sent into the wrong person's zone. Rows now key on `Household.id`.
+- **The store was renamed without discarding the engines' change tokens.** A `CKSyncEngine` fetches only
+  what changed *since* its token, so emptying the cache while keeping the token means it never refills: a
+  permanently blank household, with no error anywhere. `SharedStore.generation` now names the store file and
+  both engine state files, so they cannot come apart. This would have hit the iPad on its next launch.
+- **Removing a meal reindexed the survivors locally and sent only the deletion**, so other members kept
+  stale orders and two meals claimed one slot.
+
+Also from 11b-i: `SharedMeal` carries the recipe **title**, so a meal whose recipe is not in the catalogue
+renders as itself rather than vanishing (which is what it did); and a **local** `exportedAt` that is never
+projected, restoring the "added to Reminders" tick per member while keeping the export personal. The test
+asserts the *absence* of any export field on the record rather than trusting it.
+
+### 2026-09-26 · A recipe belongs to whoever scanned it, and says so in a field of our own (Phase 11b-ii)
+
+The plan said `CKRecord.creatorUserRecordID` would carry ownership "without a field of our own". It is
+server-set and unforgeable, which is genuinely better — but it does not work here, for two reasons. The
+local household store holds rows, not records, so there is nothing to ask; and CloudKit reports it
+inconsistently for records the *current* user created, which would make the owner's own rows read as
+`__defaultOwner__` while every member's read as a real id. "Is this mine?" would silently invert for the one
+person who can remove people. So the author writes an explicit `authorID` — their `CKContainer.userRecordID()`
+— and `creatorUserRecordID` is the fallback when that field is missing. **The device check that matters:**
+that `userRecordID()` is the same identity `CKShare.Participant.userIdentity` reports, since the owner's
+removal counts key on that equality.
+
+**Members scan.** `AddSharedMealSheet` refused to, on the reasoning that a shared week must never spend an
+extraction the owner did not ask for. That was the real argument and it stopped being true when the
+allowance moved to the person: rule 9b already counts against an attested key, not a plan, so there is no
+longer anyone else's allowance to spend. The scan lands in the scanner's own library and is projected from
+there. The sheet takes the library container **explicitly**, because inside the household view the
+environment's context is the household store, which has no `Recipe` in its schema at all.
+
+**Departure is "stop projecting", never "delete"** — the recipes are untouched in their author's library.
+Leaving withdraws them *before* the membership goes, since the membership is what resolves the zone. Being
+*removed* cannot work that way: access is lost in the same instant, so the person cannot take their own
+recipes out. Only the zone's owner can, so the owner prunes recipes whose author is no longer on the share.
+An unattributable recipe is always kept — deleting someone's recipe on a guess is worse than leaving one too
+many in a catalogue.
+
+**Two properties the fan-out needs to be safe, both non-obvious.** The projection skips a recipe whose
+already-projected row compares equal, and that skip is the *only* thing preventing an endless loop:
+`ModelContext.didSave` is one notification for the whole app, so writing to the household store wakes the
+watcher that writes to the household store. Filtering on the notification's object would have worked too,
+but rests on which object SwiftData happens to attach; idempotence does not rest on anything. And a pass is
+**all or nothing** — the local row is later read as "this household has been told", and the deletion journal
+is emptied by draining it, so a half-sent pass would both mark recipes projected that were not and lose a
+deletion outright. `SharedPlanContext.start()` reprojects once the engines are up, which is what closes the
+gap for anything scanned before they were.

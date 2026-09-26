@@ -254,7 +254,8 @@ struct RecipeYield: Codable, Equatable {
 
 **Phase 11 — The household plan**
 - ~~**11a.** One plan on display, several households joinable, Settings is the switcher, the owner names the household, hosting needs a subscription.~~ Done 2026-09-25 (`ios/RecipeBasket/Sharing/Household.swift`). **Not yet verified on a device.**
-- **11b.** Members scan against their own trial; the catalogue becomes the union of the members' projections; a recipe belongs to whoever scanned it and leaves with them; a meal whose recipe left stays marked unavailable.
+- ~~**11b.** Members scan against their own trial; the catalogue becomes the union of the members' projections; a recipe belongs to whoever scanned it and leaves with them; a meal whose recipe left stays marked unavailable.~~ Done 2026-09-26, in two halves: **11b-i** moved the household's week into the zone for everybody (`HouseholdWeekEditor`, `HouseholdInbox`; `SharedWeekFoldBack` deleted), **11b-ii** made the catalogue a union (`HouseholdAuthor`, the library fan-out in `SharedPlanContext`). **Not yet verified on a device**, and one assumption there needs a device to settle: that `CKContainer.userRecordID()` is the same identity `CKShare.Participant.userIdentity` reports, which is what the owner's removal counts rest on.
+- **Three defects in 11a were found while building 11b**, none of them seen because 11a never reached a device: rows keyed on the zone name, which is the constant `"SharedPlan"` in *every* owner's database, so two households merged into one week and an edit could be written into the wrong person's zone; the store file renamed without discarding the sync engines' change tokens, which would have left an upgrading device with a permanently blank household and no error anywhere; and a removed meal reindexing its survivors locally while sending only the deletion, so other members kept stale orders.
 - **11c.** A lapsed subscription ends the household gently; paywall, welcome and App Store copy; the frames.
 
 **Later:** on-device extraction with Apple's Foundation Models framework to remove the API cost, storing method text, and a **shared week** (below), which left "Later" to become Phase 10 and then Phase 11. iCloud sync left it to become Phase 9.
@@ -283,13 +284,32 @@ section below is what it becomes. Phase 10's design is kept only where it still 
 
 **The household model (settled with Leon 2026-09-25, Phase 11):**
 
-- **One plan on display, ever.** The plan you own, or a household you have joined. Phase 10's switcher is
-  gone (11a).
+- **One plan on display, ever.** The plan that is yours to run, or a household you have joined. Phase 10's
+  switcher is gone (11a).
+- **Hosting replaces your own plan** (settled 2026-09-26). Once you create a household, "My plan" *is* that
+  household's week, seeded from your personal week when you created it — so the screen looks the same either
+  side of sharing, and Settings shows one row rather than two names for the same thing. Your personal
+  `PlannedMeal` week is kept untouched and is not on display while the household exists. Stopping sharing
+  removes the participants only: the zone, the week and the name survive, so nothing is lost and you can
+  invite again. Giving the owner the equivalent of Leave — delete the household, get your own week back — is
+  11c's, and until then the owner has no way back.
+- **The household's week lives in the household, not in the owner's library** (11b). Phase 10 kept it in the
+  owner's `PlannedMeal` store and folded members' edits back in. That stopped being possible when the
+  catalogue became the union: a member can plan a meal from another member's recipe, and no `PlannedMeal`
+  can point at a recipe the owner has never had, so the meal reached everyone except the owner. The week is
+  now in the shared zone, and everybody — the owner included — reads and writes it through the same local
+  store and the same editor.
 - **You can belong to several households, and Settings is where you switch** — your own plan plus each
   household in one list, the current one marked. Leaving one is a separate act from switching away from it.
-- **Joining hides your own plan; it never deletes it.** Your library keeps mirroring to your own private
-  zone throughout, and leaving brings your week back untouched. Hosting and joining are independent: if you
-  host a household and then join someone else's, yours keeps running for the people in it.
+- **Joining hides your own *week*; it never deletes it, and it never hides your recipes.** The two halves
+  differ and the distinction is the feature: your week is not the one on display, while your recipes flow
+  *into* the household's catalogue so everyone can cook them. Your library keeps mirroring to your own
+  private zone throughout, and leaving brings your week back untouched. Hosting and joining are
+  independent: if you host a household and then join someone else's, yours keeps running for the people in
+  it.
+- **Your recipes reach every household you belong to**, not only the one you are looking at (settled
+  2026-09-26). Membership means your library is in that household's catalogue. A catalogue that changed with
+  where other members happened to be looking could not be explained to anyone.
 - **The owner names the household when they share**, and every member reads that name from the `CKShare`.
   Phase 10 derived it from the owner's iCloud identity, which put "Shared's plan" on screen when CloudKit
   would not say who the owner was.
@@ -304,6 +324,10 @@ section below is what it becomes. Phase 10's design is kept only where it still 
   projecting; nothing changes hands. A recipe you do not own is read-only, but its **servings are yours to
   change**, because portions live on the meal, not the recipe.
 - **A meal whose recipe left with its author stays, marked unavailable**, and Shop skips it and says so.
+  The meal carries the recipe's **title**, so it can still name itself; before 11b such a meal silently
+  vanished from everyone's week.
+- **The export stays personal, per member.** Each device keeps its own "added to Reminders" tick on a
+  household meal, and it is never projected — one member's shopping marks nobody else's meal (§9, §10).
 
 ## 11. Fixtures
 
