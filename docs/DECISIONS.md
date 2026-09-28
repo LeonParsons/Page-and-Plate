@@ -809,3 +809,27 @@ for the same reason.
 What is left of that assumption is safe by construction: a recipe's `authorID` and its author's member record
 are both written from the same device's `userRecordID()`, so that match is self-consistent and never crosses a
 zone.
+
+### 2026-09-28 · A member record's name, and why nothing was published
+
+The owner's name still did not appear after the two fixes above. The cause was in the record id:
+
+> The recordName string must contain only ASCII characters, must not exceed 255 characters, and must not start
+> with an underscore.
+
+A CloudKit **user** record name always starts with an underscore — `_a1b2c3…` — and member records were filed
+under the raw author id. Every save was therefore invalid and CloudKit refused all of them. Nothing surfaced,
+because a refusal arrives as an ordinary failed save and the handler logged it at `warning` and dropped it: the
+records existed locally, looked published, and had never left the device.
+
+Member record names are now prefixed (`SharedWeekRecords.memberPrefix`), and `.invalidArguments` /
+`.serverRejectedRequest` are logged as errors with the record name rather than folded into the default branch —
+they mean the record is unacceptable to CloudKit, which is a bug, not a transient.
+
+`SharedStore.generation` → 5, so the rejected saves still queued in both engines' state go with the tokens
+rather than being retried for ever under an id CloudKit will never accept.
+
+**The pattern across today's three naming failures is the same one:** each was a silent rejection with a
+plausible-looking local state — a name saved only on Return, an id compared against a different id, a record
+CloudKit would not take. None of them could be seen from the screen, and none produced an error a user or a log
+reader would notice. Where a feature depends on a write reaching CloudKit, the failure path has to be loud.

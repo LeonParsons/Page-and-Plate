@@ -46,10 +46,11 @@ struct HouseholdInbox {
             case SharedWeekZone.RecordType.member:
                 let name = record[SharedWeekZone.MemberKey.displayName] as? String ?? ""
                 let isOwner = (record[SharedWeekZone.MemberKey.isOwner] as? Int ?? 0) == 1
-                let row = try member(authorID: record.recordID.recordName, in: household)
+                guard let authorID = SharedWeekRecords.authorID(ofMember: record.recordID.recordName) else { break }
+                let row = try member(authorID: authorID, in: household)
                     ?? {
                         let fresh = SharedMemberRow(
-                            authorID: record.recordID.recordName, householdID: household.id, displayName: name
+                            authorID: authorID, householdID: household.id, displayName: name
                         )
                         context.insert(fresh)
                         return fresh
@@ -76,7 +77,10 @@ struct HouseholdInbox {
         // A member record is filed under a user record name, not a UUID — somebody left, or withdrew their
         // name. The cached name stays: their recipes may still be on screen while the deletion catches up.
         guard let id = UUID(uuidString: recordID.recordName) else {
-            if let row = try? member(authorID: recordID.recordName, in: household) { context.delete(row) }
+            if let authorID = SharedWeekRecords.authorID(ofMember: recordID.recordName),
+               let row = try? member(authorID: authorID, in: household) {
+                context.delete(row)
+            }
             try? context.save()
             return
         }

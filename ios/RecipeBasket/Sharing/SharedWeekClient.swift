@@ -102,7 +102,7 @@ final class SharedWeekClient: NSObject {
 
     func stage(memberID: String, in household: Household) {
         engine?.state.add(pendingRecordZoneChanges: [
-            .saveRecord(CKRecord.ID(recordName: memberID, zoneID: household.zoneID))
+            .saveRecord(SharedWeekRecords.recordID(member: memberID, in: household.zoneID))
         ])
     }
 

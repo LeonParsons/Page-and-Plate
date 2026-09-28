@@ -52,6 +52,27 @@ enum SharedWeekRecords {
         CKRecord.ID(recordName: id.uuidString, zoneID: zone)
     }
 
+    /// Distinguishes a member record's name from the UUIDs every other record uses.
+    ///
+    /// **It exists because a record name may not begin with an underscore** — those are reserved for CloudKit's
+    /// own system records — and a CloudKit *user* record name always does: `_a1b2c3…`. Filing a member record
+    /// under the raw author id therefore made every save invalid, and CloudKit refused it. The refusal arrives
+    /// as an ordinary failed save, so nothing surfaced anywhere: the name was simply never published.
+    nonisolated static let memberPrefix = "member-"
+
+    /// A member record's id, which is keyed on the author rather than on a UUID: one person, one record per
+    /// household, replaced whenever they change their name.
+    nonisolated static func recordID(member authorID: String, in zone: CKRecordZone.ID) -> CKRecord.ID {
+        CKRecord.ID(recordName: memberPrefix + authorID, zoneID: zone)
+    }
+
+    /// The author a member record belongs to, or nil if this is not one.
+    nonisolated static func authorID(ofMember recordName: String) -> String? {
+        guard recordName.hasPrefix(memberPrefix) else { return nil }
+        let id = String(recordName.dropFirst(memberPrefix.count))
+        return id.isEmpty ? nil : id
+    }
+
     /// Fills `record` from `fields`. Takes an existing record so an update keeps its change tag.
     nonisolated static func apply(_ fields: SharedRecipeFields, to record: CKRecord) throws {
         record[SharedWeekZone.RecipeKey.title] = fields.title

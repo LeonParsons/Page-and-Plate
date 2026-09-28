@@ -167,7 +167,10 @@ enum SharedStore {
     ///      rejected. The tokens go with them: a row refetched from CloudKit is how it gets its metadata,
     ///      and a kept token would mean nothing is refetched.
     /// - 4: Phase 11b-iii — `SharedMemberRow`, because CloudKit will not name a share's participants.
-    static let generation = 4
+    /// - 5: Phase 11b-iii — member records were filed under a name CloudKit refuses (see
+    ///      `SharedWeekRecords.memberPrefix`). The tokens go so the rejected saves still queued in the
+    ///      engines' state go with them, rather than being retried for ever under the old, invalid id.
+    static let generation = 5
 
     private static func supportFile(_ name: String) -> URL {
         URL.applicationSupportDirectory.appending(path: name)

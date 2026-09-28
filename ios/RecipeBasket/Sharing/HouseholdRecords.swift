@@ -35,10 +35,11 @@ struct HouseholdRecords {
     /// removed before its edit was sent has nothing left to send.
     func record(for recordID: CKRecord.ID, in household: Household) -> CKRecord? {
         guard let id = UUID(uuidString: recordID.recordName) else {
-            // Not a UUID, so it is a member record — filed under a user record name (see `SharedMemberRow`).
-            guard let row = try? inbox.member(authorID: recordID.recordName, in: household), !row.isDeleted else {
-                return nil
-            }
+            // Not a UUID, so it is a member record — see `SharedWeekRecords.memberPrefix` for why its name is
+            // not simply the author's id.
+            guard let authorID = SharedWeekRecords.authorID(ofMember: recordID.recordName),
+                  let row = try? inbox.member(authorID: authorID, in: household), !row.isDeleted
+            else { return nil }
             let record = rehydrate(row.systemFields, type: SharedWeekZone.RecordType.member, id: recordID)
             record[SharedWeekZone.MemberKey.displayName] = row.displayName
             record[SharedWeekZone.MemberKey.isOwner] = row.isOwner ? 1 : 0
@@ -74,7 +75,8 @@ struct HouseholdRecords {
     func remember(_ record: CKRecord, in household: Household) {
         let encoded = Self.encode(record)
         guard let id = UUID(uuidString: record.recordID.recordName) else {
-            if let row = try? inbox.member(authorID: record.recordID.recordName, in: household), !row.isDeleted {
+            if let authorID = SharedWeekRecords.authorID(ofMember: record.recordID.recordName),
+               let row = try? inbox.member(authorID: authorID, in: household), !row.isDeleted {
                 row.systemFields = encoded
                 try? context.save()
             }
@@ -108,6 +110,12 @@ struct HouseholdRecords {
             guard let server = error.serverRecord else { return false }
             remember(server, in: household)
             return true
+        case .invalidArguments, .serverRejectedRequest:
+            // The record itself is unacceptable to CloudKit — a name it will not take, a field it will not
+            // store. Retrying cannot help, and this is the case that hid a bug in silence: a member record
+            // filed under a raw user record name begins with an underscore, which CloudKit reserves.
+            Self.log.error("CloudKit refused \(record.recordID.recordName, privacy: .public) outright: \(error.localizedDescription, privacy: .public)")
+            return false
         case .unknownItem, .zoneNotFound, .userDeletedZone:
             // There is nothing there to update any more. Sending it again would fail the same way for ever.
             Self.log.info("dropping a save for \(record.recordID.recordName, privacy: .public): its record or zone has gone")

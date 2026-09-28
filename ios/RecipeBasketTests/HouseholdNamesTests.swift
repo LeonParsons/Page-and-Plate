@@ -31,6 +31,25 @@ struct HouseholdNamesTests {
 
     // MARK: The record
 
+    @Test("A member record's name is one CloudKit will accept")
+    func aMemberRecordNameIsLegal() {
+        // A CloudKit *user* record name always begins with an underscore — "_a1b2c3…" — and a record name may
+        // not, because CloudKit reserves those for its own system records. Filing a member record under the
+        // raw author id made every save invalid, and CloudKit refused all of them. Nothing surfaced: a refusal
+        // arrives as an ordinary failed save, so the name was simply never published and the line stayed blank.
+        let id = SharedWeekRecords.recordID(member: "_a1b2c3", in: parsons.zoneID)
+        // Hoisted: `allSatisfy` is rethrowing, which the expectation macro will not swallow.
+        let isASCII = id.recordName.allSatisfy(\.isASCII)
+        #expect(!id.recordName.hasPrefix("_"))
+        #expect(isASCII)
+        #expect(id.recordName.count <= 255)
+
+        // And it still says whose it is, which is the whole point of keying on the author.
+        #expect(SharedWeekRecords.authorID(ofMember: id.recordName) == "_a1b2c3")
+        // A recipe or a meal is not a member record, and must never be mistaken for one.
+        #expect(SharedWeekRecords.authorID(ofMember: UUID().uuidString) == nil)
+    }
+
     @Test("A member record is filed under the author's id, not a UUID, and carries their name")
     func aMemberRecordIsBuiltFromTheRow() throws {
         let context = container.mainContext
@@ -38,7 +57,7 @@ struct HouseholdNamesTests {
         try inbox.upsert(member: "_sara", name: "Sara Parsons", isOwner: true, in: parsons)
 
         let records = HouseholdRecords(context: context)
-        let id = CKRecord.ID(recordName: "_sara", zoneID: parsons.zoneID)
+        let id = SharedWeekRecords.recordID(member: "_sara", in: parsons.zoneID)
         let record = try #require(records.record(for: id, in: parsons))
 
         #expect(record.recordType == SharedWeekZone.RecordType.member)
@@ -51,15 +70,15 @@ struct HouseholdNamesTests {
         let inbox = HouseholdInbox(context: context)
         let records = HouseholdRecords(context: context)
         try inbox.upsert(member: "_sara", name: "Sara", isOwner: true, in: parsons)
-        let id = CKRecord.ID(recordName: "_sara", zoneID: parsons.zoneID)
+        let id = SharedWeekRecords.recordID(member: "_sara", in: parsons.zoneID)
 
         // Stand-in for the change tag, which only a server sets: a zone the app would never ask for itself.
         records.remember(
             CKRecord(
                 recordType: SharedWeekZone.RecordType.member,
-                recordID: CKRecord.ID(
-                    recordName: "_sara",
-                    zoneID: CKRecordZone.ID(zoneName: SharedWeekZone.zoneName, ownerName: "_server")
+                recordID: SharedWeekRecords.recordID(
+                    member: "_sara",
+                    in: CKRecordZone.ID(zoneName: SharedWeekZone.zoneName, ownerName: "_server")
                 )
             ),
             in: parsons
@@ -78,7 +97,7 @@ struct HouseholdNamesTests {
         let context = container.mainContext
         let record = CKRecord(
             recordType: SharedWeekZone.RecordType.member,
-            recordID: CKRecord.ID(recordName: "_sara", zoneID: parsons.zoneID)
+            recordID: SharedWeekRecords.recordID(member: "_sara", in: parsons.zoneID)
         )
         record[SharedWeekZone.MemberKey.displayName] = "Sara Parsons"
 
@@ -120,7 +139,7 @@ struct HouseholdNamesTests {
         )
         let record = CKRecord(
             recordType: SharedWeekZone.RecordType.member,
-            recordID: CKRecord.ID(recordName: "_sara", zoneID: mismatched.zoneID)
+            recordID: SharedWeekRecords.recordID(member: "_sara", in: mismatched.zoneID)
         )
         record[SharedWeekZone.MemberKey.displayName] = "Sara Parsons"
         record[SharedWeekZone.MemberKey.isOwner] = 1
