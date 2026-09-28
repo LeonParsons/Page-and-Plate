@@ -34,7 +34,15 @@ struct HouseholdRecords {
     /// Nil when the row has gone, which the engine reads as "drop this change" and is exactly right: a meal
     /// removed before its edit was sent has nothing left to send.
     func record(for recordID: CKRecord.ID, in household: Household) -> CKRecord? {
-        guard let id = UUID(uuidString: recordID.recordName) else { return nil }
+        guard let id = UUID(uuidString: recordID.recordName) else {
+            // Not a UUID, so it is a member record — filed under a user record name (see `SharedMemberRow`).
+            guard let row = try? inbox.member(authorID: recordID.recordName, in: household), !row.isDeleted else {
+                return nil
+            }
+            let record = rehydrate(row.systemFields, type: SharedWeekZone.RecordType.member, id: recordID)
+            record[SharedWeekZone.MemberKey.displayName] = row.displayName
+            return record
+        }
 
         if let meal = try? inbox.meal(id: id, in: household), !meal.isDeleted {
             let record = rehydrate(meal.systemFields, type: SharedWeekZone.RecordType.meal, id: recordID)
@@ -63,8 +71,14 @@ struct HouseholdRecords {
     /// The newest metadata CloudKit has given us for a row: a save it accepted, a record it sent down, or the
     /// server's version of one it refused. The next edit to that row has to build on this or be refused too.
     func remember(_ record: CKRecord, in household: Household) {
-        guard let id = UUID(uuidString: record.recordID.recordName) else { return }
         let encoded = Self.encode(record)
+        guard let id = UUID(uuidString: record.recordID.recordName) else {
+            if let row = try? inbox.member(authorID: record.recordID.recordName, in: household), !row.isDeleted {
+                row.systemFields = encoded
+                try? context.save()
+            }
+            return
+        }
         var touched = false
         if let meal = try? inbox.meal(id: id, in: household), !meal.isDeleted {
             meal.systemFields = encoded

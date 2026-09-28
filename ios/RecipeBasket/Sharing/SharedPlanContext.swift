@@ -68,7 +68,7 @@ final class SharedPlanContext {
             publisher.attach(store: container)
             return SharedPlanContext(
                 container: container,
-                client: SharedWeekClient(households: households, members: members),
+                client: SharedWeekClient(households: households),
                 publisher: publisher,
                 households: households,
                 author: author,
@@ -118,10 +118,41 @@ final class SharedPlanContext {
         if !households.joined.isEmpty {
             await client.start(store: container)
         }
+        publishIdentity()
         // Now that the engines exist, anything a projection skipped while they did not can go. Without this a
         // recipe scanned before a household's engine came up would sit in the local catalogue for good,
         // looking projected and never actually sent.
         try? projectLibrary()
+    }
+
+    /// This device's name, into every household it is in.
+    ///
+    /// **Why the app publishes a name at all.** `CKUserIdentity.nameComponents` needs the user-discoverability
+    /// permission, which iOS 17 removed — so CloudKit reports no name for any share participant, and a
+    /// household could not say whose it was. Each person types theirs once and it travels with their data, the
+    /// same way their recipes do.
+    ///
+    /// Idempotent, like `projectLibrary` and for the same reason: it writes to the household store, which wakes
+    /// the save watcher, so a pass that always wrote would never stop.
+    func publishIdentity() {
+        guard let authorID = author.id, let name = author.name, !name.isEmpty else { return }
+        members.record(id: authorID, name: name)
+        let inbox = self.inbox
+        for household in all {
+            let sync = sync(for: household)
+            guard sync.isReady else { continue }
+            if let existing = try? inbox.member(authorID: authorID, in: household), existing.displayName == name {
+                continue
+            }
+            try? inbox.upsert(member: authorID, name: name, in: household)
+            sync.stage(memberID: authorID, in: household)
+        }
+    }
+
+    /// What this person asks to be called in their households, changed and republished.
+    func setMyName(_ name: String) {
+        author.setName(name)
+        publishIdentity()
     }
 
     // MARK: The library, fanned out

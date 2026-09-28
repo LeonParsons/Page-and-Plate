@@ -47,6 +47,12 @@ struct HouseholdWeekEditorTests {
         func withdraw(recipeID: UUID, in household: Household) {
             withdrawnRecipes.append((recipeID, household))
         }
+
+        var stagedMembers: [(id: String, household: Household)] = []
+
+        func stage(memberID: String, in household: Household) {
+            stagedMembers.append((memberID, household))
+        }
     }
 
     /// Two households as CloudKit really presents them: the same zone name, different owners.

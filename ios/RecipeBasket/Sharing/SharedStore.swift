@@ -121,8 +121,31 @@ final class SharedMeal {
     }
 }
 
+/// One person in one household, and the name they asked to be known by.
+///
+/// **This exists because CloudKit will not name anybody.** `CKUserIdentity.nameComponents` needs the
+/// user-discoverability permission, removed outright in iOS 17 — so a share participant's name is nil and stays
+/// nil. Each person types theirs once and publishes it into every household they are in, exactly as they
+/// publish their recipes, and it is the only thing that says whose household "Our plan" is.
+@Model
+final class SharedMemberRow {
+    /// The author's CloudKit user record name — the same id a recipe's `authorID` carries, and the same one a
+    /// shared zone's `ownerName` is.
+    var authorID: String = ""
+    var householdID: String = ""
+    var displayName: String = ""
+    /// See `SharedRecipe.systemFields`: without it a rename is a tagless save and CloudKit refuses it.
+    var systemFields: Data?
+
+    init(authorID: String, householdID: String, displayName: String) {
+        self.authorID = authorID
+        self.householdID = householdID
+        self.displayName = displayName
+    }
+}
+
 nonisolated enum SharedSchema {
-    static let models: [any PersistentModel.Type] = [SharedRecipe.self, SharedMeal.self]
+    static let models: [any PersistentModel.Type] = [SharedRecipe.self, SharedMeal.self, SharedMemberRow.self]
 }
 
 enum SharedStore {
@@ -140,7 +163,8 @@ enum SharedStore {
     /// - 3: Phase 11b-iii — rows gained `systemFields`, so an edit can be sent as an update rather than
     ///      rejected. The tokens go with them: a row refetched from CloudKit is how it gets its metadata,
     ///      and a kept token would mean nothing is refetched.
-    static let generation = 3
+    /// - 4: Phase 11b-iii — `SharedMemberRow`, because CloudKit will not name a share's participants.
+    static let generation = 4
 
     private static func supportFile(_ name: String) -> URL {
         URL.applicationSupportDirectory.appending(path: name)
@@ -192,6 +216,7 @@ enum SharedStore {
     static func empty(_ context: ModelContext, household id: String) throws {
         try context.delete(model: SharedMeal.self, where: #Predicate { $0.householdID == id })
         try context.delete(model: SharedRecipe.self, where: #Predicate { $0.householdID == id })
+        try context.delete(model: SharedMemberRow.self, where: #Predicate { $0.householdID == id })
         try context.save()
     }
 
@@ -200,6 +225,7 @@ enum SharedStore {
     static func empty(_ context: ModelContext) throws {
         try context.delete(model: SharedMeal.self)
         try context.delete(model: SharedRecipe.self)
+        try context.delete(model: SharedMemberRow.self)
         try context.save()
     }
 }

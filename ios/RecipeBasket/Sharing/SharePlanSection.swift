@@ -25,6 +25,10 @@ struct SharePlanSection: View {
     /// What each member has contributed, so removing them can say what goes with them. Read when the share is
     /// read, because it needs the participant list to key on.
     @State private var contributions: [String: HouseholdContribution] = [:]
+    /// The name this person publishes into their households. Held locally while it is being typed, written on
+    /// commit — a write per keystroke would stage a record per keystroke.
+    @State private var myName = ""
+    @State private var isAskingName = false
 
     private var households: Households { plan.households }
     private var publisher: SharedWeekPublisher { plan.publisher }
@@ -136,12 +140,23 @@ struct SharePlanSection: View {
 
     private var hostingSection: some View {
         Section {
+            // Not the household's name — this person's. CloudKit reports no name for any share participant
+            // (iOS 17 removed the permission that used to allow it), so the only way a household can say who
+            // is in it is for each person to say. It travels with their recipes, and names them on every one.
+            LabeledContent("Your name") {
+                TextField("Your name", text: $myName)
+                    .multilineTextAlignment(.trailing)
+                    .textContentType(.name)
+                    .submitLabel(.done)
+                    .onSubmit { plan.setMyName(myName) }
+            }
             Button {
                 // Hosting is what a subscription buys (settled 2026-09-25), so anyone else meets the paywall
                 // rather than a disabled row with no explanation.
                 guard quota.isSubscribed else { return onPaywall() }
-                // Straight to the sharing sheet: there is nothing to ask. A household is not named by anybody
-                // (Leon, 2026-09-28) — see `Households.displayTitle(for:)`.
+                // A household is not named by anybody (Leon, 2026-09-28) — but the person sharing it is, and
+                // an invite that arrives from nobody is worse than one question.
+                guard plan.author.name?.isEmpty == false else { return isAskingName = true }
                 Task { await prepareShare() }
             } label: {
                 HStack {
@@ -157,14 +172,28 @@ struct SharePlanSection: View {
         } header: {
             Text("Your household")
         } footer: {
-            Text("Everyone you invite sees and edits the same week, and cooks from everyone's recipes. Each person's recipes stay theirs and go with them if they leave. Page photos are never shared.")
+            Text("Everyone you invite sees and edits the same week, and cooks from everyone's recipes. Each person's recipes stay theirs and go with them if they leave. Page photos are never shared.\n\nYour name is how the others know which plan is yours, and who added a recipe. Only the people you share with see it.")
+        }
+        .alert("What should they call you?", isPresented: $isAskingName) {
+            TextField("Your name", text: $myName)
+                .textContentType(.name)
+            Button("Share") {
+                plan.setMyName(myName)
+                if plan.author.name?.isEmpty == false { Task { await prepareShare() } }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This is what everyone in your household sees beside your plan and your recipes. Apple doesn't tell apps your name, so we have to ask.")
         }
         .alert("Couldn't share the plan", isPresented: Binding(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })) {
             Button("OK") { errorMessage = nil }
         } message: {
             Text(errorMessage ?? "")
         }
-        .task { await refreshShare() }
+        .task {
+            myName = plan.author.name ?? ""
+            await refreshShare()
+        }
         .onChange(of: presenting) { _, now in
             // The sheet has closed: someone may have been invited, or the share stopped.
             if now == nil { Task { await refreshShare() } }
@@ -186,13 +215,8 @@ struct SharePlanSection: View {
 
     /// Fetches the existing share quietly, so the section can say who is in and what each of them brought.
     private func refreshShare() async {
-        // Re-read the joined households' shares too: this is the screen that names their owners, and a name
-        // CloudKit withheld earlier may be available now.
-        await plan.client.refreshMembers()
         share = try? await publisher.existingShare()
         guard let household = households.hosted, let share else { return contributions = [:] }
-        // The participants' names, so the owner's own week can say which recipes came from whom.
-        plan.members.record(share)
         var found: [String: HouseholdContribution] = [:]
         for participant in share.participants {
             guard let id = participant.userIdentity.userRecordID?.recordName else { continue }
@@ -230,11 +254,11 @@ struct SharePlanSection: View {
     }
 
     private func name(of participant: CKShare.Participant) -> String {
-        let components = participant.userIdentity.nameComponents
-        if let components, case let name = components.formatted(.name(style: .medium)), !name.isEmpty {
+        // The name they published, not one CloudKit gave: `CKUserIdentity.nameComponents` needs the
+        // user-discoverability permission, and iOS 17 removed it, so it is nil on every modern build.
+        if let id = participant.userIdentity.userRecordID?.recordName, let name = plan.members.name(for: id) {
             return name
         }
-        // CloudKit withholds the name until the invite is accepted, and sometimes after.
         return participant.acceptanceStatus == .pending ? "Invited" : "Someone in your household"
     }
 

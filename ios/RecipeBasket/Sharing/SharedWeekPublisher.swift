@@ -237,6 +237,12 @@ extension SharedWeekPublisher: HouseholdSyncing {
             .deleteRecord(SharedWeekRecords.recordID(recipe: recipeID, in: household.zoneID))
         ])
     }
+
+    func stage(memberID: String, in household: Household) {
+        engine?.state.add(pendingRecordZoneChanges: [
+            .saveRecord(CKRecord.ID(recordName: memberID, zoneID: household.zoneID))
+        ])
+    }
 }
 
 extension SharedWeekPublisher: CKSyncEngineDelegate {

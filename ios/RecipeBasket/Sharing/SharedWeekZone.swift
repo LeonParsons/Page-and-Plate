@@ -23,6 +23,19 @@ enum SharedWeekZone {
         nonisolated static let recipe = "SharedRecipe"
         /// One per planned meal, on any day.
         nonisolated static let meal = "SharedMeal"
+        /// One per person, carrying the name they chose to be known by in the household.
+        ///
+        /// **The app has to ask, because CloudKit will not say.** `CKUserIdentity.nameComponents` needs the
+        /// user-discoverability permission, and that permission — with every `discoverUserIdentity` API —
+        /// was removed in iOS 17: "No longer supported." So a participant's name is nil and stays nil, and
+        /// the only way a household can say who is in it is for each person to type it once and publish it,
+        /// exactly as they publish their recipes.
+        nonisolated static let member = "SharedMember"
+    }
+
+    enum MemberKey {
+        /// What this person asked to be called. Theirs to set and theirs to change; nobody else writes it.
+        nonisolated static let displayName = "displayName"
     }
 
     enum RecipeKey {

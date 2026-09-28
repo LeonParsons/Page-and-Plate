@@ -2,99 +2,64 @@ import CloudKit
 import Foundation
 import Observation
 
-/// Who the other people in a household are, by the id their recipes carry.
+/// What to call the other people in a household.
 ///
-/// A recipe belongs to whoever scanned it (settled 2026-09-25), and `SharedRecipe.authorID` holds a CloudKit
-/// user record name — the right thing to key on and the wrong thing to show anybody. The names come from the
-/// share's participants, which the owner *and* every member can read, so both sides can say "Added by Sara"
-/// without the owner having to publish a roster of who is in the house.
+/// **The app has to be told, because CloudKit will not say.** `CKUserIdentity.nameComponents` needs the
+/// user-discoverability permission, and iOS 17 removed that permission and every `discoverUserIdentity` API —
+/// "No longer supported." So a share participant's name is nil on every modern build, and reading the share
+/// can never produce one. Each person types their own name instead and publishes it into every household they
+/// are in, as a `SharedMember` record beside their recipes.
 ///
-/// Cached in defaults for two reasons: a row needs the answer while it is drawing, and CloudKit withholds a
-/// participant's name until they have accepted the invite — sometimes for longer — so the name can arrive
-/// after the first recipe does and should not be lost again on the next launch.
+/// This is the **view-facing cache** of what those records said: `@Observable` so a row redraws when a name
+/// finally arrives, and backed by defaults so it survives the store being discarded on a generation bump. The
+/// records themselves are `SharedMemberRow`, which is what syncs.
 @Observable
 @MainActor
 final class HouseholdMembers {
-    /// One instance, for the same reason `Households` has one: the scene delegate that handles an accepted
-    /// invite is built by UIKit and cannot be handed dependencies — and a second instance would hold its own
-    /// stale copy of the names in memory, so a name recorded at acceptance would not reach the screen until
-    /// the next launch.
+    /// One instance, for the same reason `Households` has one: the scene delegate is built by UIKit and cannot
+    /// be handed dependencies, and a second instance would hold its own stale copy in memory.
     static let shared = HouseholdMembers()
 
     private static let key = "household.memberNames"
-    private static let fullKey = "household.memberFullNames"
 
     private let defaults: UserDefaults
-    /// User record name → their given name, for a caption on a row: "Added by Sara".
+    /// User record name → the name they asked to be known by.
     private(set) var names: [String: String]
-    /// User record name → their full name, for the line under a household in Settings, which is the only thing
-    /// telling two households apart now that neither has a name: "Sara Parsons".
-    private(set) var fullNames: [String: String]
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         names = defaults.dictionary(forKey: Self.key) as? [String: String] ?? [:]
-        fullNames = defaults.dictionary(forKey: Self.fullKey) as? [String: String] ?? [:]
     }
 
-    /// Everyone on a share whose name CloudKit will give, the owner included. Names already known are kept
-    /// when a later read withholds them, which CloudKit does often enough to matter.
-    func record(_ share: CKShare) {
-        var short = names
-        var full = fullNames
-        // The owner explicitly as well as the participant list: the owner is who identifies a household to
-        // everyone in it, and it is the one name that must not depend on how a given share reports itself.
-        for participant in [share.owner] + share.participants {
-            guard let id = participant.userIdentity.userRecordID?.recordName,
-                  let components = participant.userIdentity.nameComponents
-            else { continue }
-            // Both styles from the same components, because the two places a name appears want different
-            // lengths: a row caption wants "Sara", the household it identifies wants "Sara Parsons".
-            let given = components.formatted(.name(style: .short))
-            let whole = components.formatted(.name(style: .medium))
-            if !given.isEmpty { short[id] = given }
-            if !whole.isEmpty { full[id] = whole }
-        }
-        if short != names {
-            names = short
-            defaults.set(short, forKey: Self.key)
-        }
-        if full != fullNames {
-            fullNames = full
-            defaults.set(full, forKey: Self.fullKey)
-        }
+    /// A name that arrived from a household, or one this device has just set for itself.
+    func record(id: String, name: String) {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !id.isEmpty, !trimmed.isEmpty, names[id] != trimmed else { return }
+        names[id] = trimmed
+        defaults.set(names, forKey: Self.key)
     }
 
-    /// What to show beside something this person did not write — or nil when there is nothing honest to say.
+    /// What to show beside something this person did not write — or nil when nobody has said.
     ///
-    /// An author with no name reads as **nothing at all**, never "Someone": a caption naming nobody is noise
-    /// on every row, and a guess is worse than a blank. The same rule `HouseholdAuthor` follows for a recipe
-    /// it cannot attribute.
+    /// An author with no name reads as **nothing at all**, never "Someone": a caption naming nobody is noise on
+    /// every row, and a guess is worse than a blank. Somebody who has not set a name simply is not named yet.
     func name(for authorID: String) -> String? {
         guard !authorID.isEmpty, let name = names[authorID], !name.isEmpty else { return nil }
         return name
     }
 
-    /// Who runs a household — their **full** name, because this is what identifies the household now that
-    /// households have no names of their own.
+    /// Who runs a household — the only thing identifying it, now that households have no names of their own.
     ///
-    /// **A shared zone's `ownerName` is its owner's user record name** — the same id a recipe's `authorID`
-    /// carries and the same one the share's owner participant reports — so this needs no second lookup. Nil when
-    /// CloudKit has not given their name, which it withholds until an invite is accepted and sometimes after;
-    /// the row then simply has no second line, which is better than a guess.
+    /// **A shared zone's `ownerName` is its owner's user record name**, the same id their `SharedMember` record
+    /// is filed under and the same one their recipes carry, so this needs no second lookup.
     func owner(of household: Household) -> String? {
-        guard !household.ownerName.isEmpty, let name = fullNames[household.ownerName], !name.isEmpty else {
-            return nil
-        }
-        return name
+        name(for: household.ownerName)
     }
 
     /// Signing out. The next account's household has its own people.
     func forget() {
-        guard !names.isEmpty || !fullNames.isEmpty else { return }
+        guard !names.isEmpty else { return }
         names = [:]
-        fullNames = [:]
         defaults.removeObject(forKey: Self.key)
-        defaults.removeObject(forKey: Self.fullKey)
     }
 }

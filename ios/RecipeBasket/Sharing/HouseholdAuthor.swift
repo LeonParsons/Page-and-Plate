@@ -20,8 +20,13 @@ import OSLog
 @Observable
 @MainActor
 final class HouseholdAuthor {
+    /// One instance, for the same reason `Households` has one: the scene delegate that handles an accepted
+    /// invite is built by UIKit and cannot be handed dependencies.
+    static let shared = HouseholdAuthor()
+
     private enum Key {
         static let id = "household.authorID"
+        static let name = "household.authorName"
     }
 
     private let containerID: String
@@ -32,10 +37,26 @@ final class HouseholdAuthor {
     /// record id is a network round trip. Stable for the life of the account, and cleared when it changes.
     private(set) var id: String?
 
+    /// What this person asked to be called in a household, or nil until they say.
+    ///
+    /// **Typed, because it cannot be read.** `CKUserIdentity.nameComponents` needs the user-discoverability
+    /// permission, which iOS 17 removed outright — so no app can learn its own user's name from iCloud, let
+    /// alone another participant's. A household that wants to say "Sara Parsons" has to be told.
+    private(set) var name: String?
+
     init(containerID: String = AppModelContainer.cloudKitContainerID, defaults: UserDefaults = .standard) {
         self.containerID = containerID
         self.defaults = defaults
         id = defaults.string(forKey: Key.id)
+        name = defaults.string(forKey: Key.name)
+    }
+
+    /// Sets the name this device publishes into every household it is in. Empty clears it.
+    func setName(_ newName: String) {
+        let trimmed = newName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed != (name ?? "") else { return }
+        name = trimmed.isEmpty ? nil : trimmed
+        if let name { defaults.set(name, forKey: Key.name) } else { defaults.removeObject(forKey: Key.name) }
     }
 
     /// Fetched once per launch. Failure is not fatal: without an identity this device still reads the whole
@@ -54,6 +75,8 @@ final class HouseholdAuthor {
     func forget() {
         id = nil
         defaults.removeObject(forKey: Key.id)
+        // The name is deliberately kept: it is this person's own, not the account's, and asking again after
+        // they sign back in would be asking twice for the same answer.
     }
 
     /// Whether this device wrote the thing carrying `authorID`.

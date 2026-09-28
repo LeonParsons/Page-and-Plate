@@ -14,9 +14,6 @@ enum ShareAcceptance {
         do {
             let share = try await CKContainer(identifier: containerID).accept(metadata)
             Households.shared.join(share)
-            // The earliest moment the owner's name is available, and the household has nothing else to
-            // identify it by. CloudKit often withholds names until acceptance, so this is exactly when to ask.
-            HouseholdMembers.shared.record(share)
             log.info("accepted a shared plan in zone \(share.recordID.zoneID.zoneName, privacy: .public)")
         } catch {
             log.error("could not accept the share: \(error.localizedDescription, privacy: .public)")

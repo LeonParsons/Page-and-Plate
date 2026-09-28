@@ -43,6 +43,21 @@ struct HouseholdInbox {
                     }()
                 row.apply(fields)
                 row.systemFields = HouseholdRecords.encode(record)
+            case SharedWeekZone.RecordType.member:
+                let name = record[SharedWeekZone.MemberKey.displayName] as? String ?? ""
+                let row = try member(authorID: record.recordID.recordName, in: household)
+                    ?? {
+                        let fresh = SharedMemberRow(
+                            authorID: record.recordID.recordName, householdID: household.id, displayName: name
+                        )
+                        context.insert(fresh)
+                        return fresh
+                    }()
+                row.displayName = name
+                row.systemFields = HouseholdRecords.encode(record)
+                // The cache the views read. Names are global by author: one person has one name, whichever
+                // household you meet them in.
+                HouseholdMembers.shared.record(id: row.authorID, name: name)
             default:
                 break
             }
@@ -54,10 +69,37 @@ struct HouseholdInbox {
 
     /// A record withdrawn by whoever owned it — a meal removed, or a recipe whose author left or deleted it.
     func delete(_ recordID: CKRecord.ID, in household: Household) {
-        guard let id = UUID(uuidString: recordID.recordName) else { return }
+        // A member record is filed under a user record name, not a UUID — somebody left, or withdrew their
+        // name. The cached name stays: their recipes may still be on screen while the deletion catches up.
+        guard let id = UUID(uuidString: recordID.recordName) else {
+            if let row = try? member(authorID: recordID.recordName, in: household) { context.delete(row) }
+            try? context.save()
+            return
+        }
         if let meal = try? meal(id: id, in: household) { context.delete(meal) }
         if let recipe = try? recipe(id: id, in: household) { context.delete(recipe) }
         try? context.save()
+    }
+
+    /// This device's own name in a household, written before it is sent so the record can be built from it.
+    func upsert(member authorID: String, name: String, in household: Household) throws {
+        let row = try member(authorID: authorID, in: household)
+            ?? {
+                let fresh = SharedMemberRow(authorID: authorID, householdID: household.id, displayName: name)
+                context.insert(fresh)
+                return fresh
+            }()
+        row.displayName = name
+        try context.save()
+    }
+
+    func member(authorID: String, in household: Household) throws -> SharedMemberRow? {
+        let householdID = household.id
+        return try context.fetch(
+            FetchDescriptor<SharedMemberRow>(
+                predicate: #Predicate { $0.authorID == authorID && $0.householdID == householdID }
+            )
+        ).first
     }
 
     /// Writing a row without a record, for something this device already knows: the owner seeding their week,

@@ -24,6 +24,9 @@ protocol HouseholdSyncing: AnyObject {
     /// projects their own, which is what makes the catalogue a union rather than a copy of the owner's.
     func stage(recipeID: UUID, in household: Household)
     func withdraw(recipeID: UUID, in household: Household)
+    /// This device's own name, published so the household can say who is in it. Keyed on the author's user
+    /// record name rather than a UUID, which is what a `SharedMember` record is filed under.
+    func stage(memberID: String, in household: Household)
 }
 
 /// Editing a household's week (SPEC §10, reshaped for Phase 11b).

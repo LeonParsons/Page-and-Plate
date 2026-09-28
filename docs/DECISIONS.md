@@ -755,3 +755,33 @@ identifies a household, "Sara Parsons".
 Also today: the Plan tab drops the week from its title once the week is only a date, so it reads "Our plan"
 rather than truncating "Our plan · Week of 12 Oct". This week, last week and next week are still named. No date
 is lost — every day header carries its own, and the week arrows are in the same bar.
+
+### 2026-09-28 · CloudKit will not name anybody, so each person says
+
+"Our plan" showed no owner beneath it on a device, twice, after re-inviting. The cause is not ours to fix:
+
+```
+CKApplicationPermissionUserDiscoverability
+  API_DEPRECATED("No longer supported. Please see Sharing CloudKit Data with Other iCloud Users.",
+                 ios(8.0, 17.0))
+```
+
+`CKUserIdentity.nameComponents` needs that permission, and iOS 17 removed it along with every
+`discoverUserIdentity` API. A share participant's name is nil on every build this app can ship, and so is the
+current user's own — no app can read its user's name from iCloud any more. The "Added by Sara" attribution
+built earlier the same day rested on the same field and would never have shown anything either.
+
+So the app asks. `HouseholdAuthor.name` is typed once, in Settings or when first sharing, and published into
+every household this device is in as a `SharedMember` record — filed under the author's user record name,
+carried in the zone beside their recipes, and updated like any other record (it keeps `systemFields`, so a
+rename is an update rather than a tagless save CloudKit refuses). `SharedMemberRow` is the local row;
+`HouseholdMembers` is the observable cache the views read.
+
+Consequences worth stating. A person who has not set a name is **not named** rather than guessed at, so a
+household can sit without an owner's name until they open the app. The name is not verified and never could be
+— it is what someone asks to be called. It is visible only to the people they share with. And signing out of
+iCloud keeps it, because it is theirs rather than the account's; asking again would be asking twice for the
+same answer.
+
+This is why the owner's name is worth the prompt: with households no longer named (above), it is the only
+thing that identifies one.

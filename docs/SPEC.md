@@ -321,6 +321,11 @@ section below is what it becomes. Phase 10's design is kept only where it still 
   Phase 10 derived a name from the owner's iCloud identity ("Shared's plan" when CloudKit would not say who
   they were), and 11a asked the owner to type one. The `CKShare` still carries a title because Apple's sharing
   UI displays one; nothing reads it back.
+- **Each person says what to call them, once**, and that name travels with their data into every household
+  they are in. It is what a household is identified by ("Our plan", with "Sara Parsons" beneath it) and what
+  names a recipe somebody else scanned. **The app has to ask**: `CKUserIdentity.nameComponents` needs the
+  user-discoverability permission, and iOS 17 removed it, so CloudKit reports no name for any share
+  participant — not even the current user's. Somebody who has not said is not named, rather than guessed at.
 - **Owner and member have the same control of the week.** Adding, portions, moving and removing are one
   editor for everybody, and the only asymmetries are the three that follow from ownership: scanning spends the
   scanner's own allowance, a member may remove themselves but not the host, and a scanned recipe goes into the
