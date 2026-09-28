@@ -875,3 +875,20 @@ now GBR so a local run shows the prices that will actually be charged.
 were hardcoded in the script and had drifted from the table in `APPSTORE.md`, so it reported "ok" for copy that
 had not existed for weeks. It reads the table now. A checker that checks something other than the document is
 worse than no checker — the same shape as today's silent CloudKit rejections, and worth noticing twice.
+
+### 2026-09-28 · The pitch is the household
+
+Removing "Unlimited" left the paywall with no statement of what a subscription buys, still selling scanning
+alone — which stopped being the whole story the moment typed recipes became free and genuinely unlimited. What
+a subscription buys that nothing else does is cooking together.
+
+So the paywall leads with it ("Cook together, from your own books"), and every length-limited field in
+`docs/APPSTORE.md` was rewritten: the subtitle trades "shop" for "together", the keywords trade `scale`,
+`cooking`, `baking`, `kitchen` and `ocr` — none of which were earning their place — for `family`, `household`,
+`partner` and `share`, and the description gains a COOK TOGETHER section plus the privacy line that belongs
+beside it: members see the week, the titles and the ingredients, never the photographs of the page.
+
+The welcome screen already had a household row from 11a; this phase's plan said to add one, which was wrong.
+
+`appstore-counts.py` rejected the first draft twice, on the promotional text and the keywords. That is the
+checker doing its job a day after it was fixed to read the document rather than a hardcoded copy of it.

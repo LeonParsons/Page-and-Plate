@@ -6,6 +6,11 @@ Everything to paste into App Store Connect, plus the featuring nomination. Chara
 **Before this goes live:** the real terms and privacy URLs are still outstanding — `Subscription/Products.swift`
 points at example.com — and the two subscriptions still have to be created in App Store Connect.
 
+**The listing now sells the household** (11c-iii). Every length-limited field was written before sharing
+existed and pitched scanning alone — which stopped being the whole story when typed recipes became free and
+unlimited. `python3 docs/appstore-counts.py` passes; it caught the promotional text and the keywords going over
+on the first attempt, which is what it is for.
+
 **The plan is no longer called "Unlimited"** (Leon, 2026-09-28). It carried a real ceiling of 25 scans a week
 that is deliberately never shown (rule 9b), and typed recipes are now free and genuinely unlimited, so the word
 claimed the wrong thing in both directions — and App Review reads a subscription name as a claim. The
@@ -26,18 +31,19 @@ fallback — but try the clean name first and watch the numbers.
 ## Subtitle — 30 max
 
 ```
-Scan cookbooks, plan, shop
+Scan cookbooks, plan together
 ```
 
-Verb first, and the three things the app actually does. Indexed for search alongside the name, which is why
-"scan", "cookbooks", "plan" and "shop" do not appear again in the keyword field.
+Verb first. "Together" is the word doing the new work: sharing is what the subscription buys and the reason
+somebody picks this over a notes app. Indexed for search alongside the name, which is why "scan", "cookbooks"
+and "plan" do not appear again in the keyword field.
 
 ## Promotional text — 170 max
 
 Editable without shipping a build, so this is the field to change for a seasonal push.
 
 ```
-Photograph a page from any cookbook. Page & Plate reads the ingredients, scales them to the portions you want, and sends the week's shopping straight to Reminders.
+Photograph a page from any cookbook. Page & Plate reads the ingredients, scales them to the portions you want, and shops for the week — planned with your household.
 ```
 
 ## Keywords — 100 max
@@ -46,7 +52,7 @@ Comma-separated, no spaces — a space costs a character and buys nothing. Nothi
 subtitle, which Apple already indexes.
 
 ```
-recipe,ingredients,grocery,shopping,meal,planner,scale,portions,servings,cooking,baking,kitchen,ocr
+recipe,ingredients,grocery,shopping,meal,planner,portions,servings,family,household,partner,share
 ```
 
 ## Description — 4000 max
@@ -64,7 +70,17 @@ The arithmetic is done in code, not guessed by a model, and it is covered by tes
 
 PLAN THE WEEK
 
-Put recipes on the days you will cook them. Each meal carries its own number of portions, so Monday for two and Thursday for six live happily in the same week. Move meals between days, reorder them, and see at a glance what you have already shopped for.
+Put recipes on the days you will cook them. Each meal carries its own number of portions, so Monday for two and Thursday for six live happily in the same week. Move meals between days, reorder them, and see at a glance what you have already shopped for. Start the week on the day you shop, whichever day that is.
+
+Leave a note on a meal — who is out, who is coming — so the portions make sense to everyone looking.
+
+COOK TOGETHER
+
+Share the week with your household and everyone sees the same plan: partner, kids, whoever is cooking on Thursday. Anyone can add a meal, change the portions, move it to another day or take it off.
+
+Everyone's recipes go into the household, so you cook from each other's books. A recipe belongs to whoever scanned it and leaves with them if they go — nobody loses a library they built.
+
+What the others see is the week, the titles and the ingredients. They never see your photographs of the page.
 
 ONE SHOP
 
@@ -72,7 +88,7 @@ Tap Shop and the whole week becomes a single list in Apple Reminders. Lines that
 
 QUIET BY DESIGN
 
-No account. No sign-in. Your recipes and photographs stay on your device. Page & Plate never reads, changes or deletes the reminders you already have — it only adds.
+No account. No sign-in. Your recipes and photographs stay on your device and in your own iCloud. Sharing uses your Apple Account and nobody else's servers — we never hold a copy. Page & Plate never reads, changes or deletes the reminders you already have; it only adds.
 
 WHAT IT IS NOT
 
@@ -80,7 +96,9 @@ This is for books, not browsers. Page & Plate does not import recipes from websi
 
 TRY IT FREE
 
-Your first seven scans are free. A scan is one photographed recipe; a failed read does not count. A monthly or yearly subscription covers everything you cook in a week, and you can cancel any time from your Apple account settings.
+Your first seven scans are free. A scan is one photographed recipe; a failed read does not count. You can also type a recipe in yourself, as many as you like, without a subscription.
+
+A monthly or yearly subscription covers everything you cook in a week and lets you share a plan with your household. Cancel any time from your Apple account settings.
 ```
 
 ## What's New — 4000 max (version 1.0)
@@ -88,7 +106,7 @@ Your first seven scans are free. A scan is one photographed recipe; a failed rea
 ```
 First release.
 
-Photograph a cookbook page, scale the recipe to the portions you want, plan the week, and send the whole shop to Reminders in one tap.
+Photograph a cookbook page, scale the recipe to the portions you want, plan the week, and send the whole shop to Reminders in one tap. Share the week with your household and cook from each other's books.
 ```
 
 ## In-app purchases
@@ -97,8 +115,8 @@ Both sit in the subscription group **Page & Plate**.
 
 | Product | Display name (30) | Description (45) | UK price |
 |---|---|---|---|
-| `com.leonparsons.RecipeBasket.unlimited.monthly` | `Monthly` | `Scan and share, billed monthly` | £1.99 |
-| `com.leonparsons.RecipeBasket.unlimited.yearly` | `Yearly` | `Scan and share, billed yearly` | £14.99 |
+| `com.leonparsons.RecipeBasket.unlimited.monthly` | `Monthly` | `Scan and share a plan, billed monthly` | £1.99 |
+| `com.leonparsons.RecipeBasket.unlimited.yearly` | `Yearly` | `Scan and share a plan, billed yearly` | £14.99 |
 
 Prices confirmed 2026-09-28 and matching `ios/RecipeBasket.storekit`.
 
