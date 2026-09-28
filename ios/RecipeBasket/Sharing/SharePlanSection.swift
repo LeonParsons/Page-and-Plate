@@ -22,8 +22,6 @@ struct SharePlanSection: View {
     @State private var errorMessage: String?
     @State private var confirmingJoin: Household?
     @State private var leaving: Household?
-    @State private var isNaming = false
-    @State private var householdName = ""
     /// What each member has contributed, so removing them can say what goes with them. Read when the share is
     /// read, because it needs the participant list to key on.
     @State private var contributions: [String: HouseholdContribution] = [:]
@@ -57,7 +55,9 @@ struct SharePlanSection: View {
                         // Whose household it is, in the same place the one you host says you share it. With two
                         // households defaulting to the same name this is often the only thing telling them
                         // apart that a person actually recognises.
-                        subtitle: plan.members.owner(of: household).map { "Shared by \($0)" },
+                        // Whose it is. With no household names left, this is the only thing that identifies
+                        // one — and it is what a person actually recognises, where "Plan 2" is not.
+                        subtitle: plan.members.owner(of: household),
                         isCurrent: households.selection == .household(household.id)
                     ) {
                         // Only leaving your own plan needs saying out loud; moving between households does
@@ -140,12 +140,9 @@ struct SharePlanSection: View {
                 // Hosting is what a subscription buys (settled 2026-09-25), so anyone else meets the paywall
                 // rather than a disabled row with no explanation.
                 guard quota.isSubscribed else { return onPaywall() }
-                if participantCount > 0 {
-                    Task { await prepareShare(named: nil) }
-                } else {
-                    householdName = ""
-                    isNaming = true
-                }
+                // Straight to the sharing sheet: there is nothing to ask. A household is not named by anybody
+                // (Leon, 2026-09-28) — see `Households.displayTitle(for:)`.
+                Task { await prepareShare() }
             } label: {
                 HStack {
                     Text(participantCount > 0 ? "Manage your household…" : "Share with your household…")
@@ -161,13 +158,6 @@ struct SharePlanSection: View {
             Text("Your household")
         } footer: {
             Text("Everyone you invite sees and edits the same week, and cooks from everyone's recipes. Each person's recipes stay theirs and go with them if they leave. Page photos are never shared.")
-        }
-        .alert("Name your household", isPresented: $isNaming) {
-            TextField("The Parsons", text: $householdName)
-            Button("Share") { Task { await prepareShare(named: householdName) } }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("This is what everyone you invite will see.")
         }
         .alert("Couldn't share the plan", isPresented: Binding(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })) {
             Button("OK") { errorMessage = nil }
@@ -196,9 +186,6 @@ struct SharePlanSection: View {
 
     /// Fetches the existing share quietly, so the section can say who is in and what each of them brought.
     private func refreshShare() async {
-        // A one-time rename for a household created under 11a's default, which named the app rather than the
-        // plan. Guarded by the old string, so it runs once and never touches a name the owner chose.
-        try? await publisher.upgradeDefaultTitle()
         share = try? await publisher.existingShare()
         guard let household = households.hosted, let share else { return contributions = [:] }
         // The participants' names, so the owner's own week can say which recipes came from whom.
@@ -248,7 +235,7 @@ struct SharePlanSection: View {
         return participant.acceptanceStatus == .pending ? "Invited" : "Someone in your household"
     }
 
-    private func prepareShare(named name: String?) async {
+    private func prepareShare() async {
         isPreparing = true
         // Read before the share exists: `shareForInviting` is what records the household, so afterwards there
         // is no way to tell a first share from a re-invite.
@@ -257,7 +244,7 @@ struct SharePlanSection: View {
             try await publisher.start()
             // The share first, because it is what records the household — and `publishLibrary` and `seedWeek`
             // both need to know which household they are writing into.
-            let ready = try await publisher.shareForInviting(named: name)
+            let ready = try await publisher.shareForInviting()
             // Then the contents, before anyone is invited: an invite that arrives before the recipes looks
             // broken. The seed runs once, and only for a household that has no week yet — re-inviting must
             // never overwrite what the household has planned since with the owner's stale personal plan.

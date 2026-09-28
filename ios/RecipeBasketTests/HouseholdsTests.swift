@@ -42,9 +42,12 @@ struct HouseholdsTests {
         households.host(zoneID: zone("SharedPlan", owner: "__defaultOwner__"), title: "The Parsons")
 
         #expect(households.selection == .mine)
-        #expect(households.current?.title == "The Parsons")
         #expect(households.isShowingHousehold)
-        #expect(households.mineTitle == "The Parsons")
+        // `.mine` resolves to the household you host, which is what makes hosting *replace* your own plan
+        // rather than sit beside it. What it is **called** does not change: a plan of your own is "My plan"
+        // whether or not you have shared it (Leon, 2026-09-28), and the row's second line says you share it.
+        #expect(households.current?.id == households.hosted?.id)
+        #expect(households.mineTitle == "My plan")
     }
 
     @Test("Re-sharing renames the household rather than making a second one")
@@ -237,127 +240,75 @@ struct HouseholdsTests {
         let reopened = Households(defaults: defaults)
         #expect(reopened.joined.map(\.title) == ["The Parsons"])
     }
-    // MARK: The household's name
+    // MARK: What a plan is called
 
-    @Test("Every name this app ever generated itself is recognised as one nobody chose")
-    func appGeneratedNamesAreRecognised() {
-        // There were two, and an exact comparison against one skipped a household carrying the other — which
-        // is exactly how Leon's phone kept reading "Page & Plate — my plan" after the first attempt to rename
-        // it. Both of these have been a real default in a shipped build.
-        #expect(SharedWeekZone.isAppGeneratedTitle("\(Brand.name) — my plan"))
-        #expect(SharedWeekZone.isAppGeneratedTitle("\(Brand.name) — our plan"))
-        // And a name somebody typed is theirs, including one that happens to contain the default.
-        #expect(!SharedWeekZone.isAppGeneratedTitle("The Parsons"))
-        #expect(!SharedWeekZone.isAppGeneratedTitle(SharedWeekZone.defaultTitle))
-        #expect(!SharedWeekZone.isAppGeneratedTitle("Our plan, but nicer"))
-    }
-
-    // MARK: Telling two households of the same name apart
-
-    @Test("Two households with the same name are numbered, both of them")
-    func duplicateNamesAreNumbered() {
-        let households = Households(defaults: makeDefaults())
-        let first = CKRecordZone.ID(zoneName: SharedWeekZone.zoneName, ownerName: "_leon")
-        let second = CKRecordZone.ID(zoneName: SharedWeekZone.zoneName, ownerName: "_grandma")
-        households.join(zoneID: first, title: "Our plan")
-        households.join(zoneID: second, title: "Our plan")
-
-        let joined = households.ordered
-        // Numbering only the second would leave "Our plan" beside "Our plan 2", which says nothing about which
-        // is which. Two owners who both left the name at the default is the ordinary case, not an edge.
-        #expect(households.displayTitle(for: joined[0]) == "Our plan 1")
-        #expect(households.displayTitle(for: joined[1]) == "Our plan 2")
-    }
-
-    @Test("A name that is not shared is left exactly as the owner wrote it")
-    func uniqueNamesAreNotNumbered() {
-        let households = Households(defaults: makeDefaults())
-        households.join(zoneID: CKRecordZone.ID(zoneName: SharedWeekZone.zoneName, ownerName: "_leon"), title: "The Parsons")
-        households.join(zoneID: CKRecordZone.ID(zoneName: SharedWeekZone.zoneName, ownerName: "_grandma"), title: "Sunday lunch")
-
-        for household in households.ordered {
-            #expect(households.displayTitle(for: household) == household.title)
-        }
-    }
-
-    @Test("The household you host is numbered against the ones you joined, and comes first")
-    func hostedIsNumberedToo() {
-        let households = Households(defaults: makeDefaults())
-        households.host(zoneID: SharedWeekZone.id, title: "Our plan")
-        households.join(zoneID: CKRecordZone.ID(zoneName: SharedWeekZone.zoneName, ownerName: "_grandma"), title: "Our plan")
-
-        // "My plan" is the household you host once you host one, so its row has to disambiguate as well.
-        #expect(households.mineTitle == "Our plan 1")
-        #expect(households.displayTitle(for: households.joined[0]) == "Our plan 2")
-    }
-
-    @Test("An unnamed household is called 'Our plan' — it names the plan, not the app")
-    func theDefaultNameNamesThePlan() {
-        // It sits on the Plan tab beside the week, and in Settings directly beside "My plan", so it has to read
-        // as the name of a plan. 11a defaulted to "Page & Plate — our plan", which named the app instead
-        // (Leon, 2026-09-28). This pins it against being helpfully branded again.
-        #expect(SharedWeekZone.defaultTitle == "Our plan")
-        #expect(!SharedWeekZone.defaultTitle.contains(Brand.name))
-        #expect(!SharedWeekZone.isAppGeneratedTitle(SharedWeekZone.defaultTitle))
-    }
-
-    @Test("Your own plan is 'My plan' until you host, and then it is the household")
-    func mineIsNamedForTheHousehold() {
+    /// Households are not named by anybody (Leon, 2026-09-28). A plan's title shares the navigation bar with the
+    /// week, and any name long enough to mean something is too long to sit beside "This week" — "The Parsons ·
+    /// This week" truncated. So the title is computed from position, and **who owns it** is what tells two apart.
+    @Test("Your own plan is always 'My plan', hosted or not — you only ever own one")
+    func mineIsAlwaysMyPlan() {
         let households = Households(defaults: makeDefaults())
         #expect(households.mineTitle == "My plan")
-        households.host(zoneID: SharedWeekZone.id, title: SharedWeekZone.defaultTitle)
-        #expect(households.mineTitle == "Our plan")
+
+        households.host(zoneID: SharedWeekZone.id, title: "ignored")
+        // Hosting does not rename it. It used to take the household's name, which is what put a name in the bar.
+        #expect(households.mineTitle == "My plan")
+        #expect(households.displayTitle(for: households.hosted!) == "My plan")
     }
 
-    @Test("A household can be renamed without moving what is on display")
-    func renamingDoesNotSwitchPlans() {
+    @Test("The first household you joined is 'Our plan', and the rest are numbered from 2")
+    func joinedHouseholdsAreNumbered() {
         let households = Households(defaults: makeDefaults())
-        let zone = CKRecordZone.ID(zoneName: SharedWeekZone.zoneName, ownerName: "_grandma")
-        households.join(zoneID: zone, title: "Shared plan")
-        households.select(.mine)
-
-        households.rename(id: "\(SharedWeekZone.zoneName)|_grandma", to: "Sunday lunch")
-
-        #expect(households.joined.first?.title == "Sunday lunch")
-        // A rename is not a join: it must not move anybody's screen.
-        #expect(households.selection == .mine)
+        for owner in ["_sara", "_grandma", "_sam"] {
+            households.join(zoneID: CKRecordZone.ID(zoneName: SharedWeekZone.zoneName, ownerName: owner), title: "ignored")
+        }
+        #expect(households.orderedJoined.map { households.displayTitle(for: $0) } == ["Our plan", "Plan 2", "Plan 3"])
     }
 
-    @Test("Reading the share replaces the placeholder a Phase 10 membership was given")
-    func renamingFixesAnAdoptedHousehold() {
+    @Test("The name the owner gave a household is never shown")
+    func theOwnersNameForItIsIgnored() {
+        let households = Households(defaults: makeDefaults())
+        households.join(zoneID: CKRecordZone.ID(zoneName: SharedWeekZone.zoneName, ownerName: "_sara"), title: "The Parsons")
+
+        // A member could never rename somebody else's household, so a name they found unhelpful was one they
+        // were stuck with. The share's title is still stored — CloudKit's sharing UI shows it — but not read.
+        #expect(households.joined.first?.title == "The Parsons")
+        #expect(households.displayTitle(for: households.joined[0]) == "Our plan")
+    }
+
+    @Test("Numbering is stable across launches, and follows the order they were joined")
+    func numberingIsStable() {
         let defaults = makeDefaults()
-        defaults.set(SharedWeekZone.zoneName, forKey: "sharedPlan.zoneName")
-        defaults.set("_leon", forKey: "sharedPlan.ownerName")
         let households = Households(defaults: defaults)
+        households.join(zoneID: CKRecordZone.ID(zoneName: SharedWeekZone.zoneName, ownerName: "_sara"), title: "a")
+        households.join(zoneID: CKRecordZone.ID(zoneName: SharedWeekZone.zoneName, ownerName: "_grandma"), title: "b")
 
-        // Phase 10 never carried a household name, so the migration can only call it what it is. On a device
-        // that read "Shared plan" while the owner saw the name they had typed — nothing re-read the share.
-        #expect(households.joined.first?.title == "Shared plan")
-
-        households.rename(id: "\(SharedWeekZone.zoneName)|_leon", to: "The Parsons")
-        #expect(households.joined.first?.title == "The Parsons")
-        #expect(Households(defaults: defaults).joined.first?.title == "The Parsons")
+        let reopened = Households(defaults: defaults)
+        #expect(reopened.orderedJoined.map(\.ownerName) == ["_sara", "_grandma"])
+        #expect(reopened.displayTitle(for: reopened.orderedJoined[1]) == "Plan 2")
     }
 
-    @Test("An empty name is not a name, and never overwrites one")
-    func renamingIgnoresNothing() {
+    @Test("Leaving one renumbers the ones after it, which is the accepted cost of not naming them")
+    func leavingRenumbers() {
         let households = Households(defaults: makeDefaults())
-        households.join(zoneID: CKRecordZone.ID(zoneName: SharedWeekZone.zoneName, ownerName: "_leon"), title: "The Parsons")
+        let sara = CKRecordZone.ID(zoneName: SharedWeekZone.zoneName, ownerName: "_sara")
+        households.join(zoneID: sara, title: "a")
+        households.join(zoneID: CKRecordZone.ID(zoneName: SharedWeekZone.zoneName, ownerName: "_grandma"), title: "b")
+        #expect(households.displayTitle(for: households.orderedJoined[1]) == "Plan 2")
 
-        households.rename(id: "\(SharedWeekZone.zoneName)|_leon", to: "   ")
+        households.leave(id: "\(SharedWeekZone.zoneName)|_sara")
 
-        // CloudKit will hand back a share with no title for one made before naming existed; that is not a
-        // reason to leave somebody's household nameless.
-        #expect(households.joined.first?.title == "The Parsons")
+        // The owner's name under the row is what a person recognises, and that does not move.
+        #expect(households.orderedJoined.map { households.displayTitle(for: $0) } == ["Our plan"])
     }
 
-    @Test("The household you host can be renamed too")
-    func renamingTheHostedHousehold() {
+    @Test("The hosted household is first, and is not counted among the joined ones")
+    func hostedIsSeparateFromJoined() {
         let households = Households(defaults: makeDefaults())
-        households.host(zoneID: SharedWeekZone.id, title: "The Parsons")
-        households.rename(id: "\(SharedWeekZone.zoneName)|\(CKCurrentUserDefaultName)", to: "Ours")
-        #expect(households.hosted?.title == "Ours")
-        #expect(households.mineTitle == "Ours")
+        households.host(zoneID: SharedWeekZone.id, title: "ignored")
+        households.join(zoneID: CKRecordZone.ID(zoneName: SharedWeekZone.zoneName, ownerName: "_sara"), title: "ignored")
+
+        #expect(households.ordered.map { households.displayTitle(for: $0) } == ["My plan", "Our plan"])
     }
 
 }

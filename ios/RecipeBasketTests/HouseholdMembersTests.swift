@@ -59,15 +59,20 @@ struct HouseholdMembersTests {
     func theOwnerIsNamed() {
         let defaults = makeDefaults()
         defaults.set(["_leon": "Leon"], forKey: "household.memberNames")
+        defaults.set(["_leon": "Leon Parsons"], forKey: "household.memberFullNames")
         let members = HouseholdMembers(defaults: defaults)
         let household = Household(
             zoneID: CKRecordZone.ID(zoneName: SharedWeekZone.zoneName, ownerName: "_leon"),
-            title: "Our plan"
+            title: "ignored"
         )
 
         // A shared zone's ownerName *is* its owner's user record name — the same id a recipe's authorID
         // carries — so naming the owner needs no second lookup and no roster of its own.
-        #expect(members.owner(of: household) == "Leon")
+        //
+        // The **full** name, because with households no longer named this line is the only thing identifying
+        // one; a row caption saying "Added by Sara" wants the short form, and both come from the same share.
+        #expect(members.owner(of: household) == "Leon Parsons")
+        #expect(members.name(for: "_leon") == "Leon")
     }
 
     @Test("An owner CloudKit will not name leaves the row with no second line")
@@ -75,7 +80,7 @@ struct HouseholdMembersTests {
         let members = HouseholdMembers(defaults: makeDefaults())
         let household = Household(
             zoneID: CKRecordZone.ID(zoneName: SharedWeekZone.zoneName, ownerName: "_grandma"),
-            title: "Sunday lunch"
+            title: "ignored"
         )
         #expect(members.owner(of: household) == nil)
     }
@@ -84,10 +89,12 @@ struct HouseholdMembersTests {
     func forgettingClearsThem() {
         let defaults = makeDefaults()
         defaults.set(["_sara": "Sara"], forKey: "household.memberNames")
+        defaults.set(["_sara": "Sara Parsons"], forKey: "household.memberFullNames")
         let members = HouseholdMembers(defaults: defaults)
         members.forget()
 
         #expect(members.name(for: "_sara") == nil)
+        #expect(members.fullNames.isEmpty)
         #expect(HouseholdMembers(defaults: defaults).name(for: "_sara") == nil)
     }
 }

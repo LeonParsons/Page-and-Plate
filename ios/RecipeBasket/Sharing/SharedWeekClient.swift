@@ -72,29 +72,25 @@ final class SharedWeekClient: NSObject {
         configuration.automaticallySync = true
         engine = CKSyncEngine(configuration)
         isRunning = true
-        await refreshShares()
+        await refreshMembers()
     }
 
-    /// Re-reads each joined household's `CKShare`, for its name and its participants.
+    /// Re-reads each joined household's `CKShare` for **who is in it**.
     ///
-    /// **Why a member has to read it at all.** The owner types the household's name once and
-    /// `CKShare.SystemFieldKey.title` carries it to everybody — but Phase 11a read it only at the moment the
-    /// invite was accepted. A household adopted from Phase 10 was never accepted under 11a at all, so it kept
-    /// the placeholder `"Shared plan"` for ever while the owner saw the name they had chosen; and a later
-    /// rename reached nobody. Reading it on every start makes the name one thing rather than two.
-    private func refreshShares() async {
+    /// A household has no name of its own any more, so the owner's name is the only thing that identifies one
+    /// to a member — and CloudKit withholds a participant's name until they have accepted, and sometimes for
+    /// longer, so one read at the moment the invite was accepted is not enough. Reading on every start is what
+    /// makes the name turn up eventually rather than never.
+    private func refreshMembers() async {
         for household in households.joined {
             do {
                 let zone = try await container.sharedCloudDatabase.recordZone(for: household.zoneID)
                 guard let reference = zone.share,
                       let share = try await container.sharedCloudDatabase.record(for: reference.recordID) as? CKShare
                 else { continue }
-                if let title = share[CKShare.SystemFieldKey.title] as? String {
-                    households.rename(id: household.id, to: title)
-                }
                 members.record(share)
             } catch {
-                log.warning("could not read the share for \(household.title, privacy: .public): \(error.localizedDescription, privacy: .public)")
+                log.warning("could not read a household's share: \(error.localizedDescription, privacy: .public)")
             }
         }
     }
@@ -194,8 +190,8 @@ extension SharedWeekClient: CKSyncEngineDelegate {
                 guard let household = household(for: deleted.zoneID) else { continue }
                 shareEnded(household)
             }
-            // A zone appearing or changing can mean the owner renamed the household or somebody joined it.
-            await refreshShares()
+            // A zone appearing or changing can mean somebody joined or left, so the names may have moved.
+            await refreshMembers()
         case .sentRecordZoneChanges(let sent):
             settle(sent, engine: syncEngine)
         case .accountChange:

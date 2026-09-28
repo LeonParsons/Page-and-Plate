@@ -9,6 +9,9 @@ import Foundation
 struct Household: Codable, Hashable, Identifiable, Sendable {
     let zoneName: String
     let ownerName: String
+    /// The share's own title. **Not shown anywhere** — see `Households.displayTitle(for:)`, which computes what
+    /// a household is called. Kept because it is what CloudKit's sharing UI displays when an invite is sent, and
+    /// because removing a stored property would stop every household already on a device from decoding.
     var title: String
     var joinedAt: Date
 
@@ -99,32 +102,44 @@ final class Households {
 
     var isShowingHousehold: Bool { current != nil }
 
-    /// What a plan of your own is called before you host a household.
+    /// The plan that is yours to run — whether or not you have shared it. **Always this**, because you only
+    /// ever own one.
     static let myPlanTitle = "My plan"
 
-    /// What the "My plan" row reads. Naming the household there is the whole of how hosting announces itself.
-    var mineTitle: String { hosted.map { displayTitle(for: $0) } ?? Self.myPlanTitle }
+    /// The first household you joined. Somebody else's plan, which you are part of.
+    static let ourPlanTitle = "Our plan"
 
-    /// Every household this person is in, in a stable order: the one they host, then the ones they joined in
-    /// the order they joined them. What `displayTitle` numbers by.
-    var ordered: [Household] {
-        (hosted.map { [$0] } ?? []) + joined.sorted { ($0.joinedAt, $0.id) < ($1.joinedAt, $1.id) }
+    /// What the "My plan" row reads.
+    var mineTitle: String { Self.myPlanTitle }
+
+    /// The households this person joined, in the order they joined them. What `displayTitle` numbers by, so it
+    /// has to be stable across launches — hence `joinedAt`, with the id to break a tie.
+    var orderedJoined: [Household] {
+        joined.sorted { ($0.joinedAt, $0.id) < ($1.joinedAt, $1.id) }
     }
 
-    /// What to call a household on screen.
+    /// Every household this person is in, the one they host first.
+    var ordered: [Household] {
+        (hosted.map { [$0] } ?? []) + orderedJoined
+    }
+
+    /// What to call a household on screen — **never the name its owner gave it** (Leon, 2026-09-28).
     ///
-    /// **Numbered when two share a name** — "Our plan 1", "Our plan 2" (Leon, 2026-09-28). Two owners who both
-    /// left the name at the default are both called "Our plan", and somebody in both households would otherwise
-    /// see two identical rows with no way to tell which week they were about to open. The number is added
-    /// *here*, where the name is read, because the titles come from other people's shares and a member cannot
-    /// rename either one. Every duplicate is numbered, including the first: "Our plan" beside "Our plan 2" says
-    /// nothing about which is which.
+    /// A plan's title shares the navigation bar with the week, and any name long enough to be meaningful is too
+    /// long to sit beside "This week": "The Parsons · This week" truncated, and so would every real household
+    /// name. So a household is not named at all. Yours is "My plan", the first you joined is "Our plan", and any
+    /// after that are numbered. **Who it belongs to is what tells them apart**, shown under the row in Settings,
+    /// and that is a better answer than a name anyway — a member could never rename somebody else's household,
+    /// so a name they found confusing was one they were stuck with.
+    ///
+    /// The consequence, accepted: leaving a household renumbers the ones after it. The owner's name under the
+    /// row is what a person actually recognises, and it does not move.
     func displayTitle(for household: Household) -> String {
-        let sharing = ordered.filter { $0.title == household.title }
-        guard sharing.count > 1, let index = sharing.firstIndex(where: { $0.id == household.id }) else {
-            return household.title
+        if hosted?.id == household.id { return Self.myPlanTitle }
+        guard let index = orderedJoined.firstIndex(where: { $0.id == household.id }) else {
+            return Self.ourPlanTitle
         }
-        return "\(household.title) \(index + 1)"
+        return index == 0 ? Self.ourPlanTitle : "Plan \(index + 1)"
     }
 
     /// Accepting an invite. Re-accepting one already joined updates its name rather than adding it twice.
@@ -161,28 +176,6 @@ final class Households {
 
     func host(_ share: CKShare) {
         host(zoneID: share.recordID.zoneID, title: Self.title(for: share))
-    }
-
-    /// The owner renamed the household, or a name has finally arrived for one that never had a real one.
-    ///
-    /// **Not `join`**, which also changes what is on display: a rename must not move anybody's screen. This is
-    /// how a household adopted from Phase 10 stops being called "Shared plan" on a member's phone while the
-    /// owner sees the name they chose.
-    func rename(id: String, to title: String) {
-        let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
-        var changed = false
-        if let index = joined.firstIndex(where: { $0.id == id }), joined[index].title != trimmed {
-            joined[index].title = trimmed
-            changed = true
-        }
-        if var current = hosted, current.id == id, current.title != trimmed {
-            current.title = trimmed
-            hosted = current
-            changed = true
-        }
-        guard changed else { return }
-        persist()
     }
 
     /// Leaving, or being removed. Only this household goes; the person's own plan is never touched.

@@ -721,3 +721,37 @@ metadata by being fetched from CloudKit, and a kept token means nothing is fetch
 already symmetric once the context bug went; and a member has Leave and no way to remove the host, because the
 member rows hang off `households.hosted` and `UICloudSharingController` offers a participant only "Remove Me".
 That last one is a claim about Apple's UI, so it is on the device list rather than covered by a test.
+
+### 2026-09-28 · Nobody names a household
+
+Three attempts at naming one, all abandoned. Phase 10 derived a name from the owner's iCloud identity, which
+produced "Shared's plan" when CloudKit would not say who they were. 11a asked the owner to type one. Today that
+was tried on two phones: Sara named hers "The Parsons", and Leon's navigation bar then read "The Parsons · This
+week", truncated — as any name long enough to be meaningful would be, because the title shares that bar with the
+week.
+
+So the title is computed and there is nothing to type:
+
+- the plan that is yours to run is **"My plan"**, whether or not you host it, because you only ever own one;
+- the first household you joined is **"Our plan"**;
+- any after that are **"Plan 2"**, "Plan 3", in the order they were joined.
+
+**Whose it is is what identifies it** — the owner's full name, in small text under the row in Settings, where the
+household you host says "You share this one". That is a better answer than a name: a member could never rename
+somebody else's household, so a name they found unhelpful was one they were stuck with.
+
+Two consequences, both accepted. Leaving a household renumbers the ones after it — the owner's name under the
+row is the part a person recognises, and it does not move. And `Household.title` is now vestigial: it still holds
+the share's title and is still stored, because CloudKit's sharing UI displays it and because removing a stored
+property would stop every household already on a device from decoding, but nothing reads it.
+
+**What this deleted**, which is the argument for it: the "Name your household" prompt, `Households.rename`, the
+legacy-title upgrade (`SharedWeekPublisher.upgradeDefaultTitle` and `SharedWeekZone.isAppGeneratedTitle`) and the
+duplicate-name numbering added earlier the same day. All of it existed only because a household's name was user
+data that could be wrong, absent, stale, or the same as another's. `HouseholdMembers` now keeps two forms of each
+name from the same share — the given name for a row caption, "Added by Sara", and the full name for the line that
+identifies a household, "Sara Parsons".
+
+Also today: the Plan tab drops the week from its title once the week is only a date, so it reads "Our plan"
+rather than truncating "Our plan · Week of 12 Oct". This week, last week and next week are still named. No date
+is lost — every day header carries its own, and the week arrows are in the same bar.

@@ -154,10 +154,12 @@ final class SharedWeekPublisher: NSObject {
 
     /// The share to hand to `UICloudSharingController` — the existing one, or a new one. Re-inviting someone
     /// must never make a second share, or the owner ends up with two plans they cannot tell apart.
-    /// - Parameter name: what the owner called the household. Every participant reads it from the share, so
-    ///   a household is named once by the person who made it rather than derived from an iCloud identity —
-    ///   which is how Phase 10 managed to put "Shared's plan" on screen.
-    func shareForInviting(named name: String? = nil) async throws -> CKShare {
+    ///
+    /// **Nobody names a household.** Phase 10 derived a name from the owner's iCloud identity and 11a asked the
+    /// owner to type one; both put a name in the navigation bar beside the week, where anything meaningful is
+    /// too long — "The Parsons · This week" truncated (Leon, 2026-09-28). The share still carries a title
+    /// because Apple's sharing UI shows one, and nothing reads it back.
+    func shareForInviting() async throws -> CKShare {
         try await start()
         if let existing = try await existingShare() {
             // Re-read the name in case it was renamed in the sharing sheet since the household was recorded.
@@ -166,8 +168,7 @@ final class SharedWeekPublisher: NSObject {
         }
 
         let share = CKShare(recordZoneID: SharedWeekZone.id)
-        let trimmed = (name ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-        share[CKShare.SystemFieldKey.title] = trimmed.isEmpty ? SharedWeekZone.defaultTitle : trimmed
+        share[CKShare.SystemFieldKey.title] = SharedWeekZone.shareTitle
         share.publicPermission = .none   // invited people only, never anyone with the link
         let result = try await container.privateCloudDatabase.modifyRecords(saving: [share], deleting: [])
         guard let saved = try result.saveResults[share.recordID]?.get() as? CKShare else {
@@ -175,29 +176,6 @@ final class SharedWeekPublisher: NSObject {
         }
         households.host(saved)
         return saved
-    }
-
-    /// Brings a household still carrying an app-generated name up to the current default.
-    ///
-    /// The old defaults named the *app* — "Page & Plate — my plan" under Phase 10 and 11a, "Page & Plate — our
-    /// plan" briefly in 11b. A household carrying either was never named by its owner, so there is nothing of
-    /// theirs to preserve, and **a name the owner actually typed is never touched**.
-    ///
-    /// Two writes, and both are needed. The local one fixes a household whose share has gone or was never made;
-    /// the share one is what renames it on every *member's* phone, since they all read the name from there.
-    func upgradeDefaultTitle() async throws {
-        if let hosted = households.hosted, SharedWeekZone.isAppGeneratedTitle(hosted.title) {
-            households.rename(id: hosted.id, to: SharedWeekZone.defaultTitle)
-        }
-        guard let share = try await existingShare(),
-              let title = share[CKShare.SystemFieldKey.title] as? String,
-              SharedWeekZone.isAppGeneratedTitle(title)
-        else { return }
-        share[CKShare.SystemFieldKey.title] = SharedWeekZone.defaultTitle
-        let result = try await container.privateCloudDatabase.modifyRecords(saving: [share], deleting: [])
-        guard let saved = try result.saveResults[share.recordID]?.get() as? CKShare else { return }
-        households.host(saved)
-        log.info("renamed a household from the old default")
     }
 
     /// Ends the share for everyone. Every member's copy goes with it (SPEC §10: no copy outlives the share).

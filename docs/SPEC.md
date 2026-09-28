@@ -310,12 +310,17 @@ section below is what it becomes. Phase 10's design is kept only where it still 
 - **Your recipes reach every household you belong to**, not only the one you are looking at (settled
   2026-09-26). Membership means your library is in that household's catalogue. A catalogue that changed with
   where other members happened to be looking could not be explained to anyone.
-- **The owner names the household when they share**, and every member reads that name from the `CKShare`.
-  Phase 10 derived it from the owner's iCloud identity, which put "Shared's plan" on screen when CloudKit
-  would not say who the owner was. **Every member re-reads it**, on every launch and whenever the shared
-  database changes, so one household has one name: 11a read the title only at the moment the invite was
-  accepted, which left a household carried over from Phase 10 called "Shared plan" on a member's phone while
-  the owner saw the name they had typed, and meant a rename reached nobody.
+- **A household is not named, by anybody** (settled 2026-09-28, after three attempts at naming it). A plan's
+  title shares the navigation bar with the week, and any name long enough to mean something is too long to sit
+  beside "This week" — "The Parsons · This week" truncated. So the title is computed: the plan that is yours to
+  run is **"My plan"**, hosted or not, because you only ever own one; the first household you joined is
+  **"Our plan"**; any after that are **"Plan 2"**, "Plan 3". **Whose it is is what tells them apart** — the
+  owner's full name, under the row in Settings — and that is a better answer than a name anyway, because a
+  member could never rename somebody else's household and so was stuck with whatever they were given. Leaving
+  one renumbers those after it; the owner's name does not move, which is the part a person recognises.
+  Phase 10 derived a name from the owner's iCloud identity ("Shared's plan" when CloudKit would not say who
+  they were), and 11a asked the owner to type one. The `CKShare` still carries a title because Apple's sharing
+  UI displays one; nothing reads it back.
 - **Owner and member have the same control of the week.** Adding, portions, moving and removing are one
   editor for everybody, and the only asymmetries are the three that follow from ownership: scanning spends the
   scanner's own allowance, a member may remove themselves but not the host, and a scanned recipe goes into the
