@@ -167,7 +167,7 @@ final class SharedWeekPublisher: NSObject {
 
         let share = CKShare(recordZoneID: SharedWeekZone.id)
         let trimmed = (name ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-        share[CKShare.SystemFieldKey.title] = trimmed.isEmpty ? "\(Brand.name) — our plan" : trimmed
+        share[CKShare.SystemFieldKey.title] = trimmed.isEmpty ? SharedWeekZone.defaultTitle : trimmed
         share.publicPermission = .none   // invited people only, never anyone with the link
         let result = try await container.privateCloudDatabase.modifyRecords(saving: [share], deleting: [])
         guard let saved = try result.saveResults[share.recordID]?.get() as? CKShare else {
@@ -175,6 +175,23 @@ final class SharedWeekPublisher: NSObject {
         }
         households.host(saved)
         return saved
+    }
+
+    /// Brings a household still carrying 11a's default name up to the current one.
+    ///
+    /// The old default was "Page & Plate — our plan", which named the app rather than the plan. A household
+    /// carrying it was never named by its owner, so there is nothing of theirs to preserve — and because every
+    /// member reads the household's name from the share, writing it here is what renames it on *their* phones
+    /// too. **A name the owner actually typed is never touched**, which is the whole point of the comparison.
+    func upgradeDefaultTitle() async throws {
+        guard let share = try await existingShare(),
+              share[CKShare.SystemFieldKey.title] as? String == SharedWeekZone.legacyDefaultTitle
+        else { return }
+        share[CKShare.SystemFieldKey.title] = SharedWeekZone.defaultTitle
+        let result = try await container.privateCloudDatabase.modifyRecords(saving: [share], deleting: [])
+        guard let saved = try result.saveResults[share.recordID]?.get() as? CKShare else { return }
+        households.host(saved)
+        log.info("renamed a household from the old default")
     }
 
     /// Ends the share for everyone. Every member's copy goes with it (SPEC §10: no copy outlives the share).

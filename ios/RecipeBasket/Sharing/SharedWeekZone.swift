@@ -51,6 +51,17 @@ enum SharedWeekZone {
         nonisolated static let portions = "portions"
     }
 
+    /// What a household is called when its owner did not type a name.
+    ///
+    /// Plain, because it sits on the Plan tab beside the week and in the Settings list beside "My plan", and it
+    /// names the *plan* — which is the thing on screen. 11a defaulted to "Page & Plate — our plan", which named
+    /// the app instead (Leon, 2026-09-28: "just make it Our plan").
+    nonisolated static let defaultTitle = "Our plan"
+
+    /// 11a's default. A household still carrying it was never given a name its owner chose, so it is upgraded
+    /// in place — see `SharedWeekPublisher.upgradeDefaultTitle`.
+    nonisolated static var legacyDefaultTitle: String { "\(Brand.name) — our plan" }
+
     /// The long edge of a projected thumbnail. Enough to recognise the page at list size; far too small to
     /// read the recipe from, which is the point — the owner's photograph of someone else's book stays theirs.
     nonisolated static let thumbnailLongEdge = 240

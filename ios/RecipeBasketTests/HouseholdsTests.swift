@@ -239,6 +239,24 @@ struct HouseholdsTests {
     }
     // MARK: The household's name
 
+    @Test("An unnamed household is called 'Our plan' — it names the plan, not the app")
+    func theDefaultNameNamesThePlan() {
+        // It sits on the Plan tab beside the week, and in Settings directly beside "My plan", so it has to read
+        // as the name of a plan. 11a defaulted to "Page & Plate — our plan", which named the app instead
+        // (Leon, 2026-09-28). This pins it against being helpfully branded again.
+        #expect(SharedWeekZone.defaultTitle == "Our plan")
+        #expect(!SharedWeekZone.defaultTitle.contains(Brand.name))
+        #expect(SharedWeekZone.legacyDefaultTitle != SharedWeekZone.defaultTitle)
+    }
+
+    @Test("Your own plan is 'My plan' until you host, and then it is the household")
+    func mineIsNamedForTheHousehold() {
+        let households = Households(defaults: makeDefaults())
+        #expect(households.mineTitle == "My plan")
+        households.host(zoneID: SharedWeekZone.id, title: SharedWeekZone.defaultTitle)
+        #expect(households.mineTitle == "Our plan")
+    }
+
     @Test("A household can be renamed without moving what is on display")
     func renamingDoesNotSwitchPlans() {
         let households = Households(defaults: makeDefaults())
