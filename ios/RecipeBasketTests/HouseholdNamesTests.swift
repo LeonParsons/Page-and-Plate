@@ -35,7 +35,7 @@ struct HouseholdNamesTests {
     func aMemberRecordIsBuiltFromTheRow() throws {
         let context = container.mainContext
         let inbox = HouseholdInbox(context: context)
-        try inbox.upsert(member: "_sara", name: "Sara Parsons", in: parsons)
+        try inbox.upsert(member: "_sara", name: "Sara Parsons", isOwner: true, in: parsons)
 
         let records = HouseholdRecords(context: context)
         let id = CKRecord.ID(recordName: "_sara", zoneID: parsons.zoneID)
@@ -50,7 +50,7 @@ struct HouseholdNamesTests {
         let context = container.mainContext
         let inbox = HouseholdInbox(context: context)
         let records = HouseholdRecords(context: context)
-        try inbox.upsert(member: "_sara", name: "Sara", in: parsons)
+        try inbox.upsert(member: "_sara", name: "Sara", isOwner: true, in: parsons)
         let id = CKRecord.ID(recordName: "_sara", zoneID: parsons.zoneID)
 
         // Stand-in for the change tag, which only a server sets: a zone the app would never ask for itself.
@@ -64,7 +64,7 @@ struct HouseholdNamesTests {
             ),
             in: parsons
         )
-        try inbox.upsert(member: "_sara", name: "Sara Parsons", in: parsons)
+        try inbox.upsert(member: "_sara", name: "Sara Parsons", isOwner: true, in: parsons)
 
         let record = try #require(records.record(for: id, in: parsons))
         // Built on what the server gave us — without this a rename is a tagless save and CloudKit refuses it,
@@ -97,8 +97,8 @@ struct HouseholdNamesTests {
             title: "ignored"
         )
         let inbox = HouseholdInbox(context: context)
-        try inbox.upsert(member: "_sara", name: "Sara", in: parsons)
-        try inbox.upsert(member: "_grandma", name: "Nan", in: other)
+        try inbox.upsert(member: "_sara", name: "Sara", isOwner: true, in: parsons)
+        try inbox.upsert(member: "_grandma", name: "Nan", isOwner: true, in: other)
 
         try SharedStore.empty(context, household: parsons.id)
 
@@ -108,21 +108,58 @@ struct HouseholdNamesTests {
 
     // MARK: What the screen reads
 
-    @Test("The household's owner is named by the zone's owner id")
-    func theOwnerIsNamed() {
+    @Test("The owner is whoever said so on their own record — no ids are compared")
+    func theOwnerIsNamedFromTheirOwnFlag() throws {
+        let context = container.mainContext
+        // A household whose zone owner is reported as something *other* than the id the owner filed their
+        // record under. That disagreement is exactly what this feature used to depend on not happening, and
+        // when it did happen the record arrived, the name was stored, and the line stayed blank.
+        let mismatched = Household(
+            zoneID: CKRecordZone.ID(zoneName: SharedWeekZone.zoneName, ownerName: "_some-other-id"),
+            title: "ignored"
+        )
+        let record = CKRecord(
+            recordType: SharedWeekZone.RecordType.member,
+            recordID: CKRecord.ID(recordName: "_sara", zoneID: mismatched.zoneID)
+        )
+        record[SharedWeekZone.MemberKey.displayName] = "Sara Parsons"
+        record[SharedWeekZone.MemberKey.isOwner] = 1
+
+        HouseholdInbox(context: context).apply(record, in: mismatched)
+
+        #expect(HouseholdMembers.shared.owner(of: mismatched) == "Sara Parsons")
+        #expect(try HouseholdInbox(context: context).member(authorID: "_sara", in: mismatched)?.isOwner == true)
+    }
+
+    @Test("A member who does not host is not taken for the owner")
+    func aPlainMemberIsNotTheOwner() {
         let defaults = makeDefaults()
         let members = HouseholdMembers(defaults: defaults)
-        members.record(id: "_sara", name: "Sara Parsons")
+        // Their name is known — it labels their recipes — but they do not identify the household.
+        members.record(id: "_leon", name: "Leon Parsons")
+        #expect(members.name(for: "_leon") == "Leon Parsons")
+        #expect(members.owner(of: parsons) == nil)
+    }
 
-        // A shared zone's ownerName *is* its owner's user record name — the same id their member record is
-        // filed under and the same one their recipes carry — so this needs no second lookup.
+    @Test("The owner's name is filed against the household, so two households keep their own")
+    func ownersAreKeptPerHousehold() {
+        let members = HouseholdMembers(defaults: makeDefaults())
+        let other = Household(
+            zoneID: CKRecordZone.ID(zoneName: SharedWeekZone.zoneName, ownerName: "_grandma"),
+            title: "ignored"
+        )
+        members.recordOwner(of: parsons.id, name: "Sara Parsons")
+        members.recordOwner(of: other.id, name: "Jean Hughes")
+
         #expect(members.owner(of: parsons) == "Sara Parsons")
+        #expect(members.owner(of: other) == "Jean Hughes")
     }
 
     @Test("Somebody who has not said reads as nothing at all, never as a guess")
     func anUnnamedPersonSaysNothing() {
         let members = HouseholdMembers(defaults: makeDefaults())
         #expect(members.owner(of: parsons) == nil)
+        #expect(members.owners.isEmpty)
         #expect(members.name(for: "_sara") == nil)
         #expect(members.name(for: "") == nil)
     }
@@ -147,9 +184,11 @@ struct HouseholdNamesTests {
         let defaults = makeDefaults()
         let members = HouseholdMembers(defaults: defaults)
         members.record(id: "_sara", name: "Sara Parsons")
+        members.recordOwner(of: parsons.id, name: "Sara Parsons")
         members.forget()
 
         #expect(members.name(for: "_sara") == nil)
+        #expect(members.owner(of: parsons) == nil)
         #expect(HouseholdMembers(defaults: defaults).name(for: "_sara") == nil)
     }
 

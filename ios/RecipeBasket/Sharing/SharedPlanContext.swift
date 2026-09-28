@@ -141,10 +141,14 @@ final class SharedPlanContext {
         for household in all {
             let sync = sync(for: household)
             guard sync.isReady else { continue }
-            if let existing = try? inbox.member(authorID: authorID, in: household), existing.displayName == name {
+            // The owner says so on their own record: they are the one who knows without guessing, and it saves
+            // every member having to decide whether two ids from two sources are the same person.
+            let isOwner = isHosted(household)
+            if let existing = try? inbox.member(authorID: authorID, in: household),
+               existing.displayName == name, existing.isOwner == isOwner {
                 continue
             }
-            try? inbox.upsert(member: authorID, name: name, in: household)
+            try? inbox.upsert(member: authorID, name: name, isOwner: isOwner, in: household)
             sync.stage(memberID: authorID, in: household)
         }
     }

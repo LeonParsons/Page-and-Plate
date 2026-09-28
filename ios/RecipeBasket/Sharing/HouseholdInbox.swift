@@ -45,6 +45,7 @@ struct HouseholdInbox {
                 row.systemFields = HouseholdRecords.encode(record)
             case SharedWeekZone.RecordType.member:
                 let name = record[SharedWeekZone.MemberKey.displayName] as? String ?? ""
+                let isOwner = (record[SharedWeekZone.MemberKey.isOwner] as? Int ?? 0) == 1
                 let row = try member(authorID: record.recordID.recordName, in: household)
                     ?? {
                         let fresh = SharedMemberRow(
@@ -54,10 +55,13 @@ struct HouseholdInbox {
                         return fresh
                     }()
                 row.displayName = name
+                row.isOwner = isOwner
                 row.systemFields = HouseholdRecords.encode(record)
-                // The cache the views read. Names are global by author: one person has one name, whichever
-                // household you meet them in.
+                // The cache the views read. A name is global by author — one person has one name, whichever
+                // household you meet them in — while *who owns this household* is per household, and is taken
+                // from the flag its owner set rather than by matching ids from two different sources.
                 HouseholdMembers.shared.record(id: row.authorID, name: name)
+                if isOwner { HouseholdMembers.shared.recordOwner(of: household.id, name: name) }
             default:
                 break
             }
@@ -82,7 +86,7 @@ struct HouseholdInbox {
     }
 
     /// This device's own name in a household, written before it is sent so the record can be built from it.
-    func upsert(member authorID: String, name: String, in household: Household) throws {
+    func upsert(member authorID: String, name: String, isOwner: Bool, in household: Household) throws {
         let row = try member(authorID: authorID, in: household)
             ?? {
                 let fresh = SharedMemberRow(authorID: authorID, householdID: household.id, displayName: name)
@@ -90,6 +94,7 @@ struct HouseholdInbox {
                 return fresh
             }()
         row.displayName = name
+        row.isOwner = isOwner
         try context.save()
     }
 

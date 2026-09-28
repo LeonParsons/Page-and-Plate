@@ -29,6 +29,7 @@ struct SharePlanSection: View {
     /// commit — a write per keystroke would stage a record per keystroke.
     @State private var myName = ""
     @State private var isAskingName = false
+    @FocusState private var isNamingFocused: Bool
 
     private var households: Households { plan.households }
     private var publisher: SharedWeekPublisher { plan.publisher }
@@ -148,7 +149,8 @@ struct SharePlanSection: View {
                     .multilineTextAlignment(.trailing)
                     .textContentType(.name)
                     .submitLabel(.done)
-                    .onSubmit { plan.setMyName(myName) }
+                    .focused($isNamingFocused)
+                    .onSubmit(commitName)
             }
             Button {
                 // Hosting is what a subscription buys (settled 2026-09-25), so anyone else meets the paywall
@@ -194,10 +196,23 @@ struct SharePlanSection: View {
             myName = plan.author.name ?? ""
             await refreshShare()
         }
+        // Return is not the only way somebody finishes typing a name — tapping another row, or closing
+        // Settings, is far more common. `.onSubmit` alone meant a name could be typed, look saved on screen,
+        // and never reach the store or the household at all.
+        .onChange(of: isNamingFocused) { _, focused in
+            if !focused { commitName() }
+        }
+        .onDisappear(perform: commitName)
         .onChange(of: presenting) { _, now in
             // The sheet has closed: someone may have been invited, or the share stopped.
             if now == nil { Task { await refreshShare() } }
         }
+    }
+
+    /// Writes the typed name and publishes it, if it has actually changed. Cheap to call often, and it is.
+    private func commitName() {
+        guard myName.trimmingCharacters(in: .whitespacesAndNewlines) != (plan.author.name ?? "") else { return }
+        plan.setMyName(myName)
     }
 
     private var participantCount: Int { otherParticipants.count }

@@ -36,6 +36,16 @@ enum SharedWeekZone {
     enum MemberKey {
         /// What this person asked to be called. Theirs to set and theirs to change; nobody else writes it.
         nonisolated static let displayName = "displayName"
+
+        /// Whether this person is the household's owner, **written by them** because they are the only one who
+        /// knows without guessing — they are the one hosting it.
+        ///
+        /// The alternative was to compare the zone's `ownerName`, as a member sees it, against the
+        /// `CKContainer.userRecordID()` the owner filed their record under. Those are two different sources for
+        /// what is meant to be the same id, and whether they agree was the one assumption in this feature that
+        /// no test could settle. When they disagreed the record arrived, the name was stored, and the lookup
+        /// missed — silently. A flag the owner sets needs no comparison at all.
+        nonisolated static let isOwner = "isOwner"
     }
 
     enum RecipeKey {

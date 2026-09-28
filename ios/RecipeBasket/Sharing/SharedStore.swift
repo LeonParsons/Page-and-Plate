@@ -134,13 +134,16 @@ final class SharedMemberRow {
     var authorID: String = ""
     var householdID: String = ""
     var displayName: String = ""
+    /// Whether this person hosts the household — set by them, never inferred. See `SharedWeekZone.MemberKey`.
+    var isOwner: Bool = false
     /// See `SharedRecipe.systemFields`: without it a rename is a tagless save and CloudKit refuses it.
     var systemFields: Data?
 
-    init(authorID: String, householdID: String, displayName: String) {
+    init(authorID: String, householdID: String, displayName: String, isOwner: Bool = false) {
         self.authorID = authorID
         self.householdID = householdID
         self.displayName = displayName
+        self.isOwner = isOwner
     }
 }
 

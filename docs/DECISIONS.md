@@ -785,3 +785,27 @@ same answer.
 
 This is why the owner's name is worth the prompt: with households no longer named (above), it is the only
 thing that identifies one.
+
+### 2026-09-28 · The owner says they are the owner
+
+Two bugs in the naming built an hour earlier, both invisible on screen.
+
+**The name was never saved.** The Settings field committed on `.onSubmit`, which fires only when Return is
+pressed. Typing a name and tapping another row, or closing Settings, discarded it — and the field still showed
+the text while the screen was open, because it was bound to local state. It now commits when focus leaves and
+when the section disappears, as well as on Return.
+
+**The owner's name was looked up by comparing two ids from different sources.** The member record is filed
+under `CKContainer.userRecordID().recordName`, read on the owner's device; the lookup used the zone's
+`ownerName` as a *member's* device reports it. Whether those are the same string was listed in the plan as "the
+one assumption a unit test cannot settle" — and then built on anyway. When they disagree the record arrives,
+the name is stored, and the line stays blank with nothing in any log.
+
+The assumption is now removed rather than tested. The owner sets `isOwner` on their own record, because they are
+the one who knows without guessing: they are the one hosting. A member reads "the member record in this
+household flagged as owner" and compares no ids at all. `HouseholdMembers.owners` is keyed on `Household.id`
+for the same reason.
+
+What is left of that assumption is safe by construction: a recipe's `authorID` and its author's member record
+are both written from the same device's `userRecordID()`, so that match is self-consistent and never crosses a
+zone.

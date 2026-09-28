@@ -21,14 +21,23 @@ final class HouseholdMembers {
     static let shared = HouseholdMembers()
 
     private static let key = "household.memberNames"
+    private static let ownerKey = "household.ownerNames"
 
     private let defaults: UserDefaults
     /// User record name → the name they asked to be known by.
     private(set) var names: [String: String]
+    /// `Household.id` → the name of whoever hosts it.
+    ///
+    /// **Keyed on the household, not on an identity.** Who owns a household is read from the `isOwner` flag its
+    /// owner set on their own record, so nothing here has to decide whether the zone's `ownerName` and the
+    /// owner's `CKContainer.userRecordID()` are the same string. They are two different sources for what should
+    /// be one id, and the whole feature silently produced a blank line while it depended on them agreeing.
+    private(set) var owners: [String: String]
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         names = defaults.dictionary(forKey: Self.key) as? [String: String] ?? [:]
+        owners = defaults.dictionary(forKey: Self.ownerKey) as? [String: String] ?? [:]
     }
 
     /// A name that arrived from a household, or one this device has just set for itself.
@@ -48,18 +57,26 @@ final class HouseholdMembers {
         return name
     }
 
+    /// The name of whoever hosts a household, as they published it.
+    func recordOwner(of householdID: String, name: String) {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !householdID.isEmpty, !trimmed.isEmpty, owners[householdID] != trimmed else { return }
+        owners[householdID] = trimmed
+        defaults.set(owners, forKey: Self.ownerKey)
+    }
+
     /// Who runs a household — the only thing identifying it, now that households have no names of their own.
-    ///
-    /// **A shared zone's `ownerName` is its owner's user record name**, the same id their `SharedMember` record
-    /// is filed under and the same one their recipes carry, so this needs no second lookup.
     func owner(of household: Household) -> String? {
-        name(for: household.ownerName)
+        guard let name = owners[household.id], !name.isEmpty else { return nil }
+        return name
     }
 
     /// Signing out. The next account's household has its own people.
     func forget() {
-        guard !names.isEmpty else { return }
+        guard !names.isEmpty || !owners.isEmpty else { return }
         names = [:]
+        owners = [:]
         defaults.removeObject(forKey: Self.key)
+        defaults.removeObject(forKey: Self.ownerKey)
     }
 }

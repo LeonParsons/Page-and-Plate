@@ -41,6 +41,7 @@ struct HouseholdRecords {
             }
             let record = rehydrate(row.systemFields, type: SharedWeekZone.RecordType.member, id: recordID)
             record[SharedWeekZone.MemberKey.displayName] = row.displayName
+            record[SharedWeekZone.MemberKey.isOwner] = row.isOwner ? 1 : 0
             return record
         }
 
