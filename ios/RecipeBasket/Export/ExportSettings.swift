@@ -68,10 +68,6 @@ final class ExportSettings {
         didSet { defaults.set(recentBooks, forKey: Self.booksKey) }
     }
 
-    var lastBook: String? {
-        recentBooks.first
-    }
-
     func rememberBook(_ name: String) {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }

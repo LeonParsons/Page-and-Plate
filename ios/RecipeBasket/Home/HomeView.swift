@@ -83,10 +83,10 @@ struct HomeView: View {
                 }
             }
             .sheet(isPresented: $isAdding) {
-                AddRecipeView(lastBook: settings.lastBook, quota: quota)
+                AddRecipeView(quota: quota)
             }
             .sheet(isPresented: $isTyping) {
-                AddRecipeView(lastBook: settings.lastBook, quota: quota, manual: true)
+                AddRecipeView(quota: quota, manual: true)
             }
             .sheet(isPresented: $isShowingSettings) {
                 SettingsView(store: remindersStore, plan: guestPlan)

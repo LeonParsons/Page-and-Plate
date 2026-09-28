@@ -15,8 +15,14 @@ struct AddRecipeView: View {
 
     /// `quota` is the scan gate (SPEC §9); the presenting view hands it over from the environment. A manual
     /// entry never meets it — nothing is extracted — but the flow is otherwise the same one.
-    init(lastBook: String?, quota: ScanQuota, manual: Bool = false, onSaved: @escaping (Recipe) -> Void = { _ in }) {
-        let flow = AddRecipeFlow(book: lastBook ?? "", quota: quota)
+    ///
+    /// **The book starts empty** (Leon, 2026-09-28). It used to be pre-filled with the last one scanned, which
+    /// is right only while somebody works through one book in a sitting and quietly wrong the rest of the
+    /// time — a recipe filed under a book it did not come from is worse than one with no book at all, and the
+    /// mistake is invisible until the source line reads wrong months later. Books are still remembered: the
+    /// capture screen offers them in a menu, so the common case is one tap rather than no taps.
+    init(quota: ScanQuota, manual: Bool = false, onSaved: @escaping (Recipe) -> Void = { _ in }) {
+        let flow = AddRecipeFlow(quota: quota)
         if manual { flow.startManual() }
         _flow = State(initialValue: flow)
         isManual = manual

@@ -56,17 +56,17 @@ struct ExportSettingsTests {
     func recentBooks() {
         let defaults = makeDefaults()
         let settings = ExportSettings(defaults: defaults)
-        #expect(settings.lastBook == nil)
+        #expect(settings.recentBooks.isEmpty)
         settings.rememberBook("LEON Happy Curries")
         settings.rememberBook(" 7 a day ")
         settings.rememberBook("leon happy curries")
         #expect(settings.recentBooks == ["leon happy curries", "7 a day"])
-        #expect(settings.lastBook == "leon happy curries")
+        #expect(settings.recentBooks.first == "leon happy curries")
         settings.rememberBook("   ")
         #expect(settings.recentBooks.count == 2)
         for i in 1...12 { settings.rememberBook("Book \(i)") }
         #expect(settings.recentBooks.count == 10)
-        #expect(ExportSettings(defaults: defaults).lastBook == "Book 12")
+        #expect(ExportSettings(defaults: defaults).recentBooks.first == "Book 12")
     }
     // MARK: The week the cook shops for
 

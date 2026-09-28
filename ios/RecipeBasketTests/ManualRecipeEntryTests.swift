@@ -25,20 +25,20 @@ struct ManualRecipeEntryTests {
         return (quota, ledger)
     }
 
-    @Test("It opens straight on the review step, with a draft and no pages")
+    @Test("It opens straight on the review step, with a draft, no pages and no book")
     func itStartsOnReview() throws {
         let (quota, ledger) = try makeQuota()
         defer { try? ledger.clear() }
-        let flow = AddRecipeFlow(book: "Happy Curries", quota: quota)
+        let flow = AddRecipeFlow(quota: quota)
 
         flow.startManual()
 
         #expect(flow.path == [.review])
         #expect(flow.draft != nil)
         #expect(flow.pages.isEmpty)
-        // The book carries over, because somebody typing a second recipe from the same book should not retype
-        // its name — and a recipe with no book at all is perfectly legal.
-        #expect(flow.draft?.book == "Happy Curries")
+        // Nothing is assumed about where it came from (Leon, 2026-09-28). A recipe filed under a book it did
+        // not come from is worse than one with no book, and a typed recipe often has no book at all.
+        #expect(flow.draft?.book == "")
     }
 
     @Test("It spends no scan, whatever the trial says")

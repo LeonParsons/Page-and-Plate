@@ -97,14 +97,14 @@ struct AddSharedMealSheet: View {
                 }
             }
             .sheet(isPresented: $isScanning) {
-                AddRecipeView(lastBook: settings.lastBook, quota: quota) { recipe in scanned(recipe) }
+                AddRecipeView(quota: quota) { recipe in scanned(recipe) }
                     // The scan saves a `Recipe`, which only exists in this person's own store.
                     .modelContainer(library)
             }
             .sheet(isPresented: $isTyping) {
                 // A typed recipe lands in this person's own library and is projected from there, exactly as a
                 // scanned one is — so a member with no scans left can still bring a recipe to the household.
-                AddRecipeView(lastBook: settings.lastBook, quota: quota, manual: true) { recipe in scanned(recipe) }
+                AddRecipeView(quota: quota, manual: true) { recipe in scanned(recipe) }
                     .modelContainer(library)
             }
         }

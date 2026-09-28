@@ -66,10 +66,10 @@ struct AddMealSheet: View {
                 }
             }
             .sheet(isPresented: $isScanning) {
-                AddRecipeView(lastBook: settings.lastBook, quota: quota) { recipe in add(recipe) }
+                AddRecipeView(quota: quota) { recipe in add(recipe) }
             }
             .sheet(isPresented: $isTyping) {
-                AddRecipeView(lastBook: settings.lastBook, quota: quota, manual: true) { recipe in add(recipe) }
+                AddRecipeView(quota: quota, manual: true) { recipe in add(recipe) }
             }
             .alert("Couldn't add the meal", isPresented: Binding(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })) {
                 Button("OK") {}
