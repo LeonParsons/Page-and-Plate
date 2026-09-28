@@ -164,6 +164,27 @@ final class SharedPlanContext {
         HouseholdDissolution(context: householdContext, publisher: publisher, households: households)
     }
 
+    /// The household ends when the subscription does — and only then.
+    ///
+    /// Hosting is what the subscription buys (SPEC §10), so a household cannot outlive it. But it is not torn
+    /// down the hour a card fails: `atRisk` covers the grace period *and* the billing retry that follows a
+    /// failed payment, and during both the household keeps working while the owner is told. Only a settled
+    /// `ended` gets here.
+    ///
+    /// The members are not told why. The reason is somebody else's billing and is not ours to publish.
+    func endHouseholdIfSubscriptionHasLapsed(_ standing: SubscriptionStanding, library: ModelContext) async {
+        guard standing.endsHousehold, let hosted = households.hosted else { return }
+        do {
+            try await dissolution.dissolve(hosted, into: library)
+            log.info("a lapsed subscription ended a household; its week came home")
+        } catch {
+            // Left standing on purpose. The week is copied home before anything is deleted, so a failure here
+            // means the household is intact and this runs again next launch — which is much better than a
+            // half-dissolved household nobody can see into.
+            log.error("could not end a lapsed household: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
     // MARK: The library, fanned out
 
     /// Reprojects this person's library into every household they are in, whenever their own store changes — so

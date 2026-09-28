@@ -123,6 +123,8 @@ final class SharedWeekClient: NSObject {
     /// Only that household's rows go; the others are still live.
     private func shareEnded(_ household: Household) {
         guard let context else { return }
+        // Whose it was, read before the rows go: afterwards there is nothing left to name it by.
+        households.recordEnded(household, ownerName: HouseholdMembers.shared.owner(of: household))
         try? SharedStore.empty(context, household: household.id)
         households.leave(household)
         if households.joined.isEmpty {

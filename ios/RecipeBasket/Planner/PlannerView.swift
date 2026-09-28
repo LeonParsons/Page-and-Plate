@@ -74,6 +74,19 @@ struct PlannerView: View {
             }
                 .navigationTitle(navigationTitle)
                 .task(id: exportSettings.weekStartsOn) { alignWeek() }
+                // A household that has gone: the rows simply disappear, so without this somebody's plan
+                // vanishes overnight with nothing said. Shown once, then forgotten.
+                .alert(
+                    "A plan has ended",
+                    isPresented: Binding(
+                        get: { guestPlan?.households.endedNotice != nil },
+                        set: { if !$0 { guestPlan?.households.clearEndedNotice() } }
+                    )
+                ) {
+                    Button("OK") { guestPlan?.households.clearEndedNotice() }
+                } message: {
+                    Text(guestPlan?.households.endedNotice ?? "")
+                }
                 .toolbar {
                     ToolbarItemGroup(placement: .topBarLeading) {
                         Button("Previous week", systemImage: "chevron.left") { week = week.previous() }

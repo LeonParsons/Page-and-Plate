@@ -46,6 +46,15 @@ struct RecipeBasketApp: App {
             // person creates themselves.
             .task(id: householdCount) { await guestPlan?.start() }
             .task { guestPlan?.watchLibraryChanges(library: container.mainContext) }
+            // Keyed on the subscription's standing, so a lapse that arrives through `Transaction.updates`
+            // while the app is open is acted on then rather than at some later launch. Only a settled `ended`
+            // does anything: see `SubscriptionStanding`.
+            .task(id: subscriptions.standing) {
+                await guestPlan?.endHouseholdIfSubscriptionHasLapsed(
+                    subscriptions.standing,
+                    library: container.mainContext
+                )
+            }
         }
         .modelContainer(container)
     }

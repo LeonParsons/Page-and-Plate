@@ -29,7 +29,13 @@ struct SettingsView: View {
             Form {
                 Section {
                     LabeledContent("Scans", value: quota.statusText)
-                    if subscriptions.isSubscribed {
+                    if subscriptions.standing.isAtRisk {
+                        // Said plainly and early, because the household goes with the subscription — and the
+                        // only person who can fix it is the one reading this.
+                        LabeledContent("Subscription", value: "Needs attention")
+                            .foregroundStyle(Brand.tomato)
+                        Button("Manage subscription") { isManagingSubscription = true }
+                    } else if subscriptions.isSubscribed {
                         if let ends = subscriptions.expirationDate {
                             LabeledContent("Subscription", value: "until \(ends.formatted(date: .abbreviated, time: .omitted))")
                         }
@@ -53,7 +59,11 @@ struct SettingsView: View {
                 } header: {
                     Text("Scans")
                 } footer: {
-                    Text("A scan is one photographed recipe. The first \(ScanAllowance.trialScans) are free. A subscription covers everything you cook in a week.")
+                    if case .atRisk(let until) = subscriptions.standing {
+                        Text(riskText(until: until))
+                    } else {
+                        Text("A scan is one photographed recipe. The first \(ScanAllowance.trialScans) are free. A subscription covers everything you cook in a week.")
+                    }
                 }
 
                 Section {
@@ -152,6 +162,13 @@ struct SettingsView: View {
             }
             .manageSubscriptionsSheet(isPresented: $isManagingSubscription)
         }
+    }
+
+    /// What an at-risk subscription means for the household, with a date when Apple gives one.
+    private func riskText(until: Date?) -> String {
+        let base = "There's a problem with your payment. Your household keeps working while it's sorted out"
+        guard let until else { return base + " — nobody else is told." }
+        return base + " until \(until.formatted(date: .abbreviated, time: .omitted)) — nobody else is told."
     }
 
     private var serverDescription: String {

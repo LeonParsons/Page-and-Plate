@@ -60,6 +60,7 @@ final class Households {
         static let households = "household.joined"
         static let hosted = "household.hosted"
         static let selection = "household.selection"
+        static let endedNotice = "household.endedNotice"
         /// Phase 10 stored a single membership under these. Read once, then removed.
         static let legacyZoneName = "sharedPlan.zoneName"
         static let legacyOwnerName = "sharedPlan.ownerName"
@@ -72,6 +73,12 @@ final class Households {
     /// then belongs to it; before that there is no household and `current` is nil.
     private(set) var hosted: Household?
     private(set) var selection: PlanSelection
+    /// A household that has gone, to tell this person about once.
+    ///
+    /// A revoked share reaches a member as a zone deletion and the rows simply disappear — so without this the
+    /// household vanishes overnight with no explanation. **No reason is given**, because the reason is the
+    /// owner's billing or their decision, and neither is ours to publish.
+    private(set) var endedNotice: String?
 
     init(defaults: UserDefaults = .standard) {
         var joined = Self.load([Household].self, Key.households, from: defaults) ?? []
@@ -88,6 +95,19 @@ final class Households {
         self.joined = joined
         self.hosted = hosted
         self.selection = selection
+        endedNotice = defaults.string(forKey: Key.endedNotice)
+    }
+
+    /// A household this person belonged to has stopped being shared.
+    func recordEnded(_ household: Household, ownerName: String?) {
+        endedNotice = ownerName.map { "\($0)'s plan is no longer shared." } ?? "A plan you were part of is no longer shared."
+        defaults.set(endedNotice, forKey: Key.endedNotice)
+    }
+
+    func clearEndedNotice() {
+        guard endedNotice != nil else { return }
+        endedNotice = nil
+        defaults.removeObject(forKey: Key.endedNotice)
     }
 
     /// The household on display, or nil when this person has no household at all and is looking at their own

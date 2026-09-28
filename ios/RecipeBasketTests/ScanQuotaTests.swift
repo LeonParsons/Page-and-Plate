@@ -9,10 +9,12 @@ import RecipeCore
 final class FakeEntitlements: EntitlementSource {
     var isSubscribed: Bool
     var entitlementJWS: String?
+    var standing: SubscriptionStanding
 
-    init(isSubscribed: Bool = false, entitlementJWS: String? = nil) {
+    init(isSubscribed: Bool = false, entitlementJWS: String? = nil, standing: SubscriptionStanding? = nil) {
         self.isSubscribed = isSubscribed
         self.entitlementJWS = entitlementJWS
+        self.standing = standing ?? (isSubscribed ? .active : .none)
     }
 }
 
