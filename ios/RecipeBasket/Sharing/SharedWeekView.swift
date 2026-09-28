@@ -39,10 +39,8 @@ struct SharedWeekView: View {
             ForEach(week.days) { day in
                 Section {
                     let meals = byDay[day] ?? []
-                    if meals.isEmpty {
-                        Text("Nothing planned")
-                            .foregroundStyle(.tertiary)
-                    }
+                    // No placeholder on an empty day: see `WeekView`. The "Add meal" row below is what an
+                    // empty day offers, and it is enough on its own.
                     ForEach(meals) { meal in
                         if let recipe = recipesByID[meal.recipeID] {
                             plannedRow(meal: meal, recipe: recipe, on: day)

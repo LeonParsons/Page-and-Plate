@@ -137,10 +137,9 @@ struct WeekView: View {
             ForEach(week.days) { day in
                 let dayMeals = byDay[day] ?? []
                 Section {
-                    if dayMeals.isEmpty {
-                        Text("Nothing planned")
-                            .foregroundStyle(.tertiary)
-                    }
+                    // An empty day shows its "Add meal" row and nothing else (Leon, 2026-09-28). A placeholder
+                    // saying the day is empty says what the empty day already says, and seven of them cost a
+                    // row each on a screen that wants to show a week at once.
                     ForEach(dayMeals) { meal in
                         if let recipe = meal.recipe, !recipe.isDeleted {
                             NavigationLink {
