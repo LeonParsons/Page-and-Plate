@@ -892,3 +892,23 @@ The welcome screen already had a household row from 11a; this phase's plan said 
 
 `appstore-counts.py` rejected the first draft twice, on the promotional text and the keywords. That is the
 checker doing its job a day after it was fixed to read the document rather than a hardcoded copy of it.
+
+### 2026-09-28 · Joining a household has to fetch it from scratch
+
+Leon joined Sara's household and saw an empty week. Her meals only appeared once she changed something —
+a portions edit, say — which is the shape of a change-token problem rather than a permissions or record one.
+
+A `CKSyncEngine`'s stored state holds a change token **per zone**, and a household joined, left and joined
+again is the same zone throughout: same `zoneName` ("SharedPlan" for everybody) and same owner. So the token
+still said "you have seen everything up to here", CloudKit correctly reported nothing changed, and the backfill
+never happened. `shareEnded` only discards the state when the *last* household goes, because the households
+still joined need their own tokens — which is right, and is exactly what left the stale one behind.
+
+`SharedWeekClient` now records which households its state has actually fetched. A joined household that is not
+in that set discards the state before the engine is built, so every zone is read from the beginning. It also
+calls `fetchChanges()` explicitly on start rather than leaving it to `automaticallySync`: somebody who has just
+accepted an invite is looking at an empty week *now*.
+
+Worth noting the pattern, because it is the third of its kind today: the failure was silent and looked like
+nothing happening. A change token that is too new, a record name CloudKit refuses, an engine left running after
+its zone was deleted — none of them produced an error anywhere.

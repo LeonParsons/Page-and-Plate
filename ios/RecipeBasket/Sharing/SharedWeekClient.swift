@@ -23,13 +23,31 @@ final class SharedWeekClient: NSObject {
     /// The household store. Records are built from it when the engine asks, so nothing is staged in memory.
     private var context: ModelContext?
 
+    private let defaults: UserDefaults
+
     init(
         containerID: String = AppModelContainer.cloudKitContainerID,
-        households: Households = .shared
+        households: Households = .shared,
+        defaults: UserDefaults = .standard
     ) {
         self.containerID = containerID
         self.households = households
+        self.defaults = defaults
         super.init()
+    }
+
+    private static let syncedKey = "household.member.synced"
+
+    /// The households this engine's stored state has actually fetched.
+    ///
+    /// **Why it has to be remembered.** A `CKSyncEngine`'s state holds a change token *per zone*, and a
+    /// household joined, left and joined again is the same zone throughout — same name, same owner. So the
+    /// token says "you have seen everything up to here", CloudKit correctly reports nothing changed, and the
+    /// week never arrives until somebody happens to edit a record. Leaving one household cannot discard the
+    /// state, because the households still joined need theirs.
+    private var syncedHouseholds: Set<String> {
+        get { Set(defaults.stringArray(forKey: Self.syncedKey) ?? []) }
+        set { defaults.set(Array(newValue), forKey: Self.syncedKey) }
     }
 
     private var container: CKContainer { CKContainer(identifier: containerID) }
@@ -59,14 +77,37 @@ final class SharedWeekClient: NSObject {
         guard engine == nil, !households.joined.isEmpty else { return }
         attach(store: store)
 
+        // A household this engine has never fetched: start from nothing, or a stale token for the same zone
+        // suppresses the whole week. See `syncedHouseholds`.
+        let wanted = Set(households.joined.map(\.id))
+        if !wanted.subtracting(syncedHouseholds).isEmpty {
+            forgetState()
+        }
+
         var configuration = CKSyncEngine.Configuration(
             database: container.sharedCloudDatabase,
             stateSerialization: loadState(),
             delegate: self
         )
         configuration.automaticallySync = true
-        engine = CKSyncEngine(configuration)
+        let engine = CKSyncEngine(configuration)
+        self.engine = engine
         isRunning = true
+        syncedHouseholds = wanted
+
+        // Asked for, not waited for: `automaticallySync` chooses its own moment, and somebody who has just
+        // accepted an invite is looking at an empty week right now.
+        do {
+            try await engine.fetchChanges()
+        } catch {
+            log.warning("could not fetch a joined household: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
+    /// Throws away the engine's change tokens, so every joined zone is fetched from scratch.
+    private func forgetState() {
+        try? FileManager.default.removeItem(at: stateURL)
+        syncedHouseholds = []
     }
 
     // MARK: HouseholdSyncing
@@ -127,10 +168,11 @@ final class SharedWeekClient: NSObject {
         households.recordEnded(household, ownerName: HouseholdMembers.shared.owner(of: household))
         try? SharedStore.empty(context, household: household.id)
         households.leave(household)
+        syncedHouseholds.remove(household.id)
         if households.joined.isEmpty {
             engine = nil
             isRunning = false
-            try? FileManager.default.removeItem(at: stateURL)
+            forgetState()
         }
     }
 
