@@ -162,6 +162,25 @@ struct HouseholdDissolutionTests {
         #expect(try plannedMeals().map { $0.recipe?.title } == ["Rendang", "Kept"])
     }
 
+    // MARK: The engine goes with the zone
+
+    @Test("Resetting leaves nothing running, and no change token for a zone that has gone")
+    func resetTearsTheEngineDown() throws {
+        let publisher = SharedWeekPublisher(households: Households(defaults: scratchDefaults()))
+        let stateFile = SharedStore.engineStateURL(role: "host")
+        try Data("stale".utf8).write(to: stateFile)
+
+        publisher.reset()
+
+        // `start()` returns immediately when an engine is already running, so an engine left alive after the
+        // zone was deleted means nothing recreates the zone — sharing again then failed outright with
+        // "Zone does not exist". And a kept token points at a zone that no longer exists, which is the same
+        // trap `SharedStore.generation` exists to avoid.
+        #expect(!publisher.isReady)
+        #expect(publisher.state == .off)
+        #expect(!FileManager.default.fileExists(atPath: stateFile.path))
+    }
+
     // MARK: What the owner is told
 
     @Test("The cost reads as a sentence, and says nothing when there is nothing to say")

@@ -90,6 +90,20 @@ final class SharedWeekPublisher: NSObject {
         householdContext.map { HouseholdRecords(context: $0) }
     }
 
+    /// Tears the engine down, for a household that no longer exists.
+    ///
+    /// **Both halves are needed.** `start()` returns immediately when an engine is already running, so an
+    /// engine left alive after the zone was deleted means nothing ever recreates the zone — sharing again then
+    /// fails with "Zone does not exist". And the engine's stored state holds change tokens for a zone that has
+    /// gone, which is the same trap `SharedStore.generation` exists to avoid: keeping a token for something
+    /// that was discarded.
+    func reset() {
+        engine = nil
+        stateSerialization = nil
+        state = .off
+        try? FileManager.default.removeItem(at: stateURL)
+    }
+
     /// Brings the engine up. Safe to call more than once.
     func start() async throws {
         guard engine == nil else { return }
@@ -146,10 +160,18 @@ final class SharedWeekPublisher: NSObject {
     ///
     /// Zone-wide sharing: the `CKShare` is attached to the zone, not to a root record, so every record in it
     /// comes with the invite and a guest needs one link for the whole plan.
+    ///
+    /// **No zone means no share, not an error.** After a household is dissolved the zone is gone by design, and
+    /// letting CloudKit's "Zone does not exist" out of here put that message in front of the owner the next
+    /// time they tried to share.
     func existingShare() async throws -> CKShare? {
-        let zone = try await container.privateCloudDatabase.recordZone(for: SharedWeekZone.id)
-        guard let reference = zone.share else { return nil }
-        return try await container.privateCloudDatabase.record(for: reference.recordID) as? CKShare
+        do {
+            let zone = try await container.privateCloudDatabase.recordZone(for: SharedWeekZone.id)
+            guard let reference = zone.share else { return nil }
+            return try await container.privateCloudDatabase.record(for: reference.recordID) as? CKShare
+        } catch let error as CKError where error.code == .zoneNotFound || error.code == .unknownItem {
+            return nil
+        }
     }
 
     /// The share to hand to `UICloudSharingController` — the existing one, or a new one. Re-inviting someone

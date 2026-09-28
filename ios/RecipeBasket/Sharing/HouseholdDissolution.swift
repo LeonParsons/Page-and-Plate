@@ -73,6 +73,10 @@ struct HouseholdDissolution {
         try await publisher.stopSharing()
         try await deleteZone()
 
+        // The engine goes with the zone. Leaving it running means `start()` short-circuits on the next share
+        // and never recreates the zone, and its stored change tokens point at something that no longer exists.
+        publisher.reset()
+
         try SharedStore.empty(context, household: household.id)
         households.stopHosting()
         Self.log.info("dissolved a household, \(returned, privacy: .public) meals came home")
