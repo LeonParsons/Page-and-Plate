@@ -3,8 +3,8 @@
 Everything to paste into App Store Connect, plus the featuring nomination. Character counts are checked by
 `docs/appstore-counts.py`; run it after any edit here.
 
-**Before this goes live:** the real terms and privacy URLs are still outstanding — `Subscription/Products.swift`
-points at example.com — and the two subscriptions still have to be created in App Store Connect.
+**Before this goes live:** the two subscriptions still have to be created in App Store Connect. The terms and
+privacy URLs are real, live and pointed at by `Subscription/Products.swift` (item 4 below).
 
 **The listing now sells the household** (11c-iii). Every length-limited field was written before sharing
 existed and pitched scanning alone — which stopped being the whole story when typed recipes became free and
@@ -187,8 +187,9 @@ until you have sat with the phone and checked.
 4. ~~Real terms and privacy URLs.~~ Written 2026-09-28 and living in `legal/` in this repository, served by
    GitHub Pages at `https://leonparsons.github.io/Page-and-Plate/legal/` — versioned alongside the behaviour
    they describe, because a privacy policy that drifts from the app is worse than none.
-   **Still to do by hand:** push the repository to GitHub, and turn Pages on in its settings. Both URLs must
-   load publicly before submission; App Review checks them.
+   Pushed and Pages turned on 2026-09-28; all three URLs verified returning 200 the same day.
+   **One thing left:** `legal/index.html` links to both pages but carries no contact route of its own, and it
+   is also the **Support URL**. A reviewer landing there should see the email without clicking through.
 5. ~~Screenshots.~~ Nine frames shot 2026-09-23; see `marketing/README.md` for what is still weak.
 6. ~~A large-type pass.~~ Done 2026-09-23: Leon walked the recipe screen, export sheet, Settings, Review
    and the paywall on an iPad at the largest accessibility text size, and nothing broke. Code-side fixes
@@ -207,4 +208,13 @@ until you have sat with the phone and checked.
    people out. Turn the first on with the build, the second a release later.
 9. **Push the CloudKit schema to production.** It is created in the development environment on first run;
    a build shipped against it would sync into nothing. App Store Connect → the iCloud container →
-   Deploy Schema Changes.
+   Deploy Schema Changes. The schema has grown a lot since it was last looked at —
+   `SharedMember`, `SharedMeal.note` and `systemFields` on both shared types — so deploy after the final build
+   is made, not before.
+10. **App Review notes explaining how to test sharing.** A reviewer has one Apple Account; a household needs
+    two, and there is no demo mode. Without notes this is a plausible rejection rather than a bad one — say
+    plainly that hosting needs a subscription, that the reviewer can create a household and see the invite
+    flow with one account, and that a second account is needed only to accept.
+11. **Age rating questionnaire and the App Privacy answers** ("Data Not Collected" throughout — the app has no
+    accounts, and CloudKit private and shared databases are not developer collection). Neither can be skipped;
+    App Store Connect will not accept a submission without both.
