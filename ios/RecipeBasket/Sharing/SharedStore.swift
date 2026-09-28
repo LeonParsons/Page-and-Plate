@@ -80,6 +80,9 @@ final class SharedMeal {
     var dayKey: String = ""
     var order: Int = 0
     var portions: Int = 1
+    /// Why this meal is what it is — "Leon's out, so fewer portions". **Shared**, unlike `exportedAt`: the
+    /// occasion belongs to the household, this device's shopping does not.
+    var note: String = ""
     /// **This device's** "added to Reminders" tick, and never projected: the export is personal (SPEC §10),
     /// so each member ticks their own shopping and no member's shopping marks anyone else's meal.
     /// `SharedMealFields` deliberately has no such field — that absence is the guarantee, and it is tested.
@@ -106,13 +109,17 @@ final class SharedMeal {
         dayKey = fields.dayKey
         order = fields.order
         portions = Portions.clamp(fields.portions)
+        note = fields.note
         // `exportedAt` is deliberately not touched: it is this device's, and an update from another member
         // must never clear or set it. Neither is `systemFields`, which is CloudKit's bookkeeping and is
         // written only by `HouseholdRecords.remember` when the server hands a record back.
     }
 
     var fields: SharedMealFields {
-        SharedMealFields(id: id, recipeID: recipeID, recipeTitle: recipeTitle, dayKey: dayKey, order: order, portions: portions)
+        SharedMealFields(
+            id: id, recipeID: recipeID, recipeTitle: recipeTitle,
+            dayKey: dayKey, order: order, portions: portions, note: note
+        )
     }
 
     var day: PlanDay {
@@ -170,7 +177,8 @@ enum SharedStore {
     /// - 5: Phase 11b-iii — member records were filed under a name CloudKit refuses (see
     ///      `SharedWeekRecords.memberPrefix`). The tokens go so the rejected saves still queued in the
     ///      engines' state go with them, rather than being retried for ever under the old, invalid id.
-    static let generation = 5
+    /// - 6: Phase 12c — a meal carries a note.
+    static let generation = 6
 
     private static func supportFile(_ name: String) -> URL {
         URL.applicationSupportDirectory.appending(path: name)

@@ -52,13 +52,13 @@ struct SchemaMigrationTests {
         return (recipe.id, meal.id)
     }
 
-    @Test("A V1 store opens as V2 with every value intact")
+    @Test("A V1 store opens as V3 with every value intact")
     func migratesInPlace() throws {
         let url = makeStoreURL()
         defer { try? FileManager.default.removeItem(at: url) }
         let ids = try writeV1Store(at: url)
 
-        let schema = Schema(versionedSchema: SchemaV2.self)
+        let schema = Schema(versionedSchema: SchemaV3.self)
         let migrated = try ModelContainer(
             for: schema,
             migrationPlan: AppMigrationPlan.self,
@@ -94,7 +94,7 @@ struct SchemaMigrationTests {
         defer { try? FileManager.default.removeItem(at: url) }
         try writeV1Store(at: url)
 
-        let schema = Schema(versionedSchema: SchemaV2.self)
+        let schema = Schema(versionedSchema: SchemaV3.self)
         let migrated = try ModelContainer(
             for: schema,
             migrationPlan: AppMigrationPlan.self,
@@ -116,4 +116,96 @@ struct SchemaMigrationTests {
 
         #expect(try context.fetch(FetchDescriptor<Recipe>()).count == 2)
     }
+    // MARK: V2 → V3, which is the one that runs in the field
+
+    /// Writes a **V2** store — the shape both phones are carrying — and lets its container go.
+    @discardableResult
+    private func writeV2Store(at url: URL) throws -> (recipeID: UUID, mealID: UUID) {
+        let schema = Schema(versionedSchema: SchemaV2.self)
+        let container = try ModelContainer(
+            for: schema,
+            configurations: ModelConfiguration(schema: schema, url: url, cloudKitDatabase: .none)
+        )
+        let context = ModelContext(container)
+
+        let recipe = SchemaV2.Recipe(
+            title: "Chickpea arrabbiata",
+            book: "Happy Curries",
+            page: 110,
+            yield: RecipeYield(quantity: 4, unit: RecipeYield.servingsUnit, rawText: "Serves 4"),
+            targetYield: 4,
+            ingredients: [Ingredient(rawText: "400g chickpeas", quantity: 400, unit: .g, name: "chickpeas")],
+            pages: [SchemaV2.RecipePage(index: 0, imageData: Data([9, 9, 9]))],
+            createdAt: Date(timeIntervalSince1970: 1_700_000_000),
+            updatedAt: Date(timeIntervalSince1970: 1_700_000_000),
+            rating: 5
+        )
+        context.insert(recipe)
+
+        let meal = SchemaV2.PlannedMeal(dayKey: "2026-09-24", order: 0, portions: 3, recipe: recipe)
+        context.insert(meal)
+        try context.save()
+
+        return (recipe.id, meal.id)
+    }
+
+    @Test("A V2 store opens as V3, and its meals gain an empty note")
+    func migratesV2ToV3() throws {
+        let url = makeStoreURL()
+        defer { try? FileManager.default.removeItem(at: url) }
+        let ids = try writeV2Store(at: url)
+
+        // This is the migration that actually runs on a phone: every install since Phase 9 is a V2 store, and
+        // a column that does not exist on disk is exactly what a lightweight stage has to be trusted to add.
+        let schema = Schema(versionedSchema: SchemaV3.self)
+        let container = try ModelContainer(
+            for: schema,
+            migrationPlan: AppMigrationPlan.self,
+            configurations: ModelConfiguration(schema: schema, url: url, cloudKitDatabase: .none)
+        )
+        let context = ModelContext(container)
+
+        let meal = try #require(try context.fetch(FetchDescriptor<PlannedMeal>()).first)
+        #expect(meal.id == ids.mealID)
+        #expect(meal.note == "")
+        // And nothing else moved.
+        #expect(meal.portions == 3)
+        #expect(meal.dayKey == "2026-09-24")
+        let recipe = try #require(try context.fetch(FetchDescriptor<Recipe>()).first)
+        #expect(recipe.id == ids.recipeID)
+        #expect(recipe.title == "Chickpea arrabbiata")
+        #expect(recipe.rating == 5)
+        #expect(recipe.orderedPages.first?.imageData == Data([9, 9, 9]))
+    }
+
+    @Test("A migrated V2 store takes a note and keeps it")
+    func notesSurviveTheMigratedStore() throws {
+        let url = makeStoreURL()
+        defer { try? FileManager.default.removeItem(at: url) }
+        try writeV2Store(at: url)
+
+        let schema = Schema(versionedSchema: SchemaV3.self)
+        let configuration = ModelConfiguration(schema: schema, url: url, cloudKitDatabase: .none)
+        do {
+            let container = try ModelContainer(for: schema, migrationPlan: AppMigrationPlan.self, configurations: configuration)
+            let context = ModelContext(container)
+            let meal = try #require(try context.fetch(FetchDescriptor<PlannedMeal>()).first)
+            meal.note = "Leon's out, so fewer portions"
+            try context.save()
+        }
+
+        let reopened = ModelContext(try ModelContainer(for: schema, migrationPlan: AppMigrationPlan.self, configurations: configuration))
+        #expect(try reopened.fetch(FetchDescriptor<PlannedMeal>()).first?.note == "Leon's out, so fewer portions")
+    }
+
+    @Test("Every shipped shape is still in the plan, in order")
+    func everyVersionIsMigratedFrom() {
+        // A store stamped with any shipped version has to have a path to the current one — dropping a frozen
+        // version from this list is how somebody's plan stops opening.
+        #expect(AppMigrationPlan.schemas.count == 3)
+        #expect(AppMigrationPlan.stages.count == 2)
+        #expect(SchemaV1.versionIdentifier < SchemaV2.versionIdentifier)
+        #expect(SchemaV2.versionIdentifier < SchemaV3.versionIdentifier)
+    }
+
 }

@@ -351,6 +351,21 @@ section below is what it becomes. Phase 10's design is kept only where it still 
 - **The export stays personal, per member.** Each device keeps its own "added to Reminders" tick on a
   household meal, and it is never projected — one member's shopping marks nobody else's meal (§9, §10).
 
+### A note on a planned meal
+
+**A meal can carry a note** (settled 2026-09-28) — "Leon's out, so fewer portions", "Ros is coming". It is
+about the **occasion**, so it lives on the meal: the same recipe next week gets its own, and the recipe itself
+is untouched.
+
+**Shared with the household**, unlike the export tick: a note saying who is out is worth nothing if only the
+person who wrote it can read it. An update from another member replaces it, as it does portions.
+
+The week shows a **speech bubble** on a meal that has one, never the note itself — free text of unknown length
+does not belong in a row, and the row already has a layout that has to survive accessibility sizes. The note is
+read and written on the meal's own screen.
+
+**It never reaches Reminders or the share text.** The list is ingredients; "Ros is coming" is not one.
+
 ### Typing a recipe in
 
 **A recipe can be typed rather than photographed** (settled 2026-09-28). The same review screen, reached

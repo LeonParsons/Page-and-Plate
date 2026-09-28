@@ -18,6 +18,12 @@ final class PlannedMeal {
     /// When this meal's ingredients were last added to Reminders — from its own detail screen, or (Phase 6) the
     /// week export.
     var exportedAt: Date?
+    /// Why this meal is what it is — "Leon's out, so fewer portions", "Ros is coming".
+    ///
+    /// **On the meal, not the recipe.** It is about the occasion: the same recipe next week gets its own note,
+    /// and the recipe itself is unchanged. Shared with the household, unlike `exportedAt`, because a note
+    /// saying who is out is worth nothing if only the person who wrote it can read it.
+    var note: String = ""
 
     init(recipe: Recipe, day: PlanDay, order: Int, portions: Int, now: Date = .now) {
         id = UUID()
@@ -27,6 +33,7 @@ final class PlannedMeal {
         self.recipe = recipe
         createdAt = now
         exportedAt = nil
+        note = ""
     }
 
     var day: PlanDay {
@@ -35,8 +42,8 @@ final class PlannedMeal {
     }
 }
 
-/// Every model in the store, in one place for the app and the tests. This is `SchemaV2` — the current
-/// version; `SchemaV1` is the frozen pre-CloudKit shape the migration comes from.
+/// Every model in the store, in one place for the app and the tests. This is `SchemaV3` — the current
+/// version; `SchemaV1` and `SchemaV2` are the frozen shapes the migrations come from.
 nonisolated enum AppSchema {
     static let models: [any PersistentModel.Type] = [Recipe.self, RecipePage.self, PlannedMeal.self]
 }

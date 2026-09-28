@@ -71,6 +71,15 @@ struct HouseholdWeekEditor {
         sync.stage(mealID: meal.id, in: household)
     }
 
+    /// Why this meal is what it is, for everyone in the household to read.
+    func setNote(_ meal: SharedMeal, _ note: String, in household: Household) throws {
+        let trimmed = note.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed != meal.note else { return }
+        meal.note = trimmed
+        try context.save()
+        sync.stage(mealID: meal.id, in: household)
+    }
+
     func move(_ meal: SharedMeal, to day: PlanDay, in household: Household) throws {
         guard meal.day != day else { return }
         let source = try meals(on: meal.day, in: household).filter { $0.id != meal.id }

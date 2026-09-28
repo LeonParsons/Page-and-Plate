@@ -86,6 +86,36 @@ struct SharedStoreTests {
         #expect(meal.exportedAt == shopped)
     }
 
+    @Test("A note is shared, and an update from another member replaces it")
+    func notesTravelUnlikeTheExportTick() throws {
+        let container = try SharedStore.make(inMemory: true)
+        let context = container.mainContext
+        var mine = fields()
+        let meal = SharedMeal(mine, householdID: parsons.id)
+        context.insert(meal)
+        let shopped = Date(timeIntervalSince1970: 1_700_000_000)
+        meal.exportedAt = shopped
+        meal.note = "Ros is coming"
+        try context.save()
+
+        // Somebody else corrects the note.
+        mine.note = "Ros cancelled"
+        meal.apply(mine)
+
+        // The two are deliberately opposite, and asserted together so the difference cannot be lost: the
+        // occasion belongs to the household, this device's shopping does not.
+        #expect(meal.note == "Ros cancelled")
+        #expect(meal.exportedAt == shopped)
+
+        let record = CKRecord(
+            recordType: SharedWeekZone.RecordType.meal,
+            recordID: SharedWeekRecords.recordID(meal: meal.id, in: parsons.zoneID)
+        )
+        SharedWeekRecords.apply(meal.fields, to: record)
+        #expect(record[SharedWeekZone.MealKey.note] as? String == "Ros cancelled")
+        #expect(try SharedWeekRecords.mealFields(from: record).note == "Ros cancelled")
+    }
+
     @Test("Rows are keyed on the household, not the zone name every owner shares")
     func rowsAreKeyedOnTheHousehold() throws {
         let context = ModelContext(try SharedStore.make(inMemory: true))

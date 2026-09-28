@@ -2,7 +2,7 @@ import Foundation
 import OSLog
 import SwiftData
 
-/// Opens the app's store (SPEC §9): migrated to `SchemaV2`, then mirrored to the user's own iCloud.
+/// Opens the app's store (SPEC §9): migrated to `SchemaV3`, then mirrored to the user's own iCloud.
 ///
 /// Two opens, deliberately. The migration runs first against a plain local store, because a schema change and
 /// CloudKit's own setup happening in the same open is the case with the long tail of reported failures — and
@@ -20,7 +20,7 @@ enum AppModelContainer {
     static func make() throws -> ModelContainer {
         // `versionedSchema:` rather than `Schema(models)` — it stamps the store with the version identifier,
         // which is what lets `AppMigrationPlan` recognise a V1 store and run the stage.
-        let schema = Schema(versionedSchema: SchemaV2.self)
+        let schema = Schema(versionedSchema: SchemaV3.self)
         try migrateLocally(schema)
 
         do {

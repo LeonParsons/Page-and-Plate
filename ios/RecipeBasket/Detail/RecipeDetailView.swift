@@ -22,6 +22,15 @@ struct RecipeDetailView: View {
     @State private var servesInput: Double?
     @FocusState private var servesFocused: Bool
 
+    /// Written straight through to the meal, because there is no Save on this screen and a note lost by
+    /// closing the sheet is worse than one saved a keystroke early.
+    private func noteBinding(_ meal: PlannedMeal) -> Binding<String> {
+        Binding(
+            get: { meal.note },
+            set: { meal.note = $0 }
+        )
+    }
+
     /// A meal removed from the plan while this screen is up must not be read.
     private var liveMeal: PlannedMeal? {
         meal.flatMap { $0.isDeleted ? nil : $0 }
@@ -103,6 +112,19 @@ struct RecipeDetailView: View {
             } footer: {
                 if liveMeal != nil {
                     Text("Sets the portions for this meal on the plan. The recipe's own portions stay as they are.")
+                }
+            }
+
+            // Only when this screen is a meal's: a note is about the occasion, so it belongs to Tuesday's
+            // dinner and not to the recipe, which may be on the plan three more times.
+            if let meal = liveMeal {
+                Section {
+                    TextField("Anything worth remembering", text: noteBinding(meal), axis: .vertical)
+                        .lineLimit(1...5)
+                } header: {
+                    Text("Note")
+                } footer: {
+                    Text("Just for this meal — who's out, who's coming, anything that explains the portions. Everyone in your household sees it. It never goes to Reminders.")
                 }
             }
 

@@ -92,6 +92,7 @@ struct SharedWeekView: View {
                 recipe: recipe,
                 isMine: plan.author.wroteIt(recipe.authorID),
                 attribution: attribution(for: recipe),
+                note: noteBinding(meal),
                 portions: meal.portions
             )
         } label: {
@@ -164,7 +165,17 @@ struct SharedWeekView: View {
             portions: meal.portions,
             yieldUnit: recipe.yield.unit,
             isExported: meal.exportedAt != nil,
+            hasNote: !meal.note.isEmpty,
             attribution: attribution(for: recipe)
+        )
+    }
+
+    /// The note goes through the editor, not straight onto the row: it has to reach everyone else, and the
+    /// editor is the only thing that writes this week.
+    private func noteBinding(_ meal: SharedMeal) -> Binding<String> {
+        Binding(
+            get: { meal.isDeleted ? "" : meal.note },
+            set: { try? editor?.setNote(meal, $0, in: household) }
         )
     }
 

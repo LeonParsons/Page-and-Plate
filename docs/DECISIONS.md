@@ -833,3 +833,22 @@ rather than being retried for ever under an id CloudKit will never accept.
 plausible-looking local state — a name saved only on Return, an id compared against a different id, a record
 CloudKit would not take. None of them could be seen from the screen, and none produced an error a user or a log
 reader would notice. Where a feature depends on a write reaching CloudKit, the failure path has to be loud.
+
+### 2026-09-28 · SchemaV2 is frozen, and a meal carries a note
+
+A planned meal gained `note`, which is the first change to the app's own store since Phase 9 — so the schema
+grew a third version, and `SchemaV2` had to be frozen the way `SchemaV1` already was.
+
+**It was not.** `SchemaV2` pointed at the live models, so adding a property to `PlannedMeal` would have
+silently redefined a shipped version: V2 would have claimed a column no V2 store on disk has. Both phones are
+carrying V2 stores, which makes V2 → V3 the migration that actually runs in the field — the one case that most
+needs a real store written and reopened rather than a lightweight stage assumed to work. `SchemaV2` is now a
+frozen storage-only copy, `SchemaV3` is the live shape, and `SchemaMigrationTests` runs both stages against
+stores on disk.
+
+The note itself: on the **meal**, not the recipe, because it is about the occasion. **Shared** with the
+household, unlike `exportedAt` — the two are asserted together in one test so the difference cannot be lost.
+**Not in the export**, because the shopping list is ingredients. And shown on a row as a speech bubble rather
+than as text (Leon, 2026-09-28): free text of unknown length would break a row layout that already has to
+survive accessibility sizes, so the glyph says there is something to read and the meal's screen is where it is
+read.

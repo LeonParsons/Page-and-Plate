@@ -33,6 +33,9 @@ struct SharedMealFields: Equatable, Sendable {
     var dayKey: String
     var order: Int
     var portions: Int
+    /// Why this meal is what it is. **Shared**, unlike `exportedAt`: it is about the occasion, which is the
+    /// household's, not about this device's shopping.
+    var note: String = ""
 }
 
 /// Value ⇄ `CKRecord` mapping. Pure, so it tests without reaching CloudKit; the publisher attaches the
@@ -116,6 +119,7 @@ enum SharedWeekRecords {
         record[SharedWeekZone.MealKey.dayKey] = fields.dayKey
         record[SharedWeekZone.MealKey.order] = fields.order
         record[SharedWeekZone.MealKey.portions] = fields.portions
+        record[SharedWeekZone.MealKey.note] = fields.note
     }
 
     nonisolated static func mealFields(from record: CKRecord) throws -> SharedMealFields {
@@ -135,7 +139,9 @@ enum SharedWeekRecords {
             recipeTitle: record[SharedWeekZone.MealKey.recipeTitle] as? String ?? "",
             dayKey: dayKey,
             order: record[SharedWeekZone.MealKey.order] as? Int ?? 0,
-            portions: Portions.clamp(record[SharedWeekZone.MealKey.portions] as? Int ?? 1)
+            portions: Portions.clamp(record[SharedWeekZone.MealKey.portions] as? Int ?? 1),
+            // A meal planned before notes existed simply has none.
+            note: record[SharedWeekZone.MealKey.note] as? String ?? ""
         )
     }
 }

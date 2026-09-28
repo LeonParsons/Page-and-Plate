@@ -72,6 +72,9 @@ enum SharedWeekZone {
         nonisolated static let dayKey = "dayKey"
         nonisolated static let order = "order"
         nonisolated static let portions = "portions"
+        /// Why this meal is what it is. Shared, unlike the export tick: a note saying who is out is worth
+        /// nothing if only the person who wrote it can read it.
+        nonisolated static let note = "note"
     }
 
     /// The title written onto the `CKShare`.

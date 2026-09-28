@@ -178,6 +178,9 @@ struct SharedRecipeView: View {
     var isMine: Bool = false
     /// Who added it, when that was somebody else and their name is known.
     var attribution: String?
+    /// The meal's note, and how to save it. Nil when this screen is showing a recipe rather than a meal — the
+    /// note belongs to the occasion, so there is nothing to write without one.
+    var note: Binding<String>?
     @State var portions: Int
 
     private var lines: [ScaledIngredient] {
@@ -201,6 +204,17 @@ struct SharedRecipeView: View {
                     Text(isMine ? "Your recipe — edit it in Recipes." : "Shared with the household. Change the servings for your table; the recipe stays as its owner wrote it.")
                 }
             }
+            if let note {
+                Section {
+                    TextField("Anything worth remembering", text: note, axis: .vertical)
+                        .lineLimit(1...5)
+                } header: {
+                    Text("Note")
+                } footer: {
+                    Text("Just for this meal — who's out, who's coming, anything that explains the portions. Everyone in your household sees it.")
+                }
+            }
+
             Section("Ingredients") {
                 ForEach(lines, id: \.lineText) { line in
                     Text(line.lineText)

@@ -228,6 +228,10 @@ struct MealRowData: Equatable {
     /// `SharedMeal.exportedAt`, which is never projected, so each member ticks their own shopping and sees
     /// nobody else's (SPEC §10). It said "always false on a shared week" until 11b-i gave the row a local tick.
     var isExported: Bool = false
+    /// Whether this meal carries a note. **Not the note itself**: it is free text of unknown length, and a
+    /// row is the wrong place for it (Leon, 2026-09-28) — a glyph says there is something to read, and the
+    /// meal's own screen is where it is read.
+    var hasNote: Bool = false
     /// Who added this, when that was not the person looking. A household's catalogue is the union of everyone's
     /// libraries, so "whose recipe is this?" is a real question on a real screen. Nil on a personal week, and
     /// nil for an author whose name CloudKit has not given — a caption naming nobody is worse than none.
@@ -243,11 +247,12 @@ struct MealRowData: Equatable {
             sourceText: recipe.sourceText,
             portions: meal.portions,
             yieldUnit: recipe.yield.unit,
-            isExported: meal.exportedAt != nil
+            isExported: meal.exportedAt != nil,
+            hasNote: !meal.note.isEmpty
         )
     }
 
-    init(title: String, thumbnail: Data?, rating: Int?, sourceText: String?, portions: Int, yieldUnit: String, isExported: Bool = false, attribution: String? = nil) {
+    init(title: String, thumbnail: Data?, rating: Int?, sourceText: String?, portions: Int, yieldUnit: String, isExported: Bool = false, hasNote: Bool = false, attribution: String? = nil) {
         self.title = title
         self.thumbnail = thumbnail
         self.rating = rating
@@ -255,6 +260,7 @@ struct MealRowData: Equatable {
         self.portions = portions
         self.yieldUnit = yieldUnit
         self.isExported = isExported
+        self.hasNote = hasNote
         self.attribution = attribution
     }
 }
@@ -342,6 +348,11 @@ struct PlannedMealRow: View {
         HStack(spacing: 4) {
             Text("for \(ShoppingExport.portionsText(targetYield: data.portions, yieldUnit: data.yieldUnit))")
                 .lineLimit(1)
+            if data.hasNote {
+                Image(systemName: "text.bubble")
+                    .foregroundStyle(.secondary)
+                    .accessibilityLabel("Has a note")
+            }
             if data.isExported {
                 Image(systemName: "checkmark.circle.fill")
                     .foregroundStyle(.green)

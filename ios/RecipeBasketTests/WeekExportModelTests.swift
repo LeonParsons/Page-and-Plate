@@ -151,4 +151,23 @@ struct WeekExportModelTests {
         #expect(empty.canAddToReminders == false)
         #expect(empty.shareText == "Week of 21 Sep")
     }
+    @Test("A meal's note never reaches the shopping list")
+    func notesAreNotShopping() async throws {
+        let w = try makeWeek()
+        let secret = "Leon is out so fewer portions"
+        for meal in w.meals { meal.note = secret }
+
+        let model = ExportModel(week: w.week, meals: w.meals, store: FakeRemindersStore(access: .fullAccess, lists: [.shopping]), settings: makeSettings())
+        await model.load()
+
+        // A note explains the occasion; the list is ingredients. Reminders is not where "Ros is coming"
+        // belongs, and neither is the share text somebody pastes into a message.
+        // Every field a row can show: the title, the Reminders note and the caption naming its meals.
+        let everythingOnScreen = model.rows
+            .map { [$0.title, $0.notes, $0.caption ?? ""].joined(separator: " ") }
+            .joined(separator: "\n")
+        #expect(!everythingOnScreen.contains(secret))
+        #expect(!model.shareText.contains(secret))
+    }
+
 }
