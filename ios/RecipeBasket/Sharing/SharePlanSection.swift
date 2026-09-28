@@ -47,7 +47,7 @@ struct SharePlanSection: View {
 
     @ViewBuilder
     private var plansSection: some View {
-        if !households.joined.isEmpty {
+        if households.hasPlans {
             Section {
                 // Named for the household once there is one: hosting *replaces* your own plan rather than
                 // sitting beside it (Leon, 2026-09-26), so "My plan" would be a second name for the same week.
@@ -61,9 +61,6 @@ struct SharePlanSection: View {
                 ForEach(households.joined) { household in
                     planRow(
                         title: households.displayTitle(for: household),
-                        // Whose household it is, in the same place the one you host says you share it. With two
-                        // households defaulting to the same name this is often the only thing telling them
-                        // apart that a person actually recognises.
                         // Whose it is. With no household names left, this is the only thing that identifies
                         // one — and it is what a person actually recognises, where "Plan 2" is not.
                         subtitle: plan.members.owner(of: household),

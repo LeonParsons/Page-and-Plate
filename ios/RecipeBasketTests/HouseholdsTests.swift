@@ -240,6 +240,26 @@ struct HouseholdsTests {
         let reopened = Households(defaults: defaults)
         #expect(reopened.joined.map(\.title) == ["The Parsons"])
     }
+    @Test("Hosting alone is enough to list your plans")
+    func hostingCountsAsHavingAPlan() {
+        let households = Households(defaults: makeDefaults())
+        #expect(!households.hasPlans)
+
+        households.host(zoneID: SharedWeekZone.id, title: "ignored")
+
+        // This asked only whether a household had been *joined*, so somebody who hosts one and has joined none
+        // saw no plans section at all — and the row saying "You share this one" is the only place the app
+        // confirms they are sharing.
+        #expect(households.hasPlans)
+    }
+
+    @Test("Joining alone is enough too")
+    func joiningCountsAsHavingAPlan() {
+        let households = Households(defaults: makeDefaults())
+        households.join(zoneID: CKRecordZone.ID(zoneName: SharedWeekZone.zoneName, ownerName: "_sara"), title: "x")
+        #expect(households.hasPlans)
+    }
+
     // MARK: What a plan is called
 
     /// Households are not named by anybody (Leon, 2026-09-28). A plan's title shares the navigation bar with the

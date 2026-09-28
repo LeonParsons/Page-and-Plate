@@ -129,6 +129,13 @@ final class Households {
     /// The first household you joined. Somebody else's plan, which you are part of.
     static let ourPlanTitle = "Our plan"
 
+    /// Whether there is anything to list under "Your plans".
+    ///
+    /// **Hosting counts.** This used to ask only whether any household had been *joined*, so somebody who
+    /// hosts one and has joined none saw no plans section at all — and "You share this one" is the only place
+    /// the app confirms they are sharing. One plan is still worth listing; it is the row that says so.
+    var hasPlans: Bool { hosted != nil || !joined.isEmpty }
+
     /// What the "My plan" row reads.
     var mineTitle: String { Self.myPlanTitle }
 
