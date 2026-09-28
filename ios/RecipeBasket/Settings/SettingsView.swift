@@ -31,11 +31,11 @@ struct SettingsView: View {
                     LabeledContent("Scans", value: quota.statusText)
                     if subscriptions.isSubscribed {
                         if let ends = subscriptions.expirationDate {
-                            LabeledContent("Unlimited", value: "until \(ends.formatted(date: .abbreviated, time: .omitted))")
+                            LabeledContent("Subscription", value: "until \(ends.formatted(date: .abbreviated, time: .omitted))")
                         }
                         Button("Manage subscription") { isManagingSubscription = true }
                     } else {
-                        Button("Get Unlimited…") { isShowingPaywall = true }
+                        Button("Subscribe…") { isShowingPaywall = true }
                     }
                     Button("Restore purchases") {
                         Task { await subscriptions.restore() }

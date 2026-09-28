@@ -49,7 +49,7 @@ struct SubscriptionStoreTests {
         }
     }
 
-    @Test("The configuration carries both Unlimited plans")
+    @Test("The configuration carries both plans")
     func products() async throws {
         guard let session = try await makeSession() else { return }
         defer { session.clearTransactions() }

@@ -9,7 +9,7 @@ protocol EntitlementSource: AnyObject, Observable {
     var entitlementJWS: String? { get }
 }
 
-/// StoreKit 2: the current Unlimited entitlement, kept fresh from `Transaction.updates`.
+/// StoreKit 2: the current subscription entitlement, kept fresh from `Transaction.updates`.
 @Observable
 final class SubscriptionStore: EntitlementSource {
     private(set) var isSubscribed = false
@@ -34,7 +34,7 @@ final class SubscriptionStore: EntitlementSource {
         }
     }
 
-    /// The newest verified, unrevoked Unlimited transaction wins.
+    /// The newest verified, unrevoked subscription transaction wins.
     func refresh() async {
         var newest: (transaction: Transaction, jws: String)?
         for await result in Transaction.currentEntitlements {

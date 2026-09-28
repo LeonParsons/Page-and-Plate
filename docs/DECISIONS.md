@@ -852,3 +852,26 @@ household, unlike `exportedAt` — the two are asserted together in one test so 
 than as text (Leon, 2026-09-28): free text of unknown length would break a row layout that already has to
 survive accessibility sizes, so the glyph says there is something to read and the meal's screen is where it is
 read.
+
+### 2026-09-28 · The subscription is not called anything
+
+"Unlimited" is gone from everything a user sees (Leon). It claimed the wrong thing in both directions: the plan
+carries a real ceiling of 25 scans in any rolling seven days that is deliberately never shown (rule 9b), and
+typed recipes — added the same day — are free and *genuinely* unlimited. App Review reads a subscription name as
+a claim, and this one was getting harder to defend while doing less selling.
+
+It has no replacement name. It is simply the subscription: Settings offers "Subscribe…", and the paywall is
+headed with the app's own name. The subscription group is "Page & Plate" and the two products are "Monthly" and
+"Yearly".
+
+The paywall's body is now one sentence: *"A subscription covers everything you need to cook breakfast, lunch and
+dinner each week, and you can cancel any time."* The trial is not mentioned — this screen is for somebody
+deciding whether to pay, and their remaining free scans are counted on the screen they came from.
+
+**Prices confirmed:** £1.99 monthly, £14.99 yearly, matching `RecipeBasket.storekit`, whose test storefront is
+now GBR so a local run shows the prices that will actually be charged.
+
+**And `docs/appstore-counts.py` was checking strings that were not in the listing.** The in-app purchase fields
+were hardcoded in the script and had drifted from the table in `APPSTORE.md`, so it reported "ok" for copy that
+had not existed for weeks. It reads the table now. A checker that checks something other than the document is
+worse than no checker — the same shape as today's silent CloudKit rejections, and worth noticing twice.

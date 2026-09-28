@@ -1,13 +1,75 @@
 {
+  "appPolicies": {
+    "eula": "",
+    "policies": [
+      {
+        "locale": "en_GB",
+        "policyText": "",
+        "policyURL": ""
+      }
+    ]
+  },
   "identifier": "3C1B3E2A-7A2D-4B0C-9C41-5D6E7F8A9B01",
   "nonRenewingSubscriptions": [],
   "products": [],
-  "settings": {},
+  "settings": {
+    "_askToBuyEnabled": false,
+    "_billingGracePeriodEnabled": true,
+    "_billingIssuesEnabled": false,
+    "_compatibilityTimeRate": {
+      "3": 6,
+      "5": 1004
+    },
+    "_disableDialogs": true,
+    "_failTransactionsEnabled": false,
+    "_locale": "en_GB",
+    "_renewalBillingIssuesEnabled": true,
+    "_storefront": "GBR",
+    "_storeKitErrors": [
+      {
+        "enabled": false,
+        "name": "Load Products"
+      },
+      {
+        "enabled": false,
+        "name": "Purchase"
+      },
+      {
+        "enabled": false,
+        "name": "Verification"
+      },
+      {
+        "enabled": false,
+        "name": "App Store Sync"
+      },
+      {
+        "enabled": false,
+        "name": "Subscription Status"
+      },
+      {
+        "enabled": false,
+        "name": "App Transaction"
+      },
+      {
+        "enabled": false,
+        "name": "Manage Subscriptions Sheet"
+      },
+      {
+        "enabled": false,
+        "name": "Refund Request Sheet"
+      },
+      {
+        "enabled": false,
+        "name": "Offer Code Redeem Sheet"
+      }
+    ],
+    "_timeRate": 1005
+  },
   "subscriptionGroups": [
     {
       "id": "5A1C2B3D",
       "localizations": [],
-      "name": "Page & Plate Unlimited",
+      "name": "Page & Plate",
       "subscriptions": [
         {
           "adHocOffers": [],
@@ -26,9 +88,10 @@
           ],
           "productID": "com.leonparsons.RecipeBasket.unlimited.monthly",
           "recurringSubscriptionPeriod": "P1M",
-          "referenceName": "Unlimited Monthly",
+          "referenceName": "Monthly",
           "subscriptionGroupID": "5A1C2B3D",
-          "type": "RecurringSubscription"
+          "type": "RecurringSubscription",
+          "winbackOffers": []
         },
         {
           "adHocOffers": [],
@@ -47,15 +110,16 @@
           ],
           "productID": "com.leonparsons.RecipeBasket.unlimited.yearly",
           "recurringSubscriptionPeriod": "P1Y",
-          "referenceName": "Unlimited Yearly",
+          "referenceName": "Yearly",
           "subscriptionGroupID": "5A1C2B3D",
-          "type": "RecurringSubscription"
+          "type": "RecurringSubscription",
+          "winbackOffers": []
         }
       ]
     }
   ],
   "version": {
-    "major": 2,
+    "major": 4,
     "minor": 0
   }
 }

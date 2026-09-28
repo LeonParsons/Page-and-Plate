@@ -2,8 +2,13 @@ import RecipeCore
 import StoreKit
 import SwiftUI
 
-/// Apple's subscription store over the two Unlimited plans (SPEC §4): plans, prices and intro offers come from
-/// the App Store (or `RecipeBasket.storekit` locally), with the restore button and policy links App Review expects.
+/// Apple's subscription store over the two plans (SPEC §4): plans, prices and intro offers come from the App
+/// Store (or `RecipeBasket.storekit` locally), with the restore button and policy links App Review expects.
+///
+/// **Nothing here is called "Unlimited"** (Leon, 2026-09-28). The subscription carries a real weekly ceiling
+/// that is deliberately never shown (rule 9b), and typed recipes are free and genuinely unlimited — so the word
+/// claimed the wrong thing in both directions. The trial is not mentioned either: this screen is for somebody
+/// deciding whether to pay, and their free scans are counted on the screen they just came from.
 struct PaywallView: View {
     @Environment(SubscriptionStore.self) private var store
     @Environment(\.dismiss) private var dismiss
@@ -13,12 +18,12 @@ struct PaywallView: View {
             VStack(spacing: 12) {
                 BrandMark(size: 64)
                     .foregroundStyle(Brand.tomato)
-                Text("\(Brand.name) Unlimited")
+                Text(Brand.name)
                     .font(Brand.display(28, relativeTo: .title2))
                 Text("Scan as many pages as you cook.")
                     .font(.headline)
                     .multilineTextAlignment(.center)
-                Text("Your first \(ScanAllowance.trialScans) scans are free. A subscription covers everything you cook in a week, and you can cancel any time.")
+                Text("A subscription covers everything you need to cook breakfast, lunch and dinner each week, and you can cancel any time.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)

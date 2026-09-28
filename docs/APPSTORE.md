@@ -3,10 +3,13 @@
 Everything to paste into App Store Connect, plus the featuring nomination. Character counts are checked by
 `docs/appstore-counts.py`; run it after any edit here.
 
-**Before this goes live:** the plan is still *named* "Unlimited" while carrying a real ceiling of 25 scans a
-week (2026-09-23). Nothing user-facing says "unlimited" any more except the plan name itself — which App Review
-reads as a claim. Decide the name before the subscriptions are created in App Store Connect. Prices and the real
-terms/privacy URLs are still outstanding.
+**Before this goes live:** the real terms and privacy URLs are still outstanding — `Subscription/Products.swift`
+points at example.com — and the two subscriptions still have to be created in App Store Connect.
+
+**The plan is no longer called "Unlimited"** (Leon, 2026-09-28). It carried a real ceiling of 25 scans a week
+that is deliberately never shown (rule 9b), and typed recipes are now free and genuinely unlimited, so the word
+claimed the wrong thing in both directions — and App Review reads a subscription name as a claim. The
+subscription is simply what you buy to scan recipes; nothing needs an adjective.
 
 ---
 
@@ -90,12 +93,14 @@ Photograph a cookbook page, scale the recipe to the portions you want, plan the 
 
 ## In-app purchases
 
-Both sit in the subscription group **Page & Plate Unlimited**.
+Both sit in the subscription group **Page & Plate**.
 
-| Product | Display name (30) | Description (45) |
-|---|---|---|
-| `com.leonparsons.RecipeBasket.unlimited.monthly` | `Unlimited Monthly` | `Scans for everything you cook, monthly` |
-| `com.leonparsons.RecipeBasket.unlimited.yearly` | `Unlimited Yearly` | `Scans for everything you cook, yearly` |
+| Product | Display name (30) | Description (45) | UK price |
+|---|---|---|---|
+| `com.leonparsons.RecipeBasket.unlimited.monthly` | `Monthly` | `Scan and share, billed monthly` | £1.99 |
+| `com.leonparsons.RecipeBasket.unlimited.yearly` | `Yearly` | `Scan and share, billed yearly` | £14.99 |
+
+Prices confirmed 2026-09-28 and matching `ios/RecipeBasket.storekit`.
 
 The product IDs keep the old working name. They are never shown to anyone, and changing them now would orphan
 the existing StoreKit configuration.
@@ -155,10 +160,10 @@ until you have sat with the phone and checked.
 1. ~~Reserve **Page & Plate** in App Store Connect.~~ Done 2026-09-23, against the existing bundle id
    `com.leonparsons.RecipeBasket`. The hold lapses after 90 days without a build, so **6 January 2027**
    is the date a build has to exist by.
-2. Decide whether the plan keeps the name **Unlimited** now that it carries a 25-a-week ceiling
-   (2026-09-23). The display names in the table above and the group name are the only places left that
-   claim it. Either rename them or accept the claim knowingly — App Review reads subscription names.
-   Reshoot frame 1 either way: it reads "17 of 20 free scans left" from the old limits.
+2. ~~Decide whether the plan keeps the name **Unlimited**.~~ Settled 2026-09-28: it does not. The word
+   claimed a ceiling that exists and an unlimitedness that typed recipes now genuinely have. Nothing
+   user-facing says it any more. Still reshoot frame 1: it reads "17 of 20 free scans left" from the old
+   limits.
 3. Real prices for both plans, and the two subscriptions created in App Store Connect with the product
    ids above.
 4. Real terms and privacy URLs — `Subscription/Products.swift` still points at example.com.

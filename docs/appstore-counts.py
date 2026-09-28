@@ -23,13 +23,14 @@ LIMITS = {
     "What's New": 4000,
 }
 
-# Table fields, checked separately: (label, value, limit)
-TABLE_FIELDS = [
-    ("IAP display name (monthly)", "Unlimited Monthly", 30),
-    ("IAP display name (yearly)", "Unlimited Yearly", 30),
-    ("IAP description (monthly)", "Unlimited cookbook scans, billed monthly", 45),
-    ("IAP description (yearly)", "Unlimited cookbook scans, billed yearly", 45),
-]
+# The in-app purchase table's columns, by header, -> limit. **Read from the document**, not copied here: these
+# were hardcoded, drifted from the table they were meant to be checking, and went on reporting "ok" for strings
+# that had not been in the listing for weeks. A checker that checks something other than the document is worse
+# than no checker.
+IAP_COLUMNS = {
+    "Display name": 30,
+    "Description": 45,
+}
 
 
 def fields(text):
@@ -43,6 +44,28 @@ def fields(text):
         block = re.search(r"```\n(.*?)\n```", section, flags=re.DOTALL)
         if block:
             yield name, block.group(1)
+
+
+def iap_rows(text):
+    """Yield (label, value, limit) for every cell of the in-app purchase table."""
+    table = re.search(r"^## In-app purchases\n(.*?)(?=^## |\Z)", text, flags=re.DOTALL | re.MULTILINE)
+    if not table:
+        return
+    rows = [
+        [cell.strip() for cell in line.strip().strip("|").split("|")]
+        for line in table.group(1).splitlines()
+        if line.strip().startswith("|")
+    ]
+    if len(rows) < 3:
+        return
+    # Row 0 is the header, row 1 the |---| separator, the rest are products.
+    headers = [re.sub(r"\s*\(\d+\)$", "", header) for header in rows[0]]
+    for row in rows[2:]:
+        product = row[0].strip("`").rsplit(".", 1)[-1]
+        for header, cell in zip(headers, row):
+            if header not in IAP_COLUMNS:
+                continue
+            yield f"IAP {header.lower()} ({product})", cell.strip("`"), IAP_COLUMNS[header]
 
 
 def main():
@@ -59,12 +82,15 @@ def main():
             failures.append(f"{name}: {count} > {limit}")
         print(f"  [{status}] {name:<20} {count:>5} / {limit}")
 
-    for name, value, limit in TABLE_FIELDS:
+    iap = list(iap_rows(text))
+    if not iap:
+        failures.append("no in-app purchase table found")
+    for name, value, limit in iap:
         count = len(value)
         status = "ok " if count <= limit else "OVER"
         if count > limit:
             failures.append(f"{name}: {count} > {limit}")
-        print(f"  [{status}] {name:<20} {count:>5} / {limit}")
+        print(f"  [{status}] {name:<28} {count:>5} / {limit}")
 
     missing = set(LIMITS) - checked
     if missing:
