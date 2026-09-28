@@ -351,6 +351,19 @@ section below is what it becomes. Phase 10's design is kept only where it still 
 - **The export stays personal, per member.** Each device keeps its own "added to Reminders" tick on a
   household meal, and it is never projected — one member's shopping marks nobody else's meal (§9, §10).
 
+### Typing a recipe in
+
+**A recipe can be typed rather than photographed** (settled 2026-09-28). The same review screen, reached
+without a page: title, source, yield, and ingredients added a row at a time. It is offered everywhere a scan is
+— the Recipes tab and both Add meal sheets.
+
+**It spends no scan and never meets the paywall**, on any tier, for ever. The subscription is for reading a
+photograph, which is the part that costs; typing costs nothing to serve. So somebody whose trial is spent can
+still add recipes, and a household member with no scans left can still bring one to the table.
+
+A typed recipe has no page photograph, so it projects into a household without a thumbnail — the same as a
+scanned one whose photo has been deleted.
+
 ### The week itself
 
 **The week starts on the day the cook shops** (settled 2026-09-28). A week is seven days from a chosen weekday,

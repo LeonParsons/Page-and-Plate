@@ -18,6 +18,7 @@ struct HomeView: View {
     /// hide it with the toggle, and `.balanced` means it takes its own width rather than covering the recipe.
     @State private var columnVisibility = NavigationSplitViewVisibility.all
     @State private var isAdding = false
+    @State private var isTyping = false
     @State private var isShowingSettings = false
     @AppStorage("list.sort") private var sortRaw = RecipeListOrdering.Sort.newest.rawValue
     @AppStorage("list.grouping") private var groupingRaw = RecipeListOrdering.Grouping.none.rawValue
@@ -29,10 +30,11 @@ struct HomeView: View {
                     ContentUnavailableView {
                         Label("No recipes yet", systemImage: "book.closed")
                     } description: {
-                        Text("Scan a cookbook page to add your first recipe.")
+                        Text("Photograph a cookbook page, or type a recipe in yourself.")
                     } actions: {
-                        Button("Add recipe") { isAdding = true }
+                        Button("Scan a recipe") { isAdding = true }
                             .buttonStyle(.borderedProminent)
+                        Button("Type one in") { isTyping = true }
                     }
                 } else {
                     List(selection: $selection) {
@@ -57,7 +59,12 @@ struct HomeView: View {
             .navigationTitle("Recipes")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
-                    Button("Add recipe", systemImage: "plus") { isAdding = true }
+                    // A menu rather than a button: typing a recipe in is not a fallback for a failed scan,
+                    // it is the way to add one you already know (no book, no page, no photograph).
+                    Menu("Add recipe", systemImage: "plus") {
+                        Button("Scan a recipe", systemImage: "camera") { isAdding = true }
+                        Button("Type one in", systemImage: "square.and.pencil") { isTyping = true }
+                    }
                 }
                 ToolbarItem(placement: .secondaryAction) {
                     Picker("Sort by", systemImage: "arrow.up.arrow.down", selection: $sortRaw) {
@@ -77,6 +84,9 @@ struct HomeView: View {
             }
             .sheet(isPresented: $isAdding) {
                 AddRecipeView(lastBook: settings.lastBook, quota: quota)
+            }
+            .sheet(isPresented: $isTyping) {
+                AddRecipeView(lastBook: settings.lastBook, quota: quota, manual: true)
             }
             .sheet(isPresented: $isShowingSettings) {
                 SettingsView(store: remindersStore, plan: guestPlan)

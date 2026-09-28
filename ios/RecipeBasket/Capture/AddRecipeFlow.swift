@@ -41,6 +41,28 @@ final class AddRecipeFlow {
         book.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    /// Typing a recipe in, with no photograph and no extraction.
+    ///
+    /// Everything the review step already does is what a manual entry needs — `RecipeFormView` adds, deletes
+    /// and edits ingredient rows and `RecipeDraft.canSave` already refuses an incomplete one — so this is the
+    /// same screen reached without a page. Two portions to start, because a title and the ingredients are the
+    /// only things anybody should have to type.
+    ///
+    /// **It spends no scan.** Nothing here calls the Worker, so there is no quota to check and no paywall to
+    /// meet: a typed recipe is free on every tier, for ever. That is deliberate — the price is for reading a
+    /// photograph, which is the part that costs.
+    func startManual() {
+        guard draft == nil else { return }
+        draft = RecipeDraft(
+            title: "",
+            book: trimmedBook,
+            yield: RecipeYield(quantity: 2, unit: RecipeYield.servingsUnit),
+            ingredients: [],
+            pages: []
+        )
+        path = [.review]
+    }
+
     nonisolated static func defaultClient(entitlement: String?) throws(AppConfiguration.ConfigurationError) -> ExtractionClient {
         let configuration = try AppConfiguration.loadFromMainBundle()
         return ExtractionClient(

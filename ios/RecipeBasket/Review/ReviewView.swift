@@ -4,9 +4,12 @@ import SwiftUI
 /// The review step of the add-recipe flow: the shared form over the flow's draft, Save inserts the recipe.
 struct ReviewView: View {
     @Bindable var flow: AddRecipeFlow
+    /// A typed recipe has no pages behind it, so "Pages" would go somewhere that does not exist.
+    var isManual = false
     let onSaved: (Recipe) -> Void
 
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         Group {
@@ -18,12 +21,16 @@ struct ReviewView: View {
                 ContentUnavailableView("Nothing to review", systemImage: "doc.text")
             }
         }
-        .navigationTitle("New recipe")
+        .navigationTitle(isManual ? "Type a recipe" : "New recipe")
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(true)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
-                Button("Pages") { flow.backToPages() }
+                if isManual {
+                    Button("Cancel") { dismiss() }
+                } else {
+                    Button("Pages") { flow.backToPages() }
+                }
             }
             ToolbarItem(placement: .confirmationAction) {
                 Button("Save") { save() }

@@ -24,6 +24,7 @@ struct AddSharedMealSheet: View {
     @Environment(ScanQuota.self) private var quota
     @State private var search = ""
     @State private var isScanning = false
+    @State private var isTyping = false
 
     /// Only this household's catalogue: the store holds every household this person belongs to.
     private var catalogue: [SharedRecipe] {
@@ -89,12 +90,21 @@ struct AddSharedMealSheet: View {
                     Button("Cancel") { dismiss() }
                 }
                 ToolbarItem(placement: .primaryAction) {
-                    Button("Scan new recipe", systemImage: "camera") { isScanning = true }
+                    Menu("New recipe", systemImage: "plus") {
+                        Button("Scan a recipe", systemImage: "camera") { isScanning = true }
+                        Button("Type one in", systemImage: "square.and.pencil") { isTyping = true }
+                    }
                 }
             }
             .sheet(isPresented: $isScanning) {
                 AddRecipeView(lastBook: settings.lastBook, quota: quota) { recipe in scanned(recipe) }
                     // The scan saves a `Recipe`, which only exists in this person's own store.
+                    .modelContainer(library)
+            }
+            .sheet(isPresented: $isTyping) {
+                // A typed recipe lands in this person's own library and is projected from there, exactly as a
+                // scanned one is — so a member with no scans left can still bring a recipe to the household.
+                AddRecipeView(lastBook: settings.lastBook, quota: quota, manual: true) { recipe in scanned(recipe) }
                     .modelContainer(library)
             }
         }

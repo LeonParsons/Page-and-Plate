@@ -13,6 +13,7 @@ struct AddMealSheet: View {
     @Environment(ScanQuota.self) private var quota
     @State private var search = ""
     @State private var isScanning = false
+    @State private var isTyping = false
     @State private var errorMessage: String?
 
     private var filtered: [Recipe] {
@@ -58,11 +59,17 @@ struct AddMealSheet: View {
                     Button("Cancel") { dismiss() }
                 }
                 ToolbarItem(placement: .primaryAction) {
-                    Button("Scan new recipe", systemImage: "camera") { isScanning = true }
+                    Menu("New recipe", systemImage: "plus") {
+                        Button("Scan a recipe", systemImage: "camera") { isScanning = true }
+                        Button("Type one in", systemImage: "square.and.pencil") { isTyping = true }
+                    }
                 }
             }
             .sheet(isPresented: $isScanning) {
                 AddRecipeView(lastBook: settings.lastBook, quota: quota) { recipe in add(recipe) }
+            }
+            .sheet(isPresented: $isTyping) {
+                AddRecipeView(lastBook: settings.lastBook, quota: quota, manual: true) { recipe in add(recipe) }
             }
             .alert("Couldn't add the meal", isPresented: Binding(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })) {
                 Button("OK") {}

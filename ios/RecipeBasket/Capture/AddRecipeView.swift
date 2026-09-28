@@ -9,9 +9,17 @@ struct AddRecipeView: View {
     /// Called with the saved recipe before the sheet closes — the planner uses it to put the recipe on a day.
     private let onSaved: (Recipe) -> Void
 
-    /// `quota` is the scan gate (SPEC §9); the presenting view hands it over from the environment.
-    init(lastBook: String?, quota: ScanQuota, onSaved: @escaping (Recipe) -> Void = { _ in }) {
-        _flow = State(initialValue: AddRecipeFlow(book: lastBook ?? "", quota: quota))
+    /// Whether this was opened to photograph a page or to type one in. A typed recipe never reaches the
+    /// capture screen, so there are no pages to go back to and the review step says "Cancel" instead.
+    private let isManual: Bool
+
+    /// `quota` is the scan gate (SPEC §9); the presenting view hands it over from the environment. A manual
+    /// entry never meets it — nothing is extracted — but the flow is otherwise the same one.
+    init(lastBook: String?, quota: ScanQuota, manual: Bool = false, onSaved: @escaping (Recipe) -> Void = { _ in }) {
+        let flow = AddRecipeFlow(book: lastBook ?? "", quota: quota)
+        if manual { flow.startManual() }
+        _flow = State(initialValue: flow)
+        isManual = manual
         self.onSaved = onSaved
     }
 
@@ -28,7 +36,7 @@ struct AddRecipeView: View {
                     case .extracting:
                         ExtractingView(flow: flow)
                     case .review:
-                        ReviewView(flow: flow) { recipe in
+                        ReviewView(flow: flow, isManual: isManual) { recipe in
                             settings.rememberBook(flow.book)
                             onSaved(recipe)
                             dismiss()
@@ -38,7 +46,7 @@ struct AddRecipeView: View {
                     }
                 }
         }
-        .interactiveDismissDisabled(!flow.pages.isEmpty)
+        .interactiveDismissDisabled(!flow.pages.isEmpty || isManual)
         .sheet(isPresented: $flow.needsSubscription) {
             PaywallView()
         }
