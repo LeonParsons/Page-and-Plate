@@ -28,8 +28,8 @@ struct PlannerView: View {
     /// "This week" on a personal plan; "The Parsons · This week" on a household's, so it is never ambiguous
     /// whose meals you are looking at.
     private var navigationTitle: String {
-        guard let household else { return week.title }
-        return "\(household.title) · \(week.title)"
+        guard let household, let households = guestPlan?.households else { return week.title }
+        return "\(households.displayTitle(for: household)) · \(week.title)"
     }
 
     private var weekMeals: [PlannedMeal] {

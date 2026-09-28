@@ -48,7 +48,7 @@ struct SharePlanSection: View {
                     households.select(.mine)
                 }
                 ForEach(households.joined) { household in
-                    planRow(title: household.title, isCurrent: households.selection == .household(household.id)) {
+                    planRow(title: households.displayTitle(for: household), isCurrent: households.selection == .household(household.id)) {
                         // Only leaving your own plan needs saying out loud; moving between households does
                         // not, because nothing of yours is hidden that was not already.
                         if households.selection == .mine {
@@ -69,7 +69,7 @@ struct SharePlanSection: View {
                 Text("One plan at a time. Your recipes go with you into every household you're in; your own week is hidden while you're looking at someone else's, and comes back when you leave.")
             }
             .confirmationDialog(
-                confirmingJoin.map { "Switch to \($0.title)?" } ?? "",
+                confirmingJoin.map { "Switch to \(households.displayTitle(for: $0))?" } ?? "",
                 isPresented: Binding(get: { confirmingJoin != nil }, set: { if !$0 { confirmingJoin = nil } }),
                 titleVisibility: .visible
             ) {
@@ -82,7 +82,7 @@ struct SharePlanSection: View {
                 Text("Your own week is hidden while you're in this household. Your recipes aren't — they stay in every household you're in. Nothing is deleted: leave and your week comes back exactly as it was.")
             }
             .confirmationDialog(
-                leaving.map { "Leave \($0.title)?" } ?? "",
+                leaving.map { "Leave \(households.displayTitle(for: $0))?" } ?? "",
                 isPresented: Binding(get: { leaving != nil }, set: { if !$0 { leaving = nil } }),
                 titleVisibility: .visible
             ) {

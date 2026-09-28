@@ -100,7 +100,29 @@ final class Households {
     var isShowingHousehold: Bool { current != nil }
 
     /// What the "My plan" row reads. Naming the household there is the whole of how hosting announces itself.
-    var mineTitle: String { hosted?.title ?? "My plan" }
+    var mineTitle: String { hosted.map { displayTitle(for: $0) } ?? "My plan" }
+
+    /// Every household this person is in, in a stable order: the one they host, then the ones they joined in
+    /// the order they joined them. What `displayTitle` numbers by.
+    var ordered: [Household] {
+        (hosted.map { [$0] } ?? []) + joined.sorted { ($0.joinedAt, $0.id) < ($1.joinedAt, $1.id) }
+    }
+
+    /// What to call a household on screen.
+    ///
+    /// **Numbered when two share a name** — "Our plan 1", "Our plan 2" (Leon, 2026-09-28). Two owners who both
+    /// left the name at the default are both called "Our plan", and somebody in both households would otherwise
+    /// see two identical rows with no way to tell which week they were about to open. The number is added
+    /// *here*, where the name is read, because the titles come from other people's shares and a member cannot
+    /// rename either one. Every duplicate is numbered, including the first: "Our plan" beside "Our plan 2" says
+    /// nothing about which is which.
+    func displayTitle(for household: Household) -> String {
+        let sharing = ordered.filter { $0.title == household.title }
+        guard sharing.count > 1, let index = sharing.firstIndex(where: { $0.id == household.id }) else {
+            return household.title
+        }
+        return "\(household.title) \(index + 1)"
+    }
 
     /// Accepting an invite. Re-accepting one already joined updates its name rather than adding it twice.
     func join(zoneID: CKRecordZone.ID, title: String) {

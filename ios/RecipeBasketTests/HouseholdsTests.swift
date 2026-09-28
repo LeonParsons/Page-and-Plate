@@ -239,6 +239,58 @@ struct HouseholdsTests {
     }
     // MARK: The household's name
 
+    @Test("Every name this app ever generated itself is recognised as one nobody chose")
+    func appGeneratedNamesAreRecognised() {
+        // There were two, and an exact comparison against one skipped a household carrying the other — which
+        // is exactly how Leon's phone kept reading "Page & Plate — my plan" after the first attempt to rename
+        // it. Both of these have been a real default in a shipped build.
+        #expect(SharedWeekZone.isAppGeneratedTitle("\(Brand.name) — my plan"))
+        #expect(SharedWeekZone.isAppGeneratedTitle("\(Brand.name) — our plan"))
+        // And a name somebody typed is theirs, including one that happens to contain the default.
+        #expect(!SharedWeekZone.isAppGeneratedTitle("The Parsons"))
+        #expect(!SharedWeekZone.isAppGeneratedTitle(SharedWeekZone.defaultTitle))
+        #expect(!SharedWeekZone.isAppGeneratedTitle("Our plan, but nicer"))
+    }
+
+    // MARK: Telling two households of the same name apart
+
+    @Test("Two households with the same name are numbered, both of them")
+    func duplicateNamesAreNumbered() {
+        let households = Households(defaults: makeDefaults())
+        let first = CKRecordZone.ID(zoneName: SharedWeekZone.zoneName, ownerName: "_leon")
+        let second = CKRecordZone.ID(zoneName: SharedWeekZone.zoneName, ownerName: "_grandma")
+        households.join(zoneID: first, title: "Our plan")
+        households.join(zoneID: second, title: "Our plan")
+
+        let joined = households.ordered
+        // Numbering only the second would leave "Our plan" beside "Our plan 2", which says nothing about which
+        // is which. Two owners who both left the name at the default is the ordinary case, not an edge.
+        #expect(households.displayTitle(for: joined[0]) == "Our plan 1")
+        #expect(households.displayTitle(for: joined[1]) == "Our plan 2")
+    }
+
+    @Test("A name that is not shared is left exactly as the owner wrote it")
+    func uniqueNamesAreNotNumbered() {
+        let households = Households(defaults: makeDefaults())
+        households.join(zoneID: CKRecordZone.ID(zoneName: SharedWeekZone.zoneName, ownerName: "_leon"), title: "The Parsons")
+        households.join(zoneID: CKRecordZone.ID(zoneName: SharedWeekZone.zoneName, ownerName: "_grandma"), title: "Sunday lunch")
+
+        for household in households.ordered {
+            #expect(households.displayTitle(for: household) == household.title)
+        }
+    }
+
+    @Test("The household you host is numbered against the ones you joined, and comes first")
+    func hostedIsNumberedToo() {
+        let households = Households(defaults: makeDefaults())
+        households.host(zoneID: SharedWeekZone.id, title: "Our plan")
+        households.join(zoneID: CKRecordZone.ID(zoneName: SharedWeekZone.zoneName, ownerName: "_grandma"), title: "Our plan")
+
+        // "My plan" is the household you host once you host one, so its row has to disambiguate as well.
+        #expect(households.mineTitle == "Our plan 1")
+        #expect(households.displayTitle(for: households.joined[0]) == "Our plan 2")
+    }
+
     @Test("An unnamed household is called 'Our plan' — it names the plan, not the app")
     func theDefaultNameNamesThePlan() {
         // It sits on the Plan tab beside the week, and in Settings directly beside "My plan", so it has to read
@@ -246,7 +298,7 @@ struct HouseholdsTests {
         // (Leon, 2026-09-28). This pins it against being helpfully branded again.
         #expect(SharedWeekZone.defaultTitle == "Our plan")
         #expect(!SharedWeekZone.defaultTitle.contains(Brand.name))
-        #expect(SharedWeekZone.legacyDefaultTitle != SharedWeekZone.defaultTitle)
+        #expect(!SharedWeekZone.isAppGeneratedTitle(SharedWeekZone.defaultTitle))
     }
 
     @Test("Your own plan is 'My plan' until you host, and then it is the household")
