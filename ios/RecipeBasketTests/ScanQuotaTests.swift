@@ -54,12 +54,43 @@ struct ScanQuotaTests {
 
     /// Seven and twenty-five, spelled out, so a later change to the shipped numbers doesn't quietly rewrite what
     /// these tests claim.
+    ///
+    /// **Its own `UserDefaults`, which matters more than it looks.** `ScanQuota` reads the debug
+    /// "pretend subscribed" switch from the defaults it is given, and its default is `.standard` — so with
+    /// `.standard` these tests inherit whatever the simulator happens to have. That is not hypothetical: a
+    /// toggle left on in the simulator persists in the test host's own preferences, and every trial assertion
+    /// here then reads "Enough for the week" and fails. The scan gate is the one thing in the app that costs
+    /// real money to get wrong, so what it is tested against is never machine state.
     private func makeQuota(tally: ScanTally = ScanTally(), subscribed: Bool = false, now: Date? = nil) throws -> (ScanQuota, ScanLedger, FakeEntitlements) {
         let ledger = ScanLedger(store: KeychainStore(service: "app.recipe-basket.tests"), key: "ledger-\(UUID().uuidString)")
         try ledger.write(tally)
         let entitlements = FakeEntitlements(isSubscribed: subscribed, entitlementJWS: subscribed ? "a.b.c" : nil)
         let clock = now ?? self.now
-        return (ScanQuota(ledger: ledger, entitlements: entitlements, trialScans: 7, weeklyScans: 25, now: { clock }), ledger, entitlements)
+        let name = "quota-tests-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: name)!
+        defaults.removePersistentDomain(forName: name)
+        return (
+            ScanQuota(
+                ledger: ledger, entitlements: entitlements, trialScans: 7, weeklyScans: 25,
+                defaults: defaults, now: { clock }
+            ),
+            ledger,
+            entitlements
+        )
+    }
+
+    @Test("The trial is measured against the fixture, never against whatever this machine has lying around")
+    func theTrialIgnoresMachineState() throws {
+        // The debug override lives in `UserDefaults`, so a switch flipped on a simulator or a device stays
+        // flipped. If these tests read `.standard` they would silently stop testing the trial at all, which is
+        // the failure this pins: `isSubscribed` here must follow the injected entitlement and nothing else.
+        let (free, freeLedger, _) = try makeQuota()
+        defer { try? freeLedger.clear() }
+        #expect(!free.isSubscribed)
+
+        let (paid, paidLedger, _) = try makeQuota(subscribed: true)
+        defer { try? paidLedger.clear() }
+        #expect(paid.isSubscribed)
     }
 
     @Test("Fresh: seven left, can scan; each recorded scan counts down and is persisted")

@@ -53,6 +53,16 @@ final class HouseholdMembers {
         return name
     }
 
+    /// Who runs a household, for the row that names it in Settings.
+    ///
+    /// **A shared zone's `ownerName` is its owner's user record name** — the same id a recipe's `authorID`
+    /// carries and the same one the share's owner participant reports — so this needs no second lookup and
+    /// nothing extra stored. Nil when CloudKit has not given their name, which it withholds until an invite is
+    /// accepted and sometimes after; the row then simply has no second line.
+    func owner(of household: Household) -> String? {
+        name(for: household.ownerName)
+    }
+
     /// Signing out. The next account's household has its own people.
     func forget() {
         guard !names.isEmpty else { return }

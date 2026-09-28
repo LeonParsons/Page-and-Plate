@@ -27,9 +27,17 @@ struct PlannerView: View {
 
     /// "This week" on a personal plan; "The Parsons · This week" on a household's, so it is never ambiguous
     /// whose meals you are looking at.
+    ///
+    /// **The week goes once it is only a date**, leaving the plan's name alone: "Our plan · Week of 12 Oct" does
+    /// not fit the bar and truncates (Leon, 2026-09-28). Nothing is lost — every day header below carries its
+    /// own full date, and the arrows that moved you here are in the same bar.
     private var navigationTitle: String {
-        guard let household, let households = guestPlan?.households else { return week.title }
-        return "\(households.displayTitle(for: household)) · \(week.title)"
+        guard let household, let households = guestPlan?.households else {
+            return week.nearbyTitle ?? Households.myPlanTitle
+        }
+        let name = households.displayTitle(for: household)
+        guard let nearby = week.nearbyTitle else { return name }
+        return "\(name) · \(nearby)"
     }
 
     private var weekMeals: [PlannedMeal] {

@@ -44,11 +44,22 @@ struct SharePlanSection: View {
             Section {
                 // Named for the household once there is one: hosting *replaces* your own plan rather than
                 // sitting beside it (Leon, 2026-09-26), so "My plan" would be a second name for the same week.
-                planRow(title: households.mineTitle, isCurrent: households.selection == .mine, hostedHint: households.hosted != nil) {
+                planRow(
+                    title: households.mineTitle,
+                    subtitle: households.hosted != nil ? "You share this one" : nil,
+                    isCurrent: households.selection == .mine
+                ) {
                     households.select(.mine)
                 }
                 ForEach(households.joined) { household in
-                    planRow(title: households.displayTitle(for: household), isCurrent: households.selection == .household(household.id)) {
+                    planRow(
+                        title: households.displayTitle(for: household),
+                        // Whose household it is, in the same place the one you host says you share it. With two
+                        // households defaulting to the same name this is often the only thing telling them
+                        // apart that a person actually recognises.
+                        subtitle: plan.members.owner(of: household).map { "Shared by \($0)" },
+                        isCurrent: households.selection == .household(household.id)
+                    ) {
                         // Only leaving your own plan needs saying out loud; moving between households does
                         // not, because nothing of yours is hidden that was not already.
                         if households.selection == .mine {
@@ -97,14 +108,14 @@ struct SharePlanSection: View {
         }
     }
 
-    private func planRow(title: String, isCurrent: Bool, hostedHint: Bool = false, select: @escaping () -> Void) -> some View {
+    private func planRow(title: String, subtitle: String?, isCurrent: Bool, select: @escaping () -> Void) -> some View {
         Button(action: select) {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
                         .foregroundStyle(Brand.ink)
-                    if hostedHint {
-                        Text("You share this one")
+                    if let subtitle {
+                        Text(subtitle)
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }

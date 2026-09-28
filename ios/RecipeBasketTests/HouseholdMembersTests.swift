@@ -55,6 +55,31 @@ struct HouseholdMembersTests {
         #expect(members.name(for: "_sara") == "Sara")
     }
 
+    @Test("A household's owner is named from the zone's owner, with nothing extra stored")
+    func theOwnerIsNamed() {
+        let defaults = makeDefaults()
+        defaults.set(["_leon": "Leon"], forKey: "household.memberNames")
+        let members = HouseholdMembers(defaults: defaults)
+        let household = Household(
+            zoneID: CKRecordZone.ID(zoneName: SharedWeekZone.zoneName, ownerName: "_leon"),
+            title: "Our plan"
+        )
+
+        // A shared zone's ownerName *is* its owner's user record name — the same id a recipe's authorID
+        // carries — so naming the owner needs no second lookup and no roster of its own.
+        #expect(members.owner(of: household) == "Leon")
+    }
+
+    @Test("An owner CloudKit will not name leaves the row with no second line")
+    func anUnnamedOwnerSaysNothing() {
+        let members = HouseholdMembers(defaults: makeDefaults())
+        let household = Household(
+            zoneID: CKRecordZone.ID(zoneName: SharedWeekZone.zoneName, ownerName: "_grandma"),
+            title: "Sunday lunch"
+        )
+        #expect(members.owner(of: household) == nil)
+    }
+
     @Test("Signing out forgets who everybody was")
     func forgettingClearsThem() {
         let defaults = makeDefaults()

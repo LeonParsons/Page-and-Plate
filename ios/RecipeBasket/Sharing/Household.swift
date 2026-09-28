@@ -99,8 +99,11 @@ final class Households {
 
     var isShowingHousehold: Bool { current != nil }
 
+    /// What a plan of your own is called before you host a household.
+    static let myPlanTitle = "My plan"
+
     /// What the "My plan" row reads. Naming the household there is the whole of how hosting announces itself.
-    var mineTitle: String { hosted.map { displayTitle(for: $0) } ?? "My plan" }
+    var mineTitle: String { hosted.map { displayTitle(for: $0) } ?? Self.myPlanTitle }
 
     /// Every household this person is in, in a stable order: the one they host, then the ones they joined in
     /// the order they joined them. What `displayTitle` numbers by.
