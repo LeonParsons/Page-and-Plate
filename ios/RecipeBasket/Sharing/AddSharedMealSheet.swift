@@ -30,6 +30,13 @@ struct AddSharedMealSheet: View {
         recipes.filter { $0.householdID == household.id }
     }
 
+    /// Who contributed a recipe, when it was not this person. The catalogue is the union of everyone's
+    /// libraries, so picking from it is the screen where "whose is this?" matters most.
+    private func attribution(for recipe: SharedRecipe) -> String? {
+        guard !plan.author.wroteIt(recipe.authorID) else { return nil }
+        return plan.members.name(for: recipe.authorID)
+    }
+
     private var filtered: [SharedRecipe] {
         let needle = search.trimmingCharacters(in: .whitespaces)
         guard !needle.isEmpty else { return catalogue }
@@ -62,7 +69,7 @@ struct AddSharedMealSheet: View {
                             )
                             dismiss()
                         } label: {
-                            SharedRecipeRow(recipe: recipe)
+                            SharedRecipeRow(recipe: recipe, attribution: attribution(for: recipe))
                         }
                         .buttonStyle(.plain)
                     }
@@ -113,6 +120,7 @@ struct AddSharedMealSheet: View {
 
 private struct SharedRecipeRow: View {
     let recipe: SharedRecipe
+    var attribution: String?
 
     var body: some View {
         HStack(spacing: 12) {
@@ -137,6 +145,12 @@ private struct SharedRecipeRow: View {
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }
+                if let attribution {
+                    Text("Added by \(attribution)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
             }
         }
     }
@@ -152,6 +166,8 @@ struct SharedRecipeView: View {
     let recipe: SharedRecipe
     /// Whether this person wrote it. Their own copy is editable in Recipes; nobody else's is editable anywhere.
     var isMine: Bool = false
+    /// Who added it, when that was somebody else and their name is known.
+    var attribution: String?
     @State var portions: Int
 
     private var lines: [ScaledIngredient] {
@@ -168,6 +184,9 @@ struct SharedRecipeView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     if let source = recipe.sourceText {
                         Text(source)
+                    }
+                    if let attribution {
+                        Text("Added by \(attribution)")
                     }
                     Text(isMine ? "Your recipe — edit it in Recipes." : "Shared with the household. Change the servings for your table; the recipe stays as its owner wrote it.")
                 }

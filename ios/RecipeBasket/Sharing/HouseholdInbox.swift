@@ -22,18 +22,27 @@ struct HouseholdInbox {
                 let thumbnail = (record[SharedWeekZone.RecipeKey.thumbnail] as? CKAsset)
                     .flatMap(\.fileURL)
                     .flatMap { try? Data(contentsOf: $0) }
-                if let existing = try recipe(id: fields.id, in: household) {
-                    existing.apply(fields, thumbnail: thumbnail)
-                } else {
-                    context.insert(SharedRecipe(fields, householdID: household.id, thumbnail: thumbnail))
-                }
+                let row = try recipe(id: fields.id, in: household)
+                    ?? {
+                        let fresh = SharedRecipe(fields, householdID: household.id, thumbnail: thumbnail)
+                        context.insert(fresh)
+                        return fresh
+                    }()
+                row.apply(fields, thumbnail: thumbnail)
+                // The record's own metadata, kept so this device's next edit to this row is an *update*.
+                // Without it every local edit to something another member sent is a tagless save, which
+                // CloudKit refuses — see `HouseholdRecords`.
+                row.systemFields = HouseholdRecords.encode(record)
             case SharedWeekZone.RecordType.meal:
                 let fields = try SharedWeekRecords.mealFields(from: record)
-                if let existing = try meal(id: fields.id, in: household) {
-                    existing.apply(fields)
-                } else {
-                    context.insert(SharedMeal(fields, householdID: household.id))
-                }
+                let row = try meal(id: fields.id, in: household)
+                    ?? {
+                        let fresh = SharedMeal(fields, householdID: household.id)
+                        context.insert(fresh)
+                        return fresh
+                    }()
+                row.apply(fields)
+                row.systemFields = HouseholdRecords.encode(record)
             default:
                 break
             }
@@ -92,7 +101,7 @@ struct HouseholdInbox {
         ).filter { !$0.isDeleted }
     }
 
-    private func meal(id: UUID, in household: Household) throws -> SharedMeal? {
+    func meal(id: UUID, in household: Household) throws -> SharedMeal? {
         let householdID = household.id
         return try context.fetch(
             FetchDescriptor<SharedMeal>(predicate: #Predicate { $0.id == id && $0.householdID == householdID })

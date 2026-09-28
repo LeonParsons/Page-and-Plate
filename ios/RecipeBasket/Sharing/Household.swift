@@ -138,6 +138,28 @@ final class Households {
         host(zoneID: share.recordID.zoneID, title: Self.title(for: share))
     }
 
+    /// The owner renamed the household, or a name has finally arrived for one that never had a real one.
+    ///
+    /// **Not `join`**, which also changes what is on display: a rename must not move anybody's screen. This is
+    /// how a household adopted from Phase 10 stops being called "Shared plan" on a member's phone while the
+    /// owner sees the name they chose.
+    func rename(id: String, to title: String) {
+        let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        var changed = false
+        if let index = joined.firstIndex(where: { $0.id == id }), joined[index].title != trimmed {
+            joined[index].title = trimmed
+            changed = true
+        }
+        if var current = hosted, current.id == id, current.title != trimmed {
+            current.title = trimmed
+            hosted = current
+            changed = true
+        }
+        guard changed else { return }
+        persist()
+    }
+
     /// Leaving, or being removed. Only this household goes; the person's own plan is never touched.
     func leave(_ household: Household) {
         leave(id: household.id)

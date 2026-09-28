@@ -206,8 +206,14 @@ struct MealRowData: Equatable {
     var sourceText: String?
     var portions: Int
     var yieldUnit: String
-    /// The owner's "added to Reminders" tick. Always false on a shared week: the export stays personal.
+    /// The "added to Reminders" tick, and always **this device's**. On a household week it comes from
+    /// `SharedMeal.exportedAt`, which is never projected, so each member ticks their own shopping and sees
+    /// nobody else's (SPEC §10). It said "always false on a shared week" until 11b-i gave the row a local tick.
     var isExported: Bool = false
+    /// Who added this, when that was not the person looking. A household's catalogue is the union of everyone's
+    /// libraries, so "whose recipe is this?" is a real question on a real screen. Nil on a personal week, and
+    /// nil for an author whose name CloudKit has not given — a caption naming nobody is worse than none.
+    var attribution: String?
 
     @MainActor
     init(meal: PlannedMeal, recipe: Recipe) {
@@ -223,7 +229,7 @@ struct MealRowData: Equatable {
         )
     }
 
-    init(title: String, thumbnail: Data?, rating: Int?, sourceText: String?, portions: Int, yieldUnit: String, isExported: Bool = false) {
+    init(title: String, thumbnail: Data?, rating: Int?, sourceText: String?, portions: Int, yieldUnit: String, isExported: Bool = false, attribution: String? = nil) {
         self.title = title
         self.thumbnail = thumbnail
         self.rating = rating
@@ -231,6 +237,7 @@ struct MealRowData: Equatable {
         self.portions = portions
         self.yieldUnit = yieldUnit
         self.isExported = isExported
+        self.attribution = attribution
     }
 }
 
@@ -299,6 +306,12 @@ struct PlannedMealRow: View {
             }
             if let source = data.sourceText {
                 Text(source)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+            if let attribution = data.attribution {
+                Text("Added by \(attribution)")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)

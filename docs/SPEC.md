@@ -312,7 +312,19 @@ section below is what it becomes. Phase 10's design is kept only where it still 
   where other members happened to be looking could not be explained to anyone.
 - **The owner names the household when they share**, and every member reads that name from the `CKShare`.
   Phase 10 derived it from the owner's iCloud identity, which put "Shared's plan" on screen when CloudKit
-  would not say who the owner was.
+  would not say who the owner was. **Every member re-reads it**, on every launch and whenever the shared
+  database changes, so one household has one name: 11a read the title only at the moment the invite was
+  accepted, which left a household carried over from Phase 10 called "Shared plan" on a member's phone while
+  the owner saw the name they had typed, and meant a rename reached nobody.
+- **Owner and member have the same control of the week.** Adding, portions, moving and removing are one
+  editor for everybody, and the only asymmetries are the three that follow from ownership: scanning spends the
+  scanner's own allowance, a member may remove themselves but not the host, and a scanned recipe goes into the
+  scanner's library.
+- **A recipe says who added it** — "Added by Sara" — wherever it is shown to somebody who did not scan it.
+  The catalogue is the union of everyone's libraries, so whose a recipe is is a real question on a real
+  screen. The names come from the share's participants, which every member can read. An author whose name
+  CloudKit has not given says **nothing at all**, never "Someone": a caption naming nobody is noise, and a
+  guess is worse.
 - **Hosting requires an active subscription, and keeps requiring it.** That is what the subscription is
   *for*; membership itself is free. A lapse ends the household, honouring StoreKit's billing-retry grace
   first, and must not word itself as though the members were removed (11c).

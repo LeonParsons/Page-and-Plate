@@ -90,7 +90,12 @@ struct SharedWeekView: View {
     @ViewBuilder
     private func plannedRow(meal: SharedMeal, recipe: SharedRecipe, on day: PlanDay) -> some View {
         NavigationLink {
-            SharedRecipeView(recipe: recipe, isMine: plan.author.wroteIt(recipe.authorID), portions: meal.portions)
+            SharedRecipeView(
+                recipe: recipe,
+                isMine: plan.author.wroteIt(recipe.authorID),
+                attribution: attribution(for: recipe),
+                portions: meal.portions
+            )
         } label: {
             PlannedMealRow(data: rowData(meal: meal, recipe: recipe)) {
                 try? editor?.setPortions(meal, $0, in: household)
@@ -160,8 +165,17 @@ struct SharedWeekView: View {
             sourceText: recipe.sourceText,
             portions: meal.portions,
             yieldUnit: recipe.yield.unit,
-            isExported: meal.exportedAt != nil
+            isExported: meal.exportedAt != nil,
+            attribution: attribution(for: recipe)
         )
+    }
+
+    /// Who added a recipe, when that was somebody else. A household catalogue is the union of everyone's
+    /// libraries (11b-ii), so the row has to say whose a recipe is — and the one thing it must not do is
+    /// caption this person's *own* recipes, which is every row on the phone of whoever scanned most of them.
+    private func attribution(for recipe: SharedRecipe) -> String? {
+        guard !plan.author.wroteIt(recipe.authorID) else { return nil }
+        return plan.members.name(for: recipe.authorID)
     }
 }
 

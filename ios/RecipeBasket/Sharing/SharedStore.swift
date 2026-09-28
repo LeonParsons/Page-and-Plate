@@ -28,6 +28,15 @@ final class SharedRecipe {
     var authorID: String = ""
     /// The 240 px projection, never the author's page scan.
     @Attribute(.externalStorage) var thumbnail: Data?
+    /// The last record the server gave us for this row, as `CKRecord.encodeSystemFields(with:)` writes it —
+    /// which is the supported way to hold a record in a local database. **Local only, and never projected:**
+    /// a record cannot carry its own identity inside itself.
+    ///
+    /// **This is what makes an update an update.** A `CKRecord` built fresh has no `recordChangeTag`, and
+    /// CloudKit refuses to save over a record that already exists without one. Phase 11b built a fresh record
+    /// for every save and logged the refusal, so a recipe travelled when it was created and never again — no
+    /// portions, no move, no reindex, in either direction. See `HouseholdRecords`.
+    var systemFields: Data?
 
     init(_ fields: SharedRecipeFields, householdID: String, thumbnail: Data? = nil) {
         self.householdID = householdID
@@ -75,6 +84,15 @@ final class SharedMeal {
     /// so each member ticks their own shopping and no member's shopping marks anyone else's meal.
     /// `SharedMealFields` deliberately has no such field — that absence is the guarantee, and it is tested.
     var exportedAt: Date?
+    /// The last record the server gave us for this row, as `CKRecord.encodeSystemFields(with:)` writes it —
+    /// which is the supported way to hold a record in a local database. **Local only, and never projected:**
+    /// a record cannot carry its own identity inside itself.
+    ///
+    /// **This is what makes an update an update.** A `CKRecord` built fresh has no `recordChangeTag`, and
+    /// CloudKit refuses to save over a record that already exists without one. Phase 11b built a fresh record
+    /// for every save and logged the refusal, so a meal travelled when it was created and never again — no
+    /// portions, no move, no reindex, in either direction. See `HouseholdRecords`.
+    var systemFields: Data?
 
     init(_ fields: SharedMealFields, householdID: String) {
         self.householdID = householdID
@@ -89,7 +107,8 @@ final class SharedMeal {
         order = fields.order
         portions = Portions.clamp(fields.portions)
         // `exportedAt` is deliberately not touched: it is this device's, and an update from another member
-        // must never clear or set it.
+        // must never clear or set it. Neither is `systemFields`, which is CloudKit's bookkeeping and is
+        // written only by `HouseholdRecords.remember` when the server hands a record back.
     }
 
     var fields: SharedMealFields {
@@ -118,7 +137,10 @@ enum SharedStore {
     ///
     /// - 1: Phase 11a — rows gained a household, keyed on the zone name.
     /// - 2: Phase 11b — keyed on `Household.id`, because every owner's zone is named `"SharedPlan"`.
-    static let generation = 2
+    /// - 3: Phase 11b-iii — rows gained `systemFields`, so an edit can be sent as an update rather than
+    ///      rejected. The tokens go with them: a row refetched from CloudKit is how it gets its metadata,
+    ///      and a kept token would mean nothing is refetched.
+    static let generation = 3
 
     private static func supportFile(_ name: String) -> URL {
         URL.applicationSupportDirectory.appending(path: name)

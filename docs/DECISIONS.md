@@ -668,3 +668,56 @@ but rests on which object SwiftData happens to attach; idempotence does not rest
 is emptied by draining it, so a half-sent pass would both mark recipes projected that were not and lose a
 deletion outright. `SharedPlanContext.start()` reprojects once the engines are up, which is what closes the
 gap for anything scanned before they were.
+
+## Phase 11b-iii — the household actually syncs
+
+### 2026-09-28 · Two causes behind seven reported bugs
+
+Testing 11b on two phones produced seven reports: portions and moves never travelling in either direction, a
+member's removal not reaching the owner, and a crash on removing a meal or on remove-then-add. Reading the code
+against them found two causes, and every symptom belongs to one of them.
+
+- **Every save after the first was refused by CloudKit and only logged.** Both engines built the record to send
+  with `CKRecord(recordType:recordID:)` — a new record with no `recordChangeTag`. CloudKit accepts that once,
+  because the record does not exist yet, and refuses every later save of the same record with
+  `serverRecordChanged`, which Apple's documentation is explicit is the caller's to resolve and reschedule. Both
+  engines wrote a log warning and dropped it. So a meal reached the household when it was created and never
+  again. Fixed by keeping each row's `systemFields` (`CKRecord.encodeSystemFields(with:)`, the supported way to
+  hold a record in a local database), building every record from the row, storing the metadata of every record
+  the server accepts or sends down, and resolving `serverRecordChanged` by adopting the server's record and
+  staging the save again.
+- **Four `ModelContext`s over one container.** The facade, each engine and the views each had their own, and the
+  views' `@Query` fetched in `mainContext`. Every edit was therefore made to an object registered in one context
+  and saved through another: `setPortions` saved a context with nothing pending, `move` reindexed second copies
+  of rows still on screen, and `remove` deleted an object out from under a live reference — the crash, and "it's
+  still there when I go back in". Fixed by using `container.mainContext` everywhere; `attach` now takes the
+  container rather than a context so a second one cannot be passed in.
+
+**Why every test passed while the app was broken.** The editor tests constructed their own `ModelContext` and
+handed the same one to the editor, which is the arrangement the app did not have. `editorsWriteTheContextTheViewsRead`
+now pins the app's wiring instead, and the editor suite takes `mainContext` as the app does.
+
+**Why only "add" worked.** An add inserts a brand-new object into the editor's own context and makes a first
+CloudKit save, which needs no change tag. Every operation Leon found working was an add; that shape was the
+clue that pointed at both causes.
+
+`SharedStore.generation` → 3. The rows gained a field and the change tokens must go with them: a row gets its
+metadata by being fetched from CloudKit, and a kept token means nothing is fetched.
+
+### 2026-09-28 · The household has one name, and recipes say who added them
+
+- A member now re-reads its `CKShare` on every start and whenever the shared database changes, and takes
+  `CKShare.SystemFieldKey.title` from it. 11a read the title only when the invite was accepted, so a household
+  carried over from Phase 10 was called "Shared plan" on the member's phone for ever while the owner saw the
+  name they had typed — and a rename reached nobody. `Households.rename` is separate from `join` because a
+  rename must not move what is on display.
+- `HouseholdMembers` caches `authorID → name` from the share's participants, which every member can read, so a
+  recipe somebody else scanned reads "Added by Sara" in the week, the catalogue and the recipe screen. An author
+  whose name CloudKit has not given says nothing at all rather than "Someone" — CloudKit withholds names until
+  an invite is accepted and sometimes after, so a placeholder would be the common case, and a guess is worse
+  than a blank.
+
+**Not fixed, because it was already right:** owner and member share one editor, so control of the week was
+already symmetric once the context bug went; and a member has Leave and no way to remove the host, because the
+member rows hang off `households.hosted` and `UICloudSharingController` offers a participant only "Remove Me".
+That last one is a claim about Apple's UI, so it is on the device list rather than covered by a test.

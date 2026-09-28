@@ -44,11 +44,8 @@ final class SharedWeekPublisher: NSObject {
     private var engine: CKSyncEngine?
     /// The engine's own bookkeeping, which it asks us to persist and hand back on the next launch.
     private var stateSerialization: CKSyncEngine.State.Serialization?
-    /// Set by `publish`, read by the engine when it asks for the next batch.
-    private var pendingRecipes: [UUID: SharedRecipeFields] = [:]
-    private var pendingMeals: [UUID: SharedMealFields] = [:]
-    private var pendingThumbnails: [UUID: Data] = [:]
-    /// The household store, which is where the week lives.
+    /// The household store, which is where the week lives — **and where the records this engine sends are
+    /// built from**, so there is nothing staged in memory to lose or to disagree with the screen.
     private var householdContext: ModelContext?
 
     init(
@@ -71,8 +68,13 @@ final class SharedWeekPublisher: NSObject {
     }
 
     /// The household store this engine reads into and writes from.
-    func attach(householdContext: ModelContext) {
-        self.householdContext = householdContext
+    ///
+    /// Takes the container and uses its `mainContext` rather than accepting any context, because the one thing
+    /// that must not happen is a second context over this store: the views query `mainContext`, and an editor
+    /// holding a different one silently fails to save, reindexes copies, and deletes objects out from under a
+    /// live reference. See `HouseholdWeekEditor`.
+    func attach(store: ModelContainer) {
+        householdContext = store.mainContext
     }
 
     /// Editing the week of the household this person hosts.
@@ -82,6 +84,10 @@ final class SharedWeekPublisher: NSObject {
 
     private var inbox: HouseholdInbox? {
         householdContext.map { HouseholdInbox(context: $0) }
+    }
+
+    private var records: HouseholdRecords? {
+        householdContext.map { HouseholdRecords(context: $0) }
     }
 
     /// Brings the engine up. Safe to call more than once.
@@ -126,9 +132,9 @@ final class SharedWeekPublisher: NSObject {
         var ids: [CKRecord.ID] = []
         for meal in try context.fetch(FetchDescriptor<PlannedMeal>()) where !meal.isDeleted {
             guard let fields = SharedWeekProjection.fields(for: meal) else { continue }
-            pendingMeals[fields.id] = fields
-            ids.append(SharedWeekRecords.recordID(meal: fields.id, in: household.zoneID))
+            // The row first: it is what the record is built from when the engine asks.
             try inbox.upsert(meal: fields, in: household)
+            ids.append(SharedWeekRecords.recordID(meal: fields.id, in: household.zoneID))
         }
         engine.state.add(pendingRecordZoneChanges: ids.map { .saveRecord($0) })
         log.info("seeded \(ids.count, privacy: .public) meals into \(household.title, privacy: .public)")
@@ -207,31 +213,25 @@ extension SharedWeekPublisher: HouseholdSyncing {
     /// The owner writes into their own zone, so this is the one case where the household's zone and
     /// `SharedWeekZone.id` are the same thing. It still goes through the household, because the alternative is
     /// a special case that only works while there is exactly one.
-    func stage(meal fields: SharedMealFields, in household: Household) {
-        pendingMeals[fields.id] = fields
+    func stage(mealID: UUID, in household: Household) {
         engine?.state.add(pendingRecordZoneChanges: [
-            .saveRecord(SharedWeekRecords.recordID(meal: fields.id, in: household.zoneID))
+            .saveRecord(SharedWeekRecords.recordID(meal: mealID, in: household.zoneID))
         ])
     }
 
     func withdraw(mealID: UUID, in household: Household) {
-        pendingMeals[mealID] = nil
         engine?.state.add(pendingRecordZoneChanges: [
             .deleteRecord(SharedWeekRecords.recordID(meal: mealID, in: household.zoneID))
         ])
     }
 
-    func stage(recipe fields: SharedRecipeFields, thumbnail: Data?, in household: Household) {
-        pendingRecipes[fields.id] = fields
-        pendingThumbnails[fields.id] = thumbnail
+    func stage(recipeID: UUID, in household: Household) {
         engine?.state.add(pendingRecordZoneChanges: [
-            .saveRecord(SharedWeekRecords.recordID(recipe: fields.id, in: household.zoneID))
+            .saveRecord(SharedWeekRecords.recordID(recipe: recipeID, in: household.zoneID))
         ])
     }
 
     func withdraw(recipeID: UUID, in household: Household) {
-        pendingRecipes[recipeID] = nil
-        pendingThumbnails[recipeID] = nil
         engine?.state.add(pendingRecordZoneChanges: [
             .deleteRecord(SharedWeekRecords.recordID(recipe: recipeID, in: household.zoneID))
         ])
@@ -247,17 +247,13 @@ extension SharedWeekPublisher: CKSyncEngineDelegate {
             save(update.stateSerialization)
         case .accountChange:
             // Signing out takes the household with it; nothing of the owner's own library is lost.
-            pendingRecipes.removeAll()
-            pendingMeals.removeAll()
             deletions.forget()
             if let householdContext { try? SharedStore.empty(householdContext) }
             households.stopHosting()
         case .fetchedRecordZoneChanges(let changes):
             receive(changes)
         case .sentRecordZoneChanges(let sent):
-            for failed in sent.failedRecordSaves {
-                log.warning("record save failed: \(failed.error.localizedDescription, privacy: .public)")
-            }
+            settle(sent, engine: syncEngine)
         default:
             break
         }
@@ -276,6 +272,22 @@ extension SharedWeekPublisher: CKSyncEngineDelegate {
         }
     }
 
+    /// What the server made of what we sent.
+    ///
+    /// **The accepted saves matter as much as the refused ones.** Each one comes back with a new
+    /// `recordChangeTag`, and a row that does not keep it builds a tagless record for its next edit and is
+    /// refused all over again — the loop Phase 11b was stuck in.
+    private func settle(_ sent: CKSyncEngine.Event.SentRecordZoneChanges, engine: CKSyncEngine) {
+        guard let records, let household = households.hosted else { return }
+        for saved in sent.savedRecords {
+            records.remember(saved, in: household)
+        }
+        for failure in sent.failedRecordSaves {
+            guard records.resolve(failure.error, for: failure.record, in: household) else { continue }
+            engine.state.add(pendingRecordZoneChanges: [.saveRecord(failure.record.recordID)])
+        }
+    }
+
     func nextRecordZoneChangeBatch(
         _ context: CKSyncEngine.SendChangesContext,
         syncEngine: CKSyncEngine
@@ -286,30 +298,10 @@ extension SharedWeekPublisher: CKSyncEngineDelegate {
         }
     }
 
-    /// Builds the record the engine is about to send, from what `publish` staged.
+    /// Builds the record the engine is about to send, from the row in the store — which is what gives an
+    /// update its change tag. See `HouseholdRecords`.
     private func record(for recordID: CKRecord.ID) -> CKRecord? {
-        guard let id = UUID(uuidString: recordID.recordName) else { return nil }
-
-        if let fields = pendingRecipes[id] {
-            let record = CKRecord(recordType: SharedWeekZone.RecordType.recipe, recordID: recordID)
-            do {
-                try SharedWeekRecords.apply(fields, to: record)
-            } catch {
-                log.warning("could not encode recipe \(id, privacy: .public): \(error.localizedDescription, privacy: .public)")
-                return nil
-            }
-            if let jpeg = pendingThumbnails[id] {
-                record[SharedWeekZone.RecipeKey.thumbnail] = SharedWeekAssets.file(for: id, jpeg: jpeg)
-            }
-            return record
-        }
-
-        if let fields = pendingMeals[id] {
-            let record = CKRecord(recordType: SharedWeekZone.RecordType.meal, recordID: recordID)
-            SharedWeekRecords.apply(fields, to: record)
-            return record
-        }
-
-        return nil
+        guard let records, let household = households.hosted else { return nil }
+        return records.record(for: recordID, in: household)
     }
 }

@@ -46,6 +46,27 @@ struct SharedStoreTests {
         #expect(!record.allKeys().contains { $0.localizedCaseInsensitiveContains("export") })
     }
 
+    @Test("A row's CloudKit metadata never reaches a record either")
+    func metadataIsNeverProjected() throws {
+        let container = try SharedStore.make(inMemory: true)
+        let context = container.mainContext
+        let meal = SharedMeal(fields(), householdID: parsons.id)
+        context.insert(meal)
+        let id = SharedWeekRecords.recordID(meal: meal.id, in: parsons.zoneID)
+        meal.systemFields = HouseholdRecords.encode(
+            CKRecord(recordType: SharedWeekZone.RecordType.meal, recordID: id)
+        )
+        try context.save()
+
+        let record = CKRecord(recordType: SharedWeekZone.RecordType.meal, recordID: id)
+        SharedWeekRecords.apply(meal.fields, to: record)
+
+        // `systemFields` is a record's own identity, kept so an edit can be sent as an update. A record cannot
+        // carry that inside itself, and sending it would be sending CloudKit its own bookkeeping back.
+        #expect(!record.allKeys().contains("systemFields"))
+        #expect(record.allKeys().allSatisfy { !$0.localizedCaseInsensitiveContains("systemfields") })
+    }
+
     @Test("An update from another member leaves this device's export tick alone")
     func applyingAnUpdateKeepsTheTick() throws {
         let context = ModelContext(try SharedStore.make(inMemory: true))

@@ -187,6 +187,8 @@ struct SharePlanSection: View {
     private func refreshShare() async {
         share = try? await publisher.existingShare()
         guard let household = households.hosted, let share else { return contributions = [:] }
+        // The participants' names, so the owner's own week can say which recipes came from whom.
+        plan.members.record(share)
         var found: [String: HouseholdContribution] = [:]
         for participant in share.participants {
             guard let id = participant.userIdentity.userRecordID?.recordName else { continue }
@@ -225,7 +227,7 @@ struct SharePlanSection: View {
 
     private func name(of participant: CKShare.Participant) -> String {
         let components = participant.userIdentity.nameComponents
-        if let components, let name = try? components.formatted(.name(style: .medium)), !name.isEmpty {
+        if let components, case let name = components.formatted(.name(style: .medium)), !name.isEmpty {
             return name
         }
         // CloudKit withholds the name until the invite is accepted, and sometimes after.

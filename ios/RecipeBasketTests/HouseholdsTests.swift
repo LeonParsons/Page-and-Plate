@@ -237,4 +237,57 @@ struct HouseholdsTests {
         let reopened = Households(defaults: defaults)
         #expect(reopened.joined.map(\.title) == ["The Parsons"])
     }
+    // MARK: The household's name
+
+    @Test("A household can be renamed without moving what is on display")
+    func renamingDoesNotSwitchPlans() {
+        let households = Households(defaults: makeDefaults())
+        let zone = CKRecordZone.ID(zoneName: SharedWeekZone.zoneName, ownerName: "_grandma")
+        households.join(zoneID: zone, title: "Shared plan")
+        households.select(.mine)
+
+        households.rename(id: "\(SharedWeekZone.zoneName)|_grandma", to: "Sunday lunch")
+
+        #expect(households.joined.first?.title == "Sunday lunch")
+        // A rename is not a join: it must not move anybody's screen.
+        #expect(households.selection == .mine)
+    }
+
+    @Test("Reading the share replaces the placeholder a Phase 10 membership was given")
+    func renamingFixesAnAdoptedHousehold() {
+        let defaults = makeDefaults()
+        defaults.set(SharedWeekZone.zoneName, forKey: "sharedPlan.zoneName")
+        defaults.set("_leon", forKey: "sharedPlan.ownerName")
+        let households = Households(defaults: defaults)
+
+        // Phase 10 never carried a household name, so the migration can only call it what it is. On a device
+        // that read "Shared plan" while the owner saw the name they had typed — nothing re-read the share.
+        #expect(households.joined.first?.title == "Shared plan")
+
+        households.rename(id: "\(SharedWeekZone.zoneName)|_leon", to: "The Parsons")
+        #expect(households.joined.first?.title == "The Parsons")
+        #expect(Households(defaults: defaults).joined.first?.title == "The Parsons")
+    }
+
+    @Test("An empty name is not a name, and never overwrites one")
+    func renamingIgnoresNothing() {
+        let households = Households(defaults: makeDefaults())
+        households.join(zoneID: CKRecordZone.ID(zoneName: SharedWeekZone.zoneName, ownerName: "_leon"), title: "The Parsons")
+
+        households.rename(id: "\(SharedWeekZone.zoneName)|_leon", to: "   ")
+
+        // CloudKit will hand back a share with no title for one made before naming existed; that is not a
+        // reason to leave somebody's household nameless.
+        #expect(households.joined.first?.title == "The Parsons")
+    }
+
+    @Test("The household you host can be renamed too")
+    func renamingTheHostedHousehold() {
+        let households = Households(defaults: makeDefaults())
+        households.host(zoneID: SharedWeekZone.id, title: "The Parsons")
+        households.rename(id: "\(SharedWeekZone.zoneName)|\(CKCurrentUserDefaultName)", to: "Ours")
+        #expect(households.hosted?.title == "Ours")
+        #expect(households.mineTitle == "Ours")
+    }
+
 }

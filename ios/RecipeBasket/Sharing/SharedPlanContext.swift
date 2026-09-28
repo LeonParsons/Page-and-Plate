@@ -22,10 +22,17 @@ final class SharedPlanContext {
     let publisher: SharedWeekPublisher
     let households: Households
     let author: HouseholdAuthor
+    /// Who the other members are, for "Added by Sara".
+    let members: HouseholdMembers
 
-    /// One context for this object's own reads and writes, not one per call: a fresh `ModelContext` each time
-    /// would re-fetch everything and make identity comparisons between calls meaningless. `@ObservationIgnored`
-    /// because `@Observable` rewrites stored properties, and neither of these is anything a view observes.
+    /// **The container's `mainContext`, which is the one the views query — not a context of its own.**
+    ///
+    /// Phase 11b gave this facade, each engine and every editor a separate `ModelContext` over the same
+    /// container. A view then fetched a `SharedMeal` in `mainContext` and handed it to an editor holding a
+    /// different one, so `setPortions` mutated an object registered elsewhere and saved a context with nothing
+    /// pending, `move` reindexed second copies of rows still on screen, and `remove` deleted an object out from
+    /// under a live reference — "it crashes, and reopening shows it still there". One store, one context.
+    /// `@ObservationIgnored` because `@Observable` rewrites stored properties and no view observes this.
     @ObservationIgnored private let householdContext: ModelContext
     @ObservationIgnored private let log = Logger(subsystem: "app.recipe-basket", category: "SharedWeek")
     @ObservationIgnored private var watcher: Task<Void, Never>?
@@ -38,30 +45,34 @@ final class SharedPlanContext {
         client: SharedWeekClient,
         publisher: SharedWeekPublisher,
         households: Households,
-        author: HouseholdAuthor
+        author: HouseholdAuthor,
+        members: HouseholdMembers
     ) {
         self.container = container
         self.client = client
         self.publisher = publisher
         self.households = households
         self.author = author
-        householdContext = ModelContext(container)
+        self.members = members
+        householdContext = container.mainContext
     }
 
     static func make(
         publisher: SharedWeekPublisher,
         households: Households = .shared,
-        author: HouseholdAuthor = HouseholdAuthor()
+        author: HouseholdAuthor = HouseholdAuthor(),
+        members: HouseholdMembers = HouseholdMembers()
     ) -> SharedPlanContext? {
         do {
             let container = try SharedStore.make()
-            publisher.attach(householdContext: ModelContext(container))
+            publisher.attach(store: container)
             return SharedPlanContext(
                 container: container,
-                client: SharedWeekClient(households: households),
+                client: SharedWeekClient(households: households, members: members),
                 publisher: publisher,
                 households: households,
-                author: author
+                author: author,
+                members: members
             )
         } catch {
             Logger(subsystem: "app.recipe-basket", category: "SharedWeek")
@@ -105,7 +116,7 @@ final class SharedPlanContext {
             try? await publisher.start()
         }
         if !households.joined.isEmpty {
-            await client.start(context: ModelContext(container))
+            await client.start(store: container)
         }
         // Now that the engines exist, anything a projection skipped while they did not can go. Without this a
         // recipe scanned before a household's engine came up would sit in the local catalogue for good,
@@ -169,7 +180,7 @@ final class SharedPlanContext {
                 // it is 240 px of decoration, and paying for it on every save of any store is not worth it.
                 let thumbnail = existing?.thumbnail ?? SharedWeekProjection.thumbnailJPEG(for: recipe)
                 try inbox.upsert(recipe: fields, thumbnail: thumbnail, in: household)
-                sync.stage(recipe: fields, thumbnail: thumbnail, in: household)
+                sync.stage(recipeID: fields.id, in: household)
                 projected += 1
             }
         }
@@ -210,7 +221,7 @@ final class SharedPlanContext {
     /// leaver's own withdrawal never reached CloudKit because their app was killed.
     ///
     /// - Parameter stillIn: the user record names on the share, the owner's included.
-    func pruneDepartedAuthors(stillIn stillIn: Set<String>, from household: Household) throws {
+    func pruneDepartedAuthors(stillIn: Set<String>, from household: Household) throws {
         guard isHosted(household) else { return }
         let householdID = household.id
         let orphans = try householdContext.fetch(
