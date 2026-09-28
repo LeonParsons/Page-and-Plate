@@ -8,8 +8,11 @@ enum Unlimited {
     static let all = [monthly, yearly]
 }
 
-/// Linked from the paywall (App Review requires both). Placeholders until real pages exist — SPEC §12.
+/// Linked from the paywall (App Review requires both). The pages themselves live in `legal/` in this
+/// repository and are served by GitHub Pages, so they are versioned alongside the behaviour they describe —
+/// a privacy policy that drifts from the app is worse than none.
 enum Legal {
-    static let terms = URL(string: "https://example.com/recipe-basket/terms")!
-    static let privacy = URL(string: "https://example.com/recipe-basket/privacy")!
+    private static let site = "https://leonparsons.github.io/Page-and-Plate/legal"
+    static let terms = URL(string: "\(site)/terms.html")!
+    static let privacy = URL(string: "\(site)/privacy.html")!
 }

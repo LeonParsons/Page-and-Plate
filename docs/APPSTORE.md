@@ -184,7 +184,11 @@ until you have sat with the phone and checked.
    limits.
 3. Real prices for both plans, and the two subscriptions created in App Store Connect with the product
    ids above.
-4. Real terms and privacy URLs — `Subscription/Products.swift` still points at example.com.
+4. ~~Real terms and privacy URLs.~~ Written 2026-09-28 and living in `legal/` in this repository, served by
+   GitHub Pages at `https://leonparsons.github.io/Page-and-Plate/legal/` — versioned alongside the behaviour
+   they describe, because a privacy policy that drifts from the app is worse than none.
+   **Still to do by hand:** push the repository to GitHub, and turn Pages on in its settings. Both URLs must
+   load publicly before submission; App Review checks them.
 5. ~~Screenshots.~~ Nine frames shot 2026-09-23; see `marketing/README.md` for what is still weak.
 6. ~~A large-type pass.~~ Done 2026-09-23: Leon walked the recipe screen, export sheet, Settings, Review
    and the paywall on an iPad at the largest accessibility text size, and nothing broke. Code-side fixes
