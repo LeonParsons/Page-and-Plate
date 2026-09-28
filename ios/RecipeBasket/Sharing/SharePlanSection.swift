@@ -30,6 +30,10 @@ struct SharePlanSection: View {
     @State private var myName = ""
     @State private var isAskingName = false
     @FocusState private var isNamingFocused: Bool
+    /// Set when the owner asks to end their household, and carries what that costs — read before anything
+    /// happens, because afterwards there is nothing left to count.
+    @State private var dissolving: HouseholdDissolution.Cost?
+    @State private var isDissolving = false
 
     private var households: Households { plan.households }
     private var publisher: SharedWeekPublisher { plan.publisher }
@@ -171,6 +175,16 @@ struct SharePlanSection: View {
             }
             .disabled(isPreparing)
             memberRows
+            if households.hosted != nil {
+                Button("Stop sharing and take the plan back", role: .destructive) {
+                    dissolving = (try? plan.dissolution.cost(
+                        of: households.hosted!,
+                        library: modelContext,
+                        members: participantCount
+                    )) ?? HouseholdDissolution.Cost(mealsReturning: 0, mealsLost: 0, members: participantCount)
+                }
+                .disabled(isDissolving)
+            }
         } header: {
             Text("Your household")
         } footer: {
@@ -186,6 +200,18 @@ struct SharePlanSection: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("This is what everyone in your household sees beside your plan and your recipes. Apple doesn't tell apps your name, so we have to ask.")
+        }
+        .confirmationDialog(
+            "Stop sharing this plan?",
+            isPresented: Binding(get: { dissolving != nil }, set: { if !$0 { dissolving = nil } }),
+            titleVisibility: .visible
+        ) {
+            Button("Stop sharing", role: .destructive) { dissolve() }
+            Button("Cancel", role: .cancel) { dissolving = nil }
+        } message: {
+            // The counts before, not after: this is the last moment the answer can change anything, which is
+            // the same reason removing a member says what goes with them.
+            Text("\(dissolving?.summary() ?? "") The household's week becomes your own plan again, and your recipes are untouched.")
         }
         .alert("Couldn't share the plan", isPresented: Binding(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })) {
             Button("OK") { errorMessage = nil }
@@ -206,6 +232,24 @@ struct SharePlanSection: View {
         .onChange(of: presenting) { _, now in
             // The sheet has closed: someone may have been invited, or the share stopped.
             if now == nil { Task { await refreshShare() } }
+        }
+    }
+
+    /// Ends the household and brings its week home. The week is copied before the zone goes, so a failure
+    /// here leaves the household intact and this can simply be tried again.
+    private func dissolve() {
+        guard let household = households.hosted else { return dissolving = nil }
+        dissolving = nil
+        isDissolving = true
+        Task {
+            do {
+                try await plan.dissolution.dissolve(household, into: modelContext)
+                share = nil
+                contributions = [:]
+            } catch {
+                errorMessage = error.localizedDescription
+            }
+            isDissolving = false
         }
     }
 

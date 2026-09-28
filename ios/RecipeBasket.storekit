@@ -1,125 +1,143 @@
 {
-  "appPolicies": {
-    "eula": "",
-    "policies": [
+  "appPolicies" : {
+    "eula" : "",
+    "policies" : [
       {
-        "locale": "en_GB",
-        "policyText": "",
-        "policyURL": ""
+        "locale" : "en_GB",
+        "policyText" : "",
+        "policyURL" : ""
       }
     ]
   },
-  "identifier": "3C1B3E2A-7A2D-4B0C-9C41-5D6E7F8A9B01",
-  "nonRenewingSubscriptions": [],
-  "products": [],
-  "settings": {
-    "_askToBuyEnabled": false,
-    "_billingGracePeriodEnabled": true,
-    "_billingIssuesEnabled": false,
-    "_compatibilityTimeRate": {
-      "3": 6,
-      "5": 1004
+  "identifier" : "3C1B3E2A-7A2D-4B0C-9C41-5D6E7F8A9B01",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+
+  ],
+  "settings" : {
+    "_askToBuyEnabled" : false,
+    "_billingGracePeriodEnabled" : true,
+    "_billingIssuesEnabled" : false,
+    "_compatibilityTimeRate" : {
+      "3" : 6,
+      "5" : 1004
     },
-    "_disableDialogs": true,
-    "_failTransactionsEnabled": false,
-    "_locale": "en_GB",
-    "_renewalBillingIssuesEnabled": true,
-    "_storefront": "GBR",
-    "_storeKitErrors": [
+    "_disableDialogs" : true,
+    "_failTransactionsEnabled" : false,
+    "_locale" : "en_GB",
+    "_renewalBillingIssuesEnabled" : true,
+    "_storefront" : "GBR",
+    "_storeKitErrors" : [
       {
-        "enabled": false,
-        "name": "Load Products"
+        "enabled" : false,
+        "name" : "Load Products"
       },
       {
-        "enabled": false,
-        "name": "Purchase"
+        "enabled" : false,
+        "name" : "Purchase"
       },
       {
-        "enabled": false,
-        "name": "Verification"
+        "enabled" : false,
+        "name" : "Verification"
       },
       {
-        "enabled": false,
-        "name": "App Store Sync"
+        "enabled" : false,
+        "name" : "App Store Sync"
       },
       {
-        "enabled": false,
-        "name": "Subscription Status"
+        "enabled" : false,
+        "name" : "Subscription Status"
       },
       {
-        "enabled": false,
-        "name": "App Transaction"
+        "enabled" : false,
+        "name" : "App Transaction"
       },
       {
-        "enabled": false,
-        "name": "Manage Subscriptions Sheet"
+        "enabled" : false,
+        "name" : "Manage Subscriptions Sheet"
       },
       {
-        "enabled": false,
-        "name": "Refund Request Sheet"
+        "enabled" : false,
+        "name" : "Refund Request Sheet"
       },
       {
-        "enabled": false,
-        "name": "Offer Code Redeem Sheet"
+        "enabled" : false,
+        "name" : "Offer Code Redeem Sheet"
       }
     ],
-    "_timeRate": 1005
+    "_timeRate" : 1005
   },
-  "subscriptionGroups": [
+  "subscriptionGroups" : [
     {
-      "id": "5A1C2B3D",
-      "localizations": [],
-      "name": "Page & Plate",
-      "subscriptions": [
+      "id" : "5A1C2B3D",
+      "localizations" : [
+
+      ],
+      "name" : "Page & Plate",
+      "subscriptions" : [
         {
-          "adHocOffers": [],
-          "codeOffers": [],
-          "displayPrice": "1.99",
-          "familyShareable": false,
-          "groupNumber": 1,
-          "internalID": "6E1A0001",
-          "introductoryOffer": null,
-          "localizations": [
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "1.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "6E1A0001",
+          "introductoryOffer" : null,
+          "localizations" : [
             {
-              "description": "Scans for everything you cook, billed monthly.",
-              "displayName": "Monthly",
-              "locale": "en_GB"
+              "description" : "Scans for everything you cook, billed monthly.",
+              "displayName" : "Monthly",
+              "locale" : "en_GB"
             }
           ],
-          "productID": "com.leonparsons.RecipeBasket.unlimited.monthly",
-          "recurringSubscriptionPeriod": "P1M",
-          "referenceName": "Monthly",
-          "subscriptionGroupID": "5A1C2B3D",
-          "type": "RecurringSubscription",
-          "winbackOffers": []
+          "productID" : "com.leonparsons.RecipeBasket.unlimited.monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Monthly",
+          "subscriptionGroupID" : "5A1C2B3D",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
         },
         {
-          "adHocOffers": [],
-          "codeOffers": [],
-          "displayPrice": "14.99",
-          "familyShareable": false,
-          "groupNumber": 2,
-          "internalID": "6E1A0002",
-          "introductoryOffer": null,
-          "localizations": [
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "14.99",
+          "familyShareable" : false,
+          "groupNumber" : 2,
+          "internalID" : "6E1A0002",
+          "introductoryOffer" : null,
+          "localizations" : [
             {
-              "description": "Scans for everything you cook, billed yearly.",
-              "displayName": "Yearly",
-              "locale": "en_GB"
+              "description" : "Scans for everything you cook, billed yearly.",
+              "displayName" : "Yearly",
+              "locale" : "en_GB"
             }
           ],
-          "productID": "com.leonparsons.RecipeBasket.unlimited.yearly",
-          "recurringSubscriptionPeriod": "P1Y",
-          "referenceName": "Yearly",
-          "subscriptionGroupID": "5A1C2B3D",
-          "type": "RecurringSubscription",
-          "winbackOffers": []
+          "productID" : "com.leonparsons.RecipeBasket.unlimited.yearly",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Yearly",
+          "subscriptionGroupID" : "5A1C2B3D",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
         }
       ]
     }
   ],
-  "version": {
-    "major": 4,
-    "minor": 0
+  "version" : {
+    "major" : 4,
+    "minor" : 0
   }
 }

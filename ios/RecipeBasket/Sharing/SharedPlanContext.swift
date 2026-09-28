@@ -159,6 +159,11 @@ final class SharedPlanContext {
         publishIdentity()
     }
 
+    /// Ending the household this person hosts, and taking the week back — see `HouseholdDissolution`.
+    var dissolution: HouseholdDissolution {
+        HouseholdDissolution(context: householdContext, publisher: publisher, households: households)
+    }
+
     // MARK: The library, fanned out
 
     /// Reprojects this person's library into every household they are in, whenever their own store changes — so
