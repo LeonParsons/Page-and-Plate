@@ -1,13 +1,123 @@
 {
-  "description": "PlanWeek(containing:) cases. calendar = which weekday starts the week; timeZone defaults to Europe/London. 2026-03-29 and 2026-10-25 are the UK clock changes.",
+  "description": "PlanWeek(containing:) cases. calendar = which weekday starts the week; timeZone defaults to Europe/London. 2026-03-29 and 2026-10-25 are the UK clock changes. `page` steps that many weeks with next()/previous() using the default calendar, which is how the app pages: a week must keep its own start day rather than snapping back to the locale's.",
   "cases": [
-    { "id": 1, "title": "Monday-first, a Monday", "calendar": "monday", "day": "2026-09-21", "start": "2026-09-21", "end": "2026-09-27" },
-    { "id": 2, "title": "Monday-first, a Sunday", "calendar": "monday", "day": "2026-09-27", "start": "2026-09-21", "end": "2026-09-27" },
-    { "id": 3, "title": "Sunday-first, a Wednesday", "calendar": "sunday", "day": "2026-09-23", "start": "2026-09-20", "end": "2026-09-26" },
-    { "id": 4, "title": "Year boundary, Monday-first", "calendar": "monday", "day": "2026-01-01", "start": "2025-12-29", "end": "2026-01-04" },
-    { "id": 5, "title": "Clocks go forward on the last day of the week", "calendar": "monday", "day": "2026-03-29", "start": "2026-03-23", "end": "2026-03-29" },
-    { "id": 6, "title": "Clocks go back on the last day of the week", "calendar": "monday", "day": "2026-10-25", "start": "2026-10-19", "end": "2026-10-25" },
-    { "id": 7, "title": "Week after the clock change", "calendar": "monday", "day": "2026-03-30", "start": "2026-03-30", "end": "2026-04-05" },
-    { "id": 8, "title": "Sunday-first across the clock change", "calendar": "sunday", "timeZone": "America/New_York", "day": "2026-03-10", "start": "2026-03-08", "end": "2026-03-14" }
+    {
+      "id": 1,
+      "title": "Monday-first, a Monday",
+      "calendar": "monday",
+      "day": "2026-09-21",
+      "start": "2026-09-21",
+      "end": "2026-09-27"
+    },
+    {
+      "id": 2,
+      "title": "Monday-first, a Sunday",
+      "calendar": "monday",
+      "day": "2026-09-27",
+      "start": "2026-09-21",
+      "end": "2026-09-27"
+    },
+    {
+      "id": 3,
+      "title": "Sunday-first, a Wednesday",
+      "calendar": "sunday",
+      "day": "2026-09-23",
+      "start": "2026-09-20",
+      "end": "2026-09-26"
+    },
+    {
+      "id": 4,
+      "title": "Year boundary, Monday-first",
+      "calendar": "monday",
+      "day": "2026-01-01",
+      "start": "2025-12-29",
+      "end": "2026-01-04"
+    },
+    {
+      "id": 5,
+      "title": "Clocks go forward on the last day of the week",
+      "calendar": "monday",
+      "day": "2026-03-29",
+      "start": "2026-03-23",
+      "end": "2026-03-29"
+    },
+    {
+      "id": 6,
+      "title": "Clocks go back on the last day of the week",
+      "calendar": "monday",
+      "day": "2026-10-25",
+      "start": "2026-10-19",
+      "end": "2026-10-25"
+    },
+    {
+      "id": 7,
+      "title": "Week after the clock change",
+      "calendar": "monday",
+      "day": "2026-03-30",
+      "start": "2026-03-30",
+      "end": "2026-04-05"
+    },
+    {
+      "id": 8,
+      "title": "Sunday-first across the clock change",
+      "calendar": "sunday",
+      "timeZone": "America/New_York",
+      "day": "2026-03-10",
+      "start": "2026-03-08",
+      "end": "2026-03-14"
+    },
+    {
+      "id": 9,
+      "title": "Sunday-first still starts on Sunday after paging forward",
+      "calendar": "sunday",
+      "day": "2026-09-23",
+      "page": 1,
+      "start": "2026-09-27",
+      "end": "2026-10-03"
+    },
+    {
+      "id": 10,
+      "title": "Sunday-first still starts on Sunday after paging back",
+      "calendar": "sunday",
+      "day": "2026-09-23",
+      "page": -1,
+      "start": "2026-09-13",
+      "end": "2026-09-19"
+    },
+    {
+      "id": 11,
+      "title": "Paging a Sunday-first week across a month boundary",
+      "calendar": "sunday",
+      "day": "2026-09-27",
+      "page": 1,
+      "start": "2026-10-04",
+      "end": "2026-10-10"
+    },
+    {
+      "id": 12,
+      "title": "Paging a Sunday-first week across the UK clock change",
+      "calendar": "sunday",
+      "day": "2026-10-18",
+      "page": 1,
+      "start": "2026-10-25",
+      "end": "2026-10-31"
+    },
+    {
+      "id": 13,
+      "title": "A Wednesday-first week, for a midweek shop",
+      "calendar": "wednesday",
+      "day": "2026-09-25",
+      "start": "2026-09-23",
+      "end": "2026-09-29"
+    },
+    {
+      "id": 14,
+      "title": "A Wednesday-first week keeps its start when paged",
+      "calendar": "wednesday",
+      "day": "2026-09-25",
+      "page": 2,
+      "start": "2026-10-07",
+      "end": "2026-10-13"
+    }
   ]
 }

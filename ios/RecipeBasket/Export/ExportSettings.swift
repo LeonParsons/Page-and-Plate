@@ -10,12 +10,57 @@ final class ExportSettings {
     private static let listKey = "export.defaultListID"
     private static let staplesKey = "export.staples"
     private static let booksKey = "capture.recentBooks"
+    private static let weekStartKey = "plan.weekStartsOn"
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         defaultListID = defaults.string(forKey: Self.listKey)
         staples = Self.normalise(defaults.stringArray(forKey: Self.staplesKey) ?? Staples.defaultNames)
         recentBooks = defaults.stringArray(forKey: Self.booksKey) ?? []
+        // `integer(forKey:)` is 0 when absent, which falls through to the locale's day — so an install that
+        // has never touched this behaves exactly as every build before it did.
+        weekStartsOn = Self.valid(defaults.integer(forKey: Self.weekStartKey))
+    }
+
+    /// Which weekday a plan's week begins on, 1 = Sunday … 7 = Saturday.
+    ///
+    /// **A shopping question, not a calendar one.** Somebody who shops on a Thursday wants a week that runs
+    /// Thursday to Wednesday, so the plan and the trip line up. Defaults to the locale's first day, which is
+    /// what every week was built with before this existed: nothing moves for anyone who does not go looking.
+    ///
+    /// Changing it moves no data and can be changed back at any time — a meal is stored against its own day
+    /// (`PlanDay.isoString`), never against a week, so this only decides which seven days are drawn together.
+    var weekStartsOn: Int {
+        didSet {
+            // Corrected by re-assigning and returning, exactly as `staples` normalises itself — and the guard
+            // is what makes that terminate. `@Observable` rewrites a stored property into a computed one, so
+            // an unconditional write inside its own `didSet` re-enters the setter and recurses until the
+            // stack goes.
+            let valid = Self.valid(weekStartsOn)
+            if valid != weekStartsOn {
+                weekStartsOn = valid
+                return
+            }
+            defaults.set(weekStartsOn, forKey: Self.weekStartKey)
+        }
+    }
+
+    /// The calendar a plan's weeks are built with: this device's, starting where the cook shops.
+    var planCalendar: Calendar {
+        var calendar = Calendar.current
+        calendar.firstWeekday = weekStartsOn
+        return calendar
+    }
+
+    private static func valid(_ weekday: Int) -> Int {
+        (1...7).contains(weekday) ? weekday : Calendar.current.firstWeekday
+    }
+
+    /// "Monday", "Sunday" — in the reader's own language, for the picker.
+    nonisolated static func weekdayName(_ weekday: Int, calendar: Calendar = .current) -> String {
+        let symbols = calendar.standaloneWeekdaySymbols
+        guard (1...symbols.count).contains(weekday) else { return "" }
+        return symbols[weekday - 1]
     }
 
     /// Books the user has keyed on capture, most recent first (the first one pre-fills the next capture).

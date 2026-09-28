@@ -57,6 +57,19 @@ struct SettingsView: View {
                 }
 
                 Section {
+                    Picker("Week starts on", selection: $settings.weekStartsOn) {
+                        // 1 = Sunday … 7 = Saturday, the order `Calendar.standaloneWeekdaySymbols` uses.
+                        ForEach(1...7, id: \.self) { weekday in
+                            Text(ExportSettings.weekdayName(weekday)).tag(weekday)
+                        }
+                    }
+                } header: {
+                    Text("Week")
+                } footer: {
+                    Text("Set this to the day you shop, so the week you plan is the week you buy for. Nothing moves: meals stay on their own days, and you can change it back whenever you like.")
+                }
+
+                Section {
                     LabeledContent("iCloud", value: cloud.statusText)
                 } header: {
                     Text("Sync")

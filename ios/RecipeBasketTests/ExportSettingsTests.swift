@@ -68,4 +68,49 @@ struct ExportSettingsTests {
         #expect(settings.recentBooks.count == 10)
         #expect(ExportSettings(defaults: defaults).lastBook == "Book 12")
     }
+    // MARK: The week the cook shops for
+
+    @Test("Defaults to the locale's first day, so nothing moves for anyone who never looks")
+    func weekStartDefaultsToTheLocale() {
+        let settings = ExportSettings(defaults: makeDefaults())
+        #expect(settings.weekStartsOn == Calendar.current.firstWeekday)
+        #expect(settings.planCalendar.firstWeekday == Calendar.current.firstWeekday)
+    }
+
+    @Test("A chosen day is kept, and builds the calendar the plan's weeks come from")
+    func weekStartIsStored() {
+        let defaults = makeDefaults()
+        let settings = ExportSettings(defaults: defaults)
+        settings.weekStartsOn = 5   // Thursday, for a Thursday shop
+
+        #expect(settings.planCalendar.firstWeekday == 5)
+        #expect(PlanWeek(containing: PlanDay(year: 2026, month: 9, day: 26), calendar: settings.planCalendar).start
+                == PlanDay(year: 2026, month: 9, day: 24))
+        #expect(ExportSettings(defaults: defaults).weekStartsOn == 5)
+    }
+
+    @Test("A weekday outside 1…7 falls back to the locale rather than making an eight-day week")
+    func weekStartIsClamped() {
+        let defaults = makeDefaults()
+        let settings = ExportSettings(defaults: defaults)
+        settings.weekStartsOn = 0
+        #expect(settings.weekStartsOn == Calendar.current.firstWeekday)
+        settings.weekStartsOn = 99
+        #expect(settings.weekStartsOn == Calendar.current.firstWeekday)
+
+        // Including one written straight into defaults by an older or broken build.
+        defaults.set(12, forKey: "plan.weekStartsOn")
+        #expect(ExportSettings(defaults: defaults).weekStartsOn == Calendar.current.firstWeekday)
+    }
+
+    @Test("Every day of the week has a name to show")
+    func weekdaysAreNamed() {
+        for weekday in 1...7 {
+            #expect(!ExportSettings.weekdayName(weekday).isEmpty)
+        }
+        // The picker only ever offers 1…7; anything else says nothing rather than crashing on an index.
+        #expect(ExportSettings.weekdayName(0).isEmpty)
+        #expect(ExportSettings.weekdayName(8).isEmpty)
+    }
+
 }

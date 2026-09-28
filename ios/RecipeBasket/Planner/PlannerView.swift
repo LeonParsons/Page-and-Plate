@@ -18,6 +18,16 @@ struct PlannerView: View {
     @State private var isShowingSettings = false
     @State private var isConfirmingClear = false
 
+    /// Rebuilds the week on the day the cook has chosen to start on.
+    ///
+    /// Needed on appear as well as on change, because `@State`'s initial value cannot read the environment —
+    /// the first week is built with the locale's day and corrected here. Paging keeps it from then on, since
+    /// `PlanWeek` carries its own start day.
+    private func alignWeek() {
+        guard week.firstWeekday != exportSettings.weekStartsOn else { return }
+        week = PlanWeek(containing: week.start, calendar: exportSettings.planCalendar)
+    }
+
     /// The household on display, or nil when this person has no household and is looking at their own
     /// personal week. There is no switcher here: one plan is on display and Settings is where it changes
     /// (Phase 11a). Hosting a household makes it what `.mine` resolves to, so an owner lands here too.
@@ -63,12 +73,13 @@ struct PlannerView: View {
                 }
             }
                 .navigationTitle(navigationTitle)
+                .task(id: exportSettings.weekStartsOn) { alignWeek() }
                 .toolbar {
                     ToolbarItemGroup(placement: .topBarLeading) {
                         Button("Previous week", systemImage: "chevron.left") { week = week.previous() }
                         Button("Next week", systemImage: "chevron.right") { week = week.next() }
                         if !week.contains(PlanDay(.now)) {
-                            Button("Today") { week = PlanWeek(containing: PlanDay(.now)) }
+                            Button("Today") { week = PlanWeek(containing: PlanDay(.now), calendar: exportSettings.planCalendar) }
                         }
                     }
                     if household == nil {

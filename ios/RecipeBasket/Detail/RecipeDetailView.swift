@@ -145,7 +145,7 @@ struct RecipeDetailView: View {
             PageViewerView(pages: pages, initialIndex: selection.index)
         }
         .sheet(isPresented: $isPickingDay) {
-            DayPickerSheet(recipe: recipe)
+            DayPickerSheet(recipe: recipe, calendar: exportSettings.planCalendar)
         }
         .sheet(isPresented: $isEditing) {
             EditRecipeView(recipe: recipe)

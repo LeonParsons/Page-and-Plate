@@ -12,9 +12,12 @@ struct DayPickerSheet: View {
     @State private var errorMessage: String?
     private let weeks: [PlanWeek]
 
-    init(recipe: Recipe) {
+    /// - Parameter calendar: the cook's own week, so "this week and next" here means the same seven days the
+    ///   Plan tab is showing. A `@Query` predicate is fixed at init, so this cannot be read from the
+    ///   environment and the caller passes it in.
+    init(recipe: Recipe, calendar: Calendar = .current) {
         self.recipe = recipe
-        let thisWeek = PlanWeek(containing: PlanDay(.now))
+        let thisWeek = PlanWeek(containing: PlanDay(.now), calendar: calendar)
         weeks = [thisWeek, thisWeek.next()]
         let start = thisWeek.start.isoString
         let end = thisWeek.next().end.isoString

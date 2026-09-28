@@ -351,6 +351,20 @@ section below is what it becomes. Phase 10's design is kept only where it still 
 - **The export stays personal, per member.** Each device keeps its own "added to Reminders" tick on a
   household meal, and it is never projected — one member's shopping marks nobody else's meal (§9, §10).
 
+### The week itself
+
+**The week starts on the day the cook shops** (settled 2026-09-28). A week is seven days from a chosen weekday,
+defaulting to the locale's — Monday in the UK, Sunday in the US — and changed in Settings. Nothing moves when it
+changes: a meal is stored against its own day, never against a week, so the setting decides only which seven
+days are drawn together, and it can be changed back at any time.
+
+`PlanWeek` **carries the weekday it starts on**, so paging with ‹ › keeps it. Without that, `next()` falls back
+to the locale's boundary and the days stop matching the header — and it makes the type honest, since the same
+seven days are a different week depending on where a week is taken to begin.
+
+Two people in a household may set it differently, and that is fine: each sees their own seven-day window over
+the same meals. It is a personal setting and is never shared.
+
 ## 11. Fixtures
 
 **Planning (`fixtures/planning/`, Phase 5–6):** `weeks.json` pins `PlanWeek` boundaries (Monday-first and Sunday-first, a year boundary, the UK clock changes). `week-export/` has one case per file for the merge rule — meals from `fixtures/expected/` (rendang + arrabbiata, the same recipe twice, two curries at different factors) or inline, with the expected ids, titles, notes, contributors and staples, plus `01-….txt` for the share text.
