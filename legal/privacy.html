@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Page &amp; Plate — Privacy Policy</title>
+<style>
+/* Page & Plate's own palette, so the legal pages read as part of the app rather than as a stock template. */
+:root {
+  --paper: #FAF7F0;
+  --ink: #23201B;
+  --ink-secondary: #5C554A;
+  --tomato: #B23A1B;
+  --rule: #E4DDD0;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #1A1713;
+    --ink: #F2EDE4;
+    --ink-secondary: #A79E90;
+    --tomato: #F2775A;
+    --rule: #332E27;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  padding: 0 16px 64px;
+  background: var(--paper);
+  color: var(--ink);
+  font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-text-size-adjust: 100%;
+}
+main { max-width: 42rem; margin: 0 auto; }
+header { padding: 48px 0 24px; border-bottom: 1px solid var(--rule); margin-bottom: 32px; }
+h1 { font-size: 2rem; line-height: 1.2; margin: 0 0 8px; }
+h2 { font-size: 1.25rem; margin: 40px 0 8px; }
+h3 { font-size: 1rem; margin: 24px 0 4px; }
+p, li { color: var(--ink); }
+.lede, .updated, footer { color: var(--ink-secondary); }
+.updated { font-size: 0.9rem; margin: 0; }
+a { color: var(--tomato); }
+ul { padding-left: 1.25rem; }
+li { margin: 6px 0; }
+strong { font-weight: 600; }
+footer { margin-top: 56px; padding-top: 24px; border-top: 1px solid var(--rule); font-size: 0.9rem; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Privacy Policy</h1>
+    <p class="updated">Page &amp; Plate · Last updated 28 September 2026</p>
+  </header>
+
+  <p>Page &amp; Plate has no accounts and no sign-in. We do not know who you are, and there is nothing to log
+  into. This page describes exactly what happens to what you put into the app.</p>
+
+  <h2>What stays on your device</h2>
+
+  <p>Your recipes, your photographs of cookbook pages, your week's plan and your settings are stored on your
+  device and, if you have iCloud turned on, in <strong>your own private iCloud database</strong> — the same
+  place your other apps' iCloud data lives. That is Apple's storage, tied to your Apple Account, and we have no
+  access to it. It is not on our servers and we cannot read it, recover it, or hand it to anyone.</p>
+
+  <p>Deleting the app removes the copy on that device. Your iCloud copy stays until you delete it in iOS
+  Settings, and comes back if you reinstall.</p>
+
+  <h2>What leaves your device, and why</h2>
+
+  <h3>Reading a cookbook page</h3>
+
+  <p>When you photograph a page and ask the app to read it, that image is sent to our server and passed to
+  <strong>Anthropic's API</strong>, which reads the ingredients and returns them as text. This is the only time
+  a photograph of yours leaves your device, and it only happens when you ask for it.</p>
+
+  <ul>
+    <li>We do not store the image. It exists for the length of that one request and is then gone.</li>
+    <li>We do not store the ingredients that come back. They are returned to your device and saved there.</li>
+    <li>We never log the image or the text extracted from it.</li>
+    <li>A recipe you <strong>type in yourself</strong> never leaves your device at all — nothing is sent, because
+      there is nothing to read.</li>
+  </ul>
+
+  <h3>What our server records</h3>
+
+  <p>For each request our server writes one line to its log containing: the first eight characters of a
+  randomly generated device identifier, how many images were in the request, how long it took, whether it
+  succeeded, and how much of the allowance has been used. No image, no recipe, no ingredient, no title, and
+  nothing that names you.</p>
+
+  <p>To count your free scans and the weekly allowance, our server keeps a small counter. It is stored against
+  either a random identifier the app generates, or — on devices that support it — an anonymous key produced by
+  Apple's App Attest, which confirms a request came from a genuine, unmodified copy of the app. Neither is
+  linked to your name, your Apple Account or your email, and neither can be used to identify you.</p>
+
+  <h3>Subscriptions</h3>
+
+  <p>If you subscribe, Apple gives the app a signed receipt for that purchase. The app sends it to our server so
+  we can check the subscription is real before allowing unlimited scanning. We do not receive your name, your
+  email address or your payment details — Apple does not give them to us, and we do not want them. Payment is
+  handled entirely by Apple.</p>
+
+  <h2>Sharing a plan with your household</h2>
+
+  <p>If you share your plan, that sharing runs through <strong>Apple's CloudKit</strong>, using your Apple
+  Account and the Apple Accounts of the people you invite. It does not pass through our servers and we hold no
+  copy of it.</p>
+
+  <p>The people you share with can see:</p>
+  <ul>
+    <li>The week's plan — what is on which day, the portions, and any note left on a meal</li>
+    <li>Your recipes' titles, source, ingredients and a small thumbnail</li>
+    <li>The name you have chosen to be known by in that household</li>
+  </ul>
+
+  <p>They <strong>cannot</strong> see your photographs of cookbook pages. Those are never shared, with anyone,
+  under any circumstances. They also cannot see recipes you have not put into a household, your other
+  households, or anything in your own plan outside that household.</p>
+
+  <p>A recipe belongs to whoever scanned or typed it. If you leave a household, or are removed from one, your
+  recipes leave with you and the others lose access to them. If the person who runs a household stops sharing
+  it — by choice, or because their subscription ends — everyone else loses access to that plan, and is told only
+  that it is no longer shared. Nobody is told why.</p>
+
+  <p>The name you type for yourself is visible to the people in your households and to nobody else. It is not
+  verified, and you can change or remove it at any time in Settings.</p>
+
+  <h2>Reminders</h2>
+
+  <p>When you send a shopping list to Apple Reminders, the app asks your permission first and then
+  <strong>only adds</strong> reminders. It never reads, changes or deletes reminders that are already there.
+  Your reminders stay on your device and in your iCloud; we never see them.</p>
+
+  <h2>What we do not do</h2>
+
+  <ul>
+    <li>No advertising, no advertising identifiers, no ad networks.</li>
+    <li>No analytics or tracking SDKs. Nothing follows you between apps or websites.</li>
+    <li>We do not sell, rent or share your information with anyone, because we do not have it.</li>
+    <li>We do not build a profile of you, and we could not — there is no account to attach one to.</li>
+  </ul>
+
+  <h2>Children</h2>
+
+  <p>Page &amp; Plate is not aimed at children and collects nothing that would identify one. Anybody may be
+  invited into a household by the person who runs it, and a household is visible only to the people in it.</p>
+
+  <h2>Your rights</h2>
+
+  <p>Under UK and EU data protection law you have the right to ask what personal data is held about you, and to
+  have it corrected or erased. In practice we hold almost nothing: an anonymous scan counter with no name
+  attached to it, and server logs that contain no personal data. If you would like the counter associated with
+  your device removed, write to us and we will delete it.</p>
+
+  <p>Everything else is in your own iCloud, where you control it directly: delete a recipe in the app, or turn
+  iCloud off for Page &amp; Plate in iOS Settings.</p>
+
+  <h2>Changes</h2>
+
+  <p>If this policy changes in a way that affects what happens to your information, the date at the top will
+  change and the new version will be published here before it takes effect.</p>
+
+  <h2>Contact</h2>
+
+  <p>Questions about this policy, or a request about your data: <a href="mailto:CONTACT@EXAMPLE.COM">CONTACT@EXAMPLE.COM</a>.</p>
+
+  <footer>Page &amp; Plate is made by Leon Parsons. · <a href="terms.html">Terms of Service</a></footer>
+</main>
+</body>
+</html>

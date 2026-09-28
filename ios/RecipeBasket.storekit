@@ -21,8 +21,7 @@
     "_billingGracePeriodEnabled" : true,
     "_billingIssuesEnabled" : false,
     "_compatibilityTimeRate" : {
-      "3" : 6,
-      "5" : 1004
+      "3" : 6
     },
     "_disableDialogs" : true,
     "_failTransactionsEnabled" : false,
@@ -67,7 +66,7 @@
         "name" : "Offer Code Redeem Sheet"
       }
     ],
-    "_timeRate" : 1005
+    "_timeRate" : 1004
   },
   "subscriptionGroups" : [
     {

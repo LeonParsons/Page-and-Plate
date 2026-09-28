@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Page &amp; Plate — Legal</title>
+<style>
+/* Page & Plate's own palette, so the legal pages read as part of the app rather than as a stock template. */
+:root {
+  --paper: #FAF7F0;
+  --ink: #23201B;
+  --ink-secondary: #5C554A;
+  --tomato: #B23A1B;
+  --rule: #E4DDD0;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #1A1713;
+    --ink: #F2EDE4;
+    --ink-secondary: #A79E90;
+    --tomato: #F2775A;
+    --rule: #332E27;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  padding: 0 16px 64px;
+  background: var(--paper);
+  color: var(--ink);
+  font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-text-size-adjust: 100%;
+}
+main { max-width: 42rem; margin: 0 auto; }
+header { padding: 48px 0 24px; border-bottom: 1px solid var(--rule); margin-bottom: 32px; }
+h1 { font-size: 2rem; line-height: 1.2; margin: 0 0 8px; }
+h2 { font-size: 1.25rem; margin: 40px 0 8px; }
+h3 { font-size: 1rem; margin: 24px 0 4px; }
+p, li { color: var(--ink); }
+.lede, .updated, footer { color: var(--ink-secondary); }
+.updated { font-size: 0.9rem; margin: 0; }
+a { color: var(--tomato); }
+ul { padding-left: 1.25rem; }
+li { margin: 6px 0; }
+strong { font-weight: 600; }
+footer { margin-top: 56px; padding-top: 24px; border-top: 1px solid var(--rule); font-size: 0.9rem; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Page &amp; Plate</h1>
+    <p class="lede">Cook from the books you own.</p>
+  </header>
+  <ul>
+    <li><a href="privacy.html">Privacy Policy</a></li>
+    <li><a href="terms.html">Terms of Service</a></li>
+  </ul>
+  <footer>Page &amp; Plate is made by Leon Parsons.</footer>
+</main>
+</body>
+</html>
