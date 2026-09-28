@@ -29,7 +29,7 @@ final class SharedWeekClient: NSObject {
     init(
         containerID: String = AppModelContainer.cloudKitContainerID,
         households: Households = .shared,
-        members: HouseholdMembers = HouseholdMembers()
+        members: HouseholdMembers = .shared
     ) {
         self.containerID = containerID
         self.households = households
@@ -81,17 +81,36 @@ final class SharedWeekClient: NSObject {
     /// to a member — and CloudKit withholds a participant's name until they have accepted, and sometimes for
     /// longer, so one read at the moment the invite was accepted is not enough. Reading on every start is what
     /// makes the name turn up eventually rather than never.
-    private func refreshMembers() async {
+    func refreshMembers() async {
         for household in households.joined {
-            do {
-                let zone = try await container.sharedCloudDatabase.recordZone(for: household.zoneID)
-                guard let reference = zone.share,
-                      let share = try await container.sharedCloudDatabase.record(for: reference.recordID) as? CKShare
-                else { continue }
-                members.record(share)
-            } catch {
-                log.warning("could not read a household's share: \(error.localizedDescription, privacy: .public)")
+            guard let share = await share(for: household) else {
+                log.warning("no share found for a joined household, so nobody in it can be named")
+                continue
             }
+            members.record(share)
+        }
+    }
+
+    /// A joined household's `CKShare`.
+    ///
+    /// **By its well-known record name first.** A zone-wide share always lives at `CKRecordNameZoneWideShare`
+    /// in its zone, so the record id can be built without asking anything — which is the documented route and
+    /// does not depend on `recordZone(for:)` returning a populated `share` reference from the *shared*
+    /// database. Reading it through the zone was why the owner's name never appeared under a household.
+    private func share(for household: Household) async -> CKShare? {
+        let wellKnown = CKRecord.ID(recordName: CKRecordNameZoneWideShare, zoneID: household.zoneID)
+        if let share = try? await container.sharedCloudDatabase.record(for: wellKnown) as? CKShare {
+            return share
+        }
+        // A share on a record hierarchy rather than the whole zone: not what this app creates, but a household
+        // joined from an older build could be one, and the zone still points at it.
+        do {
+            let zone = try await container.sharedCloudDatabase.recordZone(for: household.zoneID)
+            guard let reference = zone.share else { return nil }
+            return try await container.sharedCloudDatabase.record(for: reference.recordID) as? CKShare
+        } catch {
+            log.warning("could not read a household's share: \(error.localizedDescription, privacy: .public)")
+            return nil
         }
     }
 

@@ -61,7 +61,7 @@ final class SharedPlanContext {
         publisher: SharedWeekPublisher,
         households: Households = .shared,
         author: HouseholdAuthor = HouseholdAuthor(),
-        members: HouseholdMembers = HouseholdMembers()
+        members: HouseholdMembers = .shared
     ) -> SharedPlanContext? {
         do {
             let container = try SharedStore.make()

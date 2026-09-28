@@ -15,6 +15,12 @@ import Observation
 @Observable
 @MainActor
 final class HouseholdMembers {
+    /// One instance, for the same reason `Households` has one: the scene delegate that handles an accepted
+    /// invite is built by UIKit and cannot be handed dependencies — and a second instance would hold its own
+    /// stale copy of the names in memory, so a name recorded at acceptance would not reach the screen until
+    /// the next launch.
+    static let shared = HouseholdMembers()
+
     private static let key = "household.memberNames"
     private static let fullKey = "household.memberFullNames"
 
@@ -36,7 +42,9 @@ final class HouseholdMembers {
     func record(_ share: CKShare) {
         var short = names
         var full = fullNames
-        for participant in share.participants {
+        // The owner explicitly as well as the participant list: the owner is who identifies a household to
+        // everyone in it, and it is the one name that must not depend on how a given share reports itself.
+        for participant in [share.owner] + share.participants {
             guard let id = participant.userIdentity.userRecordID?.recordName,
                   let components = participant.userIdentity.nameComponents
             else { continue }

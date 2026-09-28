@@ -186,6 +186,9 @@ struct SharePlanSection: View {
 
     /// Fetches the existing share quietly, so the section can say who is in and what each of them brought.
     private func refreshShare() async {
+        // Re-read the joined households' shares too: this is the screen that names their owners, and a name
+        // CloudKit withheld earlier may be available now.
+        await plan.client.refreshMembers()
         share = try? await publisher.existingShare()
         guard let household = households.hosted, let share else { return contributions = [:] }
         // The participants' names, so the owner's own week can say which recipes came from whom.
