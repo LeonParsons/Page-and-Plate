@@ -868,8 +868,14 @@ The paywall's body is now one sentence: *"A subscription covers everything you n
 dinner each week, and you can cancel any time."* The trial is not mentioned — this screen is for somebody
 deciding whether to pay, and their remaining free scans are counted on the screen they came from.
 
-**Prices confirmed:** £1.99 monthly, £14.99 yearly, matching `RecipeBasket.storekit`, whose test storefront is
-now GBR so a local run shows the prices that will actually be charged.
+**Prices confirmed:** £1.99 monthly, **£19.99** yearly, matching `RecipeBasket.storekit`, whose test storefront
+is now GBR so a local run shows the prices that will actually be charged.
+
+*Corrected 2026-09-29.* This entry said £14.99 yearly and claimed it matched `RecipeBasket.storekit`, which has
+said `19.99` throughout — so the sentence asserting agreement was the thing that was wrong, and it had been
+copied on into `APPSTORE.md`, `SPEC.md` and the published terms page. The prose was never checked against the
+file it cited. `appstore-counts.py` reads the listing table now but does not read the StoreKit config, so
+nothing would have caught this.
 
 **And `docs/appstore-counts.py` was checking strings that were not in the listing.** The in-app purchase fields
 were hardcoded in the script and had drifted from the table in `APPSTORE.md`, so it reported "ok" for copy that

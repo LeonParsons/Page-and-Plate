@@ -431,4 +431,4 @@ Each case: ingredient + base yield + target yield → expected line text.
 2. Should recipes sync between iPhone and iPad from day one, or is that "Later"?
 3. Should method text be stored in future? (Affects the data model and the copyright position of keeping book content.)
 4. Should the week export offer "since last shop" (only meals not yet exported) once the weekly rhythm settles?
-5. Unlimited prices (placeholders in `RecipeBasket.storekit`: £1.99 / month, £14.99 / year) and the terms and privacy URLs (`Legal` in `Subscription/Products.swift` points at example.com until real pages exist).
+5. ~~Prices and the terms and privacy URLs.~~ Settled: £1.99 / month and £19.99 / year, in `RecipeBasket.storekit` and to be created in App Store Connect; `Legal` in `Subscription/Products.swift` points at the real pages in `legal/`, served by GitHub Pages.

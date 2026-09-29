@@ -116,7 +116,7 @@ Both sit in the subscription group **Page & Plate**.
 | Product | Display name (30) | Description (45) | UK price |
 |---|---|---|---|
 | `com.leonparsons.RecipeBasket.unlimited.monthly` | `Monthly` | `Scan and share a plan, billed monthly` | £1.99 |
-| `com.leonparsons.RecipeBasket.unlimited.yearly` | `Yearly` | `Scan and share a plan, billed yearly` | £14.99 |
+| `com.leonparsons.RecipeBasket.unlimited.yearly` | `Yearly` | `Scan and share a plan, billed yearly` | £19.99 |
 
 Prices confirmed 2026-09-28 and matching `ios/RecipeBasket.storekit`.
 
