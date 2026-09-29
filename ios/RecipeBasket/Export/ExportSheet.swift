@@ -248,11 +248,16 @@ struct ReminderListPicker: View {
                                     Text(list.title).foregroundStyle(list.allowsModifications ? .primary : .secondary)
                                     Spacer()
                                     if model.selectedList?.id == list.id {
-                                        Image(systemName: "checkmark").foregroundStyle(Color.accentColor)
+                                        Image(systemName: "checkmark")
+                                            .foregroundStyle(Color.accentColor)
+                                            // The tick is the row's selected trait, below. Left to speak for
+                                            // itself it is silent, and every list reads alike.
+                                            .accessibilityHidden(true)
                                     }
                                 }
                             }
                             .disabled(!list.allowsModifications)
+                            .accessibilityAddTraits(model.selectedList?.id == list.id ? [.isSelected] : [])
                         }
                     }
                 }

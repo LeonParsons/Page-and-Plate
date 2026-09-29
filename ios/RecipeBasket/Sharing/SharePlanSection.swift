@@ -130,7 +130,9 @@ struct SharePlanSection: View {
                 if isCurrent {
                     Image(systemName: "checkmark")
                         .foregroundStyle(Brand.tomato)
-                        .accessibilityLabel("Showing")
+                        // The row's `.isSelected` says this, and is what Voice Control and Full Keyboard
+                        // Access act on. Labelled as well, it read "Showing, Selected".
+                        .accessibilityHidden(true)
                 }
             }
         }
@@ -295,12 +297,15 @@ struct SharePlanSection: View {
             // Bound first: inside an optional chain, `.flatMap` would be `String`'s own and iterate characters.
             let id = participant.userIdentity.userRecordID?.recordName
             let contribution = id.flatMap { contributions[$0] }
+            // Combined, so a member reads as "Sara, 3 recipes, 2 in your plan" rather than two stops —
+            // which is what every other composite row in the app does.
             VStack(alignment: .leading, spacing: 2) {
                 Text(name(of: participant))
                 Text(contribution.map { $0.isEmpty ? "No recipes yet" : $0.summary } ?? "No recipes yet")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+            .accessibilityElement(children: .combine)
         }
     }
 

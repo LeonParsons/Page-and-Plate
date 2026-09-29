@@ -134,11 +134,17 @@ struct RecipeFormView: View {
             VStack(spacing: 12) {
                 ForEach(Array(draft.pages.enumerated()), id: \.element.id) { index, page in
                     if let image = UIImage(data: page.jpegData) {
-                        Image(uiImage: image)
-                            .resizable()
-                            .scaledToFit()
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                            .onTapGesture { viewingPage = .init(index: index) }
+                        // A Button, not `.onTapGesture`: a tap gesture is invisible to VoiceOver and Voice
+                        // Control, so the page could be seen and never opened. `PageThumbnailStrip` — the
+                        // compact-width path to the same viewer — has always done it this way.
+                        Button { viewingPage = .init(index: index) } label: {
+                            Image(uiImage: image)
+                                .resizable()
+                                .scaledToFit()
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Page \(index + 1) photo")
                     }
                 }
             }

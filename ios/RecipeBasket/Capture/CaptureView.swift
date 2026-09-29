@@ -191,6 +191,12 @@ private struct PageRow: View {
 }
 
 /// Decodes a page JPEG for display at thumbnail size.
+///
+/// **Decorative, everywhere it is used.** The title beside it says what the recipe is, and a photograph of a
+/// cookbook page has nothing useful to announce — so it is hidden here rather than at each of the seven call
+/// sites, two of which used to disagree. Where the thumbnail is the only content it is the *container* that
+/// carries the label: `PageThumbnailStrip` and `HomeView` both wrap it in a labelled Button, which a hidden
+/// child does not affect.
 struct PageThumbnail: View {
     let data: Data
 
@@ -205,5 +211,6 @@ struct PageThumbnail: View {
             }
         }
         .clipShape(RoundedRectangle(cornerRadius: 6))
+        .accessibilityHidden(true)
     }
 }

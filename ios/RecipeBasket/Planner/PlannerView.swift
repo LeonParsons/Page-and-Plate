@@ -316,8 +316,7 @@ struct PlannedMealRow: View {
         }
     }
 
-    /// Decorative: the title beside it says what the meal is, and a photo of a cookbook page has nothing
-    /// useful to announce.
+    /// Decorative — `PageThumbnail` hides itself, and the placeholder has nothing to announce either.
     @ViewBuilder private var thumbnail: some View {
         Group {
             if let image = data.thumbnail {
@@ -328,7 +327,6 @@ struct PlannedMealRow: View {
             }
         }
         .frame(width: 44, height: 56)
-        .accessibilityHidden(true)
     }
 
     /// Combined, so it reads as "Chickpea arrabbiata, rated 4 of 5, LEON Happy Curries, p. 110" rather than
