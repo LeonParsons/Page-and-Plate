@@ -955,3 +955,40 @@ and the "page photos are never shared" line, and Staples loses the exact-match r
 lives in the App Store description and the privacy policy, which is where someone deciding goes; a Settings
 footer is read by someone who has already decided. The recipes list is now titled **My recipes**, which the
 household made meaningful — it queries the device owner's own library, never the household's catalogue.
+
+### 2026-09-29 · The listing copy, the nomination, and nine reshot frames
+
+**The description told people to photograph the ingredient list**, which the app stopped saying earlier the
+same day. It now opens "Photograph the page." — four characters shorter than the sentence it replaces, so the
+count check was never in danger. The featuring nomination said "Point it at the ingredient list on the page"
+and has been rewritten from scratch for a different reason.
+
+**The featuring nomination could not have been submitted.** Checked against Apple's own documentation
+(rule 10, and this is exactly the case it exists for): the form is a **60-character name, a 1,000-character
+description and a 500-character "Helpful Details" box**, plus structured fields for dates, platforms, regions,
+localizations and up to five supplemental URLs. This section held three long essays under headings Apple does
+not have — about **3,150 characters for fields that take 1,500**. It is now three fields that fit, with the
+structured ones tabulated, and `appstore-counts.py` counts them: `fields()` splits on `##` **and** `###`, so
+the nomination is checked like every other length-limited field. Nothing counted them before, which is why the
+drift was invisible.
+
+Apple also documents a **minimum three-week lead time** and asks for plans as early as possible. This section
+claimed "minimum two weeks" and "eight to twelve weeks out"; the second figure is nowhere in Apple's
+documentation and is not repeated.
+
+**All nine screenshots reshot** (iPhone 17 Pro Max, iPad Pro 13-inch M5). Frame 1 was already known to be stale
+— "17 of 20 free scans left" from the pre-2026-09-23 limits — and the capture help text reversed today made it
+wrong twice over. Three frames were *recomposed* rather than refreshed, because the old captures showed the top
+of a screen while the claim was proved further down: the extraction frame now shows the extracted rows
+(`1 tin (400 g)`, `1½ tsp`, `Feta — 200 g` read off `200g/7oz`), the scaling frame shows `¼ tin (400 g)` under
+the ×¼, and the shopping frames show the real merges (`Butter beans — 5 tins (400 g)`, `Garlic — 9½–11 cloves`,
+olive oil marked `staple` and unticked). A screenshot that asserts its headline is weaker than one that
+demonstrates it, and this set had been assembled the first way.
+
+**There is still no household frame, and the listing leads with the household.** A simulator cannot produce
+one: hosting needs an iCloud account and a subscription, and the Simulator has neither, so this is now a
+release-checklist item rather than something that can be done here.
+
+**The iPad library was seeded by copying the app's data container** rather than scanning three pages again —
+faster, free, and it guarantees the two devices show the same week. Written down in `marketing/README.md`,
+because the obvious alternative costs scans and real money each time.

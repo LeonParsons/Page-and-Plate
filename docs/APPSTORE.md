@@ -60,7 +60,7 @@ recipe,ingredients,grocery,shopping,meal,planner,portions,servings,family,househ
 ```
 You already own the cookbooks. Page & Plate is for cooking from them.
 
-Photograph the ingredient list on the page. The app reads it — quantities, units, tins, ranges, "serves 4" — and shows you what it found so you can correct anything before it is saved. The method stays in the book, where it belongs; Page & Plate notes the book and page so you can find your way back.
+Photograph the page. The app reads it — quantities, units, tins, ranges, "serves 4" — and shows you what it found so you can correct anything before it is saved. The method stays in the book, where it belongs; Page & Plate notes the book and page so you can find your way back.
 
 SCALED PROPERLY
 
@@ -127,49 +127,75 @@ the existing StoreKit configuration.
 
 ## Featuring nomination
 
-Submitted in App Store Connect under **App Launch**. Minimum two weeks' lead, but the editorial team plans
-collections eight to twelve weeks out, so submit **about three months before the target date**. Needs an
-Account Holder, Admin, App Manager or Marketing role.
+Submitted in App Store Connect under nomination type **App Launch**. Needs an Account Holder, Admin, App
+Manager or Marketing role.
 
-### What's launching
+**Checked against Apple's own documentation 2026-09-29, and the shape of this section changed as a result.**
+It previously held three long essays under invented headings; the real form is a 60-character name, a
+1,000-character description and a 500-character "Helpful Details" box, plus structured fields. The old copy
+ran to about 3,150 characters across fields that take 1,500, so it could not have been pasted in. Apple
+documents a **minimum lead time of three weeks** and asks for plans "as early as possible"; the "eight to
+twelve weeks" figure this section used to quote is not in Apple's documentation and is not repeated here.
+`python3 docs/appstore-counts.py` now counts these three fields too.
+
+### Nomination name — 60 max
+
+Only to recognise the nomination later; Apple's editorial team does not read it as a pitch.
+
+```
+Page & Plate 1.0 launch — cookbook scanning
+```
+
+### Nomination description — 1000 max
+
+The pitch. Leads with what the app does in one line, because an editor reads a great many of these.
 
 ```
 Page & Plate turns a photographed cookbook page into a scaled ingredient list and a week's shopping.
 
-Point it at the ingredient list on the page. It reads the quantities, units, tin sizes, ranges and the stated yield, and hands them back for a quick check before saving. Set the portions you actually want and every quantity follows — and it follows the way a cook thinks rather than the way a calculator does. A quarter of a 400g tin is shown as a quarter of a tin, because that is what you do in the kitchen. Half a teaspoon is half a teaspoon. Nothing is silently converted into units the book did not use.
+Photograph the page. It reads the quantities, units, tin sizes, ranges and the stated yield, and hands them back to check before saving. Set the portions you want and every quantity follows — rounded the way a cook rounds, not the way a calculator does. A quarter of a 400g tin stays a quarter of a tin. Half a teaspoon stays half a teaspoon. Nothing is converted into units the book never used.
 
-From there, recipes go onto the days of a week, each meal at its own number of portions, and the whole week exports to Apple Reminders as one shopping list. Lines are only combined when they genuinely match — same ingredient, same unit, same package size — because a wrong merge sends you home without an onion.
+Recipes go onto the days of a week, each meal at its own portions, and the whole week exports to Apple Reminders as one shopping list. Lines are combined only when they genuinely match — same ingredient, same unit, same tin size — because a wrong merge sends you home without an onion.
+
+A household shares one week and cooks from each other's books, carried over the members' own iCloud accounts. No accounts of ours, no sign-in, no library of other people's recipes.
 ```
 
-### Why it is worth a look
+### Helpful details — 500 max
+
+Apple asks here for what makes the app stand out: the unique approach, or what went on behind it.
 
 ```
-It is built around one deliberate constraint: the model reads the page, and never does arithmetic. Every scaling, rounding and formatting decision happens in tested code, pinned to a suite of hand-checked fixtures. That is an unusual line to draw in an app that leans on a model, and it is the reason the numbers can be trusted — the interesting failure mode in this category is not a misread word, it is a confidently wrong quantity.
+One constraint shapes the whole app: the model reads the page and never does arithmetic. Every scaling, rounding and formatting decision happens in tested code, pinned to hand-checked fixtures. That is an unusual line to draw in an app built on a model, and it is why the numbers can be trusted — the interesting failure is not a misread word, it is a confidently wrong quantity.
 
-The design is drawn rather than assembled: a paper-and-ink palette, a serif display face, and a mark of a plate holding an open book, drawn in code so it stays sharp at every size. It is an app about printed books and it is meant to feel like one.
-
-It is also deliberately small. No account, no sign-in, no library of other people's recipes to scroll. Your photographs and your recipes stay on your device, and the app never reads or changes the reminders you already have — it only adds to them.
+Built by one person for his own kitchen. The mark, a plate holding an open book, is drawn in code.
 ```
 
-### The story
+### The structured fields
 
-```
-I built this for my own kitchen. I cook from books rather than from the internet, and almost every Sunday I was doing the same tedious thing: working out what two thirds of a recipe for four looks like, writing the answers in the margin, and then copying a shopping list out by hand for whatever I had planned that week. The maths is not hard, it is just relentless, and it is exactly the kind of work a phone should absorb.
-
-What I did not want was another app that wants my recipes. The books are the point. The app's job is to get out of the way between the page and the shop.
-```
+| Field | Value |
+|---|---|
+| Nomination type | App Launch (cannot be edited after submission) |
+| Related apps | Page & Plate's Apple ID, from App Store Connect |
+| Platforms | iOS (iPhone), iOS (iPad) |
+| Publish date | The release date, at least three weeks out |
+| Relevant countries or regions | GBR at minimum — widen it if the release does |
+| Localization | en-GB |
+| Launching in certain markets first? | Answer honestly; a UK-only start is a "Yes" |
+| New In-App Event? | No |
+| Pre-order? | No |
+| Supplemental materials | https://leonparsons.github.io/Page-and-Plate/ (up to 5 URLs) |
 
 ### Accessibility — verify before claiming
 
-Do not paste this section until it is checked on a device. What is true today:
+Do not add accessibility to **Helpful details** until it is checked on a device. What is true today:
 
 - All text uses Dynamic Type; the display face scales with it via `relativeTo:`.
 - Every brand colour was chosen against measured contrast ratios rather than by eye — body and accent text
   clear 4.5:1 in both light and dark. The previous accent failed at 3.2:1, which is what prompted the change.
 - Controls are standard SwiftUI, so VoiceOver and Voice Control get the system behaviour.
+- Large type was walked on a real iPad at the largest accessibility size (2026-09-23) and nothing broke.
 
-**Not yet verified:** a real VoiceOver pass, and layout at the largest accessibility text sizes. Claim neither
-until you have sat with the phone and checked.
+**Not yet verified:** a deliberate VoiceOver session. Claim it to Apple only after sitting with the phone.
 
 ---
 
@@ -190,7 +216,12 @@ until you have sat with the phone and checked.
    Pushed and Pages turned on 2026-09-28; all three URLs verified returning 200 the same day.
    **One thing left:** `legal/index.html` links to both pages but carries no contact route of its own, and it
    is also the **Support URL**. A reviewer landing there should see the email without clicking through.
-5. ~~Screenshots.~~ Nine frames shot 2026-09-23; see `marketing/README.md` for what is still weak.
+5. ~~Screenshots.~~ Nine frames, **reshot 2026-09-29** against the current copy and the current limits — the
+   2026-09-23 set showed "17 of 20 free scans left" and the capture help text that was reversed the same day.
+   Three of them now prove their headline in the picture rather than near it. See `marketing/README.md`.
+   **Still missing: a household frame**, which the listing now leads with. It cannot be shot on a simulator —
+   hosting needs an iCloud account and a subscription — so it has to come from a device already in a
+   household, alongside item 10's review notes.
 6. ~~A large-type pass.~~ Done 2026-09-23: Leon walked the recipe screen, export sheet, Settings, Review
    and the paywall on an iPad at the largest accessibility text size, and nothing broke. Code-side fixes
    landed the same day (see `docs/DECISIONS.md`).

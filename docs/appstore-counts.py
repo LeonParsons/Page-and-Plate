@@ -21,6 +21,11 @@ LIMITS = {
     "Keywords": 100,
     "Description": 4000,
     "What's New": 4000,
+    # The featuring nomination's own fields, which are `###` headings under "## Featuring nomination".
+    # Apple's limits, from the nominations template (checked 2026-09-29).
+    "Nomination name": 60,
+    "Nomination description": 1000,
+    "Helpful details": 500,
 }
 
 # The in-app purchase table's columns, by header, -> limit. **Read from the document**, not copied here: these
@@ -34,8 +39,13 @@ IAP_COLUMNS = {
 
 
 def fields(text):
-    """Yield (heading, first fenced block) for each '## Heading — N max' section."""
-    sections = re.split(r"^## ", text, flags=re.MULTILINE)[1:]
+    """Yield (heading, first fenced block) for each '## Heading — N max' section.
+
+    Third-level headings count too: the nomination's fields sit under "## Featuring nomination", and its
+    description used to be three essays totalling roughly twice what Apple's form accepts — unnoticed because
+    nothing counted it.
+    """
+    sections = re.split(r"^#{2,3} ", text, flags=re.MULTILINE)[1:]
     for section in sections:
         heading = section.split("\n", 1)[0]
         name = heading.split(" — ")[0].strip()

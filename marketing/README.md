@@ -39,11 +39,45 @@ python3 marketing/tools/makeipad.py      # iPad
 Captures come from `xcrun simctl io <device> screenshot`, which writes at native resolution — that is what
 guarantees Apple's accepted dimensions rather than resizing afterwards.
 
+All nine were **reshot 2026-09-29**, on the iPhone 17 Pro Max and iPad Pro 13-inch (M5) simulators, against
+the copy as it stands today. The previous set was shot 2026-09-23 and had gone stale in two ways: frame 1 read
+"17 of 20 free scans left" from the pre-2026-09-23 limits, and it carried the capture help text that was
+reversed on 2026-09-29 (see `docs/DECISIONS.md`).
+
+**Three frames got better content rather than just a refresh**, because the old captures showed the top of a
+screen where the claim is proved further down:
+
+- **Frame 2 ("It reads the list for you")** now shows the extracted ingredient rows themselves — `1 tin
+  (400 g)`, `1½ tsp`, and `Feta — 200 g` read off `200g/7oz`, each with the printed line beneath it.
+- **Frame 3 ("a quarter tin stays a quarter tin")** now has `Chopped tomatoes — ¼ tin (400 g)` and
+  `Olive oil — 2 tbsp · doesn't scale` in shot, under the ×¼ scaling.
+- **Frame 5 / iPad 3 ("one shop")** show the real merges: `Butter beans — 5 tins (400 g)` across two recipes,
+  `Garlic — 9½–11 cloves` across three, and olive oil marked `staple` and unticked.
+
+The week is Monday 4 portions, Wednesday 2, Thursday 6, so "each meal at its own portions" is visible rather
+than asserted.
+
 ## Before these go to App Store Connect
 
-1. **The free-scan count.** Frame 1 reads "17 of 20 free scans left", from the limits as they were before
-   2026-09-23. The trial is now 7 for the life of the device (`ScanAllowance.trialScans`), so the frame has to
-   be reshot — and a build with scans already spent will say "No free scans left" instead, which is a weaker
-   frame. Shoot it on a device with 2 or 3 scans used.
-2. The iPad export sheet sits as a small form sheet over the plan and does not use the width well. It is
-   honest, but it is the weakest of the nine.
+1. **There is still no household frame**, and the listing now leads with the household. A simulator cannot
+   produce one: hosting needs an iCloud account and a subscription, and the Simulator has neither. This one
+   has to be shot on a device that is already in a household — see `docs/APPSTORE.md`.
+2. The iPad export sheet sits as a form sheet over the plan and does not use the width well. It is honest,
+   and it does at least show the week behind the list, but it is the weakest of the nine.
+
+## Reshooting
+
+The three cookbook pages go into the simulator's photo library first (`html2png.swift`, then
+`simctl addmedia`). To put the same library on the iPad without scanning it again — which costs scans and
+real money — copy the app's data container across rather than repeating the flow by hand:
+
+```bash
+SRC=$(xcrun simctl get_app_container <iphone-udid> com.leonparsons.RecipeBasket data)
+DST=$(xcrun simctl get_app_container <ipad-udid>   com.leonparsons.RecipeBasket data)
+cp -R "$SRC/Library/Application Support" "$DST/Library/Application Support"
+cp -R "$SRC/Documents" "$DST/Documents"
+```
+
+Install and launch the app on the destination once first, so the container exists, and terminate it before
+copying. The default Reminders list does not travel (the list id is per device), so pick it again in the
+export sheet.
