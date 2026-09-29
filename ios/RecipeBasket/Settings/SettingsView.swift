@@ -8,6 +8,10 @@ struct SettingsView: View {
     @Environment(SubscriptionStore.self) private var subscriptions
     @Environment(ScanQuota.self) private var quota
     @Environment(\.dismiss) private var dismiss
+    #if DEBUG
+    /// This device's own library, which `HouseholdDemoSeed` projects the demo household from.
+    @Environment(\.modelContext) private var modelContext
+    #endif
     let store: any RemindersStoring
     /// Households. Optional for the same reason it is everywhere else: the app works without the household
     /// store, it simply cannot share.
@@ -89,6 +93,22 @@ struct SettingsView: View {
 
                 if let plan {
                     SharePlanSection(plan: plan, presenting: $sharePresentation, onPaywall: { isShowingPaywall = true })
+                    #if DEBUG
+                    // The household is the one screen a simulator cannot reach — hosting needs an iCloud
+                    // account and a subscription — so the App Store frame for it had no way to be shot, or
+                    // reshot when copy changed. See `HouseholdDemoSeed`.
+                    Section {
+                        Button("Seed demo household (debug)") {
+                            HouseholdDemoSeed.seed(plan: plan, library: modelContext)
+                            dismiss()
+                        }
+                        Button("Clear demo household (debug)", role: .destructive) {
+                            HouseholdDemoSeed.clear(plan: plan)
+                        }
+                    } footer: {
+                        Text("Projects this device's own recipes into a demo household, so the household screens can be photographed. `marketing/README.md` says how the frames are made.")
+                    }
+                    #endif
                 }
 
                 Section {

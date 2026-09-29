@@ -992,3 +992,33 @@ release-checklist item rather than something that can be done here.
 **The iPad library was seeded by copying the app's data container** rather than scanning three pages again —
 faster, free, and it guarantees the two devices show the same week. Written down in `marketing/README.md`,
 because the obvious alternative costs scans and real money each time.
+
+### 2026-09-29 · The household frame, and seeding a household the Simulator cannot host
+
+The listing leads with the household and there was no screenshot of it, for a reason that looked structural:
+hosting needs an iCloud account and a subscription, and the Simulator has neither. Shooting it on two real
+phones works once — Leon did, and the result showed the problem with doing it that way. The plan held pages
+from *real published cookbooks*, titles and photographs both, which `marketing/README.md` has ruled out of our
+marketing since the pages were written ("it is someone else's book in our marketing"). And a frame that needs
+two people, two Apple Accounts and a live share cannot be reshot when copy changes — which it just had been,
+twice in a day.
+
+**So the app seeds one.** `HouseholdDemoSeed` is `#if DEBUG`, and what it writes is not a mock: the same
+`SharedRecipe` / `SharedMeal` / `SharedMemberRow` rows the sync engine writes, projected from this device's own
+library through `SharedWeekProjection` — the same call the real projection makes — through `mainContext` and
+nothing else (rule 9e). Every pixel is the real UI rendering real rows. Only their provenance is faked.
+
+**The bug it hit is worth keeping, because it is rule 9e's first bullet wearing a different hat.** Seeded rows
+that reused the library recipe's `id` lost their author within a second: joining a household runs
+`projectLibrary`, which upserts this device's recipes keyed on exactly that id, finds the demo row, takes it for
+this device's copy and rewrites `authorID` to this device's empty one. The row survived and looked right —
+title, thumbnail, book, page — and only "Added by Sara" disappeared, which was the whole point of the frame.
+Silent, plausible, and visible only by knowing what should have been on screen. Sara's copies now carry ids of
+their own, which is also what is true of a real member's recipes.
+
+The frame is **"Cook together"**, fifth of seven, placed after "Plan the week" because it is about the week.
+Two meals are Sara's and say so, one is the reader's and says nothing, and it carries a note bubble — the
+household as it actually looks, rather than an invite sheet or a settings list.
+
+**What this does not cover:** the CloudKit sharing sheet, acceptance, and anything else needing two real
+accounts. Those still need phones, and still need App Review notes (checklist item 10).

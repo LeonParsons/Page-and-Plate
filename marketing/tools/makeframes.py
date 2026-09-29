@@ -5,6 +5,9 @@ FRAMES = [
     ("review.png", "It reads the list for you.",            "Quantities, units and servings, straight off the page."),
     ("shot3b.png", "Cooking for one?",                      "Every line follows &#8212; and a quarter tin stays a quarter tin."),
     ("shot4.png",  "Plan the week.",                        "Every meal at its own number of portions."),
+    # The household is what the listing leads with, and it sits here because it is about the week — the frame
+    # before it. Its capture comes from `HouseholdDemoSeed`: a simulator cannot host a real household.
+    ("household.png", "Cook together.",                     "One week your household shares, and everyone&#8217;s books to cook from."),
     ("shot5.png",  "One shop for the whole week.",          "Straight into a Reminders list. Staples left out."),
     ("shot6.png",  "The books you already own.",            "No accounts, no web clipping, no database to subscribe to."),
 ]

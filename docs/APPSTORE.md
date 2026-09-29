@@ -225,9 +225,12 @@ Do not add accessibility to **Helpful details** until it is checked on a device.
 5. ~~Screenshots.~~ Nine frames, **reshot 2026-09-29** against the current copy and the current limits — the
    2026-09-23 set showed "17 of 20 free scans left" and the capture help text that was reversed the same day.
    Three of them now prove their headline in the picture rather than near it. See `marketing/README.md`.
-   **Still missing: a household frame**, which the listing now leads with. It cannot be shot on a simulator —
-   hosting needs an iCloud account and a subscription — so it has to come from a device already in a
-   household, alongside item 10's review notes.
+   ~~**Still missing: a household frame**, which the listing now leads with.~~ Shot 2026-09-29 and now
+   **frame 5 of seven**, "Cook together" — the shared week with "Added by Sara" on two meals and the reader's
+   own on a third. A simulator cannot host a household, so the app seeds one: `HouseholdDemoSeed` (`#if DEBUG`)
+   writes the same rows the sync engine writes, projected from this device's own library. That also means the
+   frame can be **reshot whenever copy changes**, which a frame needing two phones and two Apple Accounts
+   could not. See `marketing/README.md`.
 6. ~~A large-type pass.~~ Done 2026-09-23: Leon walked the recipe screen, export sheet, Settings, Review
    and the paywall on an iPad at the largest accessibility text size, and nothing broke. Code-side fixes
    landed the same day (see `docs/DECISIONS.md`).

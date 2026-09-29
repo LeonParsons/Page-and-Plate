@@ -4,13 +4,13 @@ App Store screenshots and the cookbook pages they were shot against. The listing
 `docs/APPSTORE.md`.
 
 ```
-screenshots/iphone-6.9/   six frames, 1320 x 2868 (iPhone 17 Pro Max, native)
+screenshots/iphone-6.9/   seven frames, 1320 x 2868 (iPhone 17 Pro Max, native)
 screenshots/ipad-13/      three frames, 2064 x 2752 (iPad Pro 13-inch, native)
 pages/                    the cookbook pages, as HTML — our own recipes, not anyone's book
 tools/                    html2png.swift, makeframes.py, makeipad.py
 ```
 
-All nine are RGB with no alpha channel, which Apple requires.
+All ten are RGB with no alpha channel, which Apple requires.
 
 ## Why the pages are ours
 
@@ -39,7 +39,7 @@ python3 marketing/tools/makeipad.py      # iPad
 Captures come from `xcrun simctl io <device> screenshot`, which writes at native resolution — that is what
 guarantees Apple's accepted dimensions rather than resizing afterwards.
 
-All nine were **reshot 2026-09-29**, on the iPhone 17 Pro Max and iPad Pro 13-inch (M5) simulators, against
+All were **reshot 2026-09-29**, on the iPhone 17 Pro Max and iPad Pro 13-inch (M5) simulators, against
 the copy as it stands today. The previous set was shot 2026-09-23 and had gone stale in two ways: frame 1 read
 "17 of 20 free scans left" from the pre-2026-09-23 limits, and it carried the capture help text that was
 reversed on 2026-09-29 (see `docs/DECISIONS.md`).
@@ -57,13 +57,34 @@ screen where the claim is proved further down:
 The week is Monday 4 portions, Wednesday 2, Thursday 6, so "each meal at its own portions" is visible rather
 than asserted.
 
+## The household frame, and how it is possible at all
+
+Frame 5 is the household — the thing the listing leads with, and for a while the one screen with no frame.
+A simulator cannot host a household: hosting needs an iCloud account and a subscription, and the Simulator has
+neither. Shooting it on real phones works, but it cannot be *re*shot when copy changes without two people, two
+Apple Accounts and a live share — and the first attempt came off a phone whose plan held pages from real
+published cookbooks, which is exactly what the section above rules out.
+
+So the app seeds it. `HouseholdDemoSeed` (`#if DEBUG`, in `ios/RecipeBasket/Sharing/`) writes the same
+`SharedRecipe` / `SharedMeal` / `SharedMemberRow` rows the sync engine writes, projected from this device's own
+library through `SharedWeekProjection` — the same call the real projection makes. Every pixel is the real UI
+rendering real rows; only their provenance is faked. **Settings → Seed demo household (debug)**, then shoot the
+Plan tab.
+
+Two things it has to get right, both learned the hard way:
+
+- **Sara's recipes need ids of their own.** Joining a household runs `projectLibrary`, which upserts this
+  device's recipes into it keyed on the library recipe's id. A demo row reusing that id is found, taken for
+  this device's copy and rewritten with this device's (empty) `authorID` — so the row survives and only
+  "Added by Sara" quietly disappears, which is the entire point of the frame.
+- **Set "Your name" first.** It is what the Settings frame shows, and it is blank on a fresh simulator.
+
 ## Before these go to App Store Connect
 
-1. **There is still no household frame**, and the listing now leads with the household. A simulator cannot
-   produce one: hosting needs an iCloud account and a subscription, and the Simulator has neither. This one
-   has to be shot on a device that is already in a household — see `docs/APPSTORE.md`.
-2. The iPad export sheet sits as a form sheet over the plan and does not use the width well. It is honest,
-   and it does at least show the week behind the list, but it is the weakest of the nine.
+1. The iPad export sheet sits as a form sheet over the plan and does not use the width well. It is honest,
+   and it does at least show the week behind the list, but it is the weakest of the ten.
+2. There is no iPad household frame. The same seeder works there — copy the container across as below, then
+   seed — it simply has not been shot.
 
 ## Reshooting
 
