@@ -6,11 +6,20 @@ App Store screenshots and the cookbook pages they were shot against. The listing
 ```
 screenshots/iphone-6.9/   seven frames, 1320 x 2868 (iPhone 17 Pro Max, native)
 screenshots/ipad-13/      three frames, 2064 x 2752 (iPad Pro 13-inch, native)
+screenshots/raw/          the unframed device captures the frames are built from
 pages/                    the cookbook pages, as HTML — our own recipes, not anyone's book
 tools/                    html2png.swift, makeframes.py, makeipad.py
+SCREENSHOT-BRIEF.md       hand this to anyone redesigning the frames
 ```
 
-All ten are RGB with no alpha channel, which Apple requires.
+All ten frames are RGB with no alpha channel, which Apple requires.
+
+**The raw captures are committed now** (2026-09-29), which they were not before: they lived beside the scripts
+as working files and were lost, and they cannot be recovered from the finished frames — `object-fit: cover`
+puts the screen in at about 84% on iPhone and 87% on iPad, minus a sliver of width, under a border and rounded
+corners, and the crop differs per frame with how each headline wraps. Reshooting them cost nothing only because
+both simulators still held the library; that will not always be true. **Commit them whenever they are reshot.**
+Names match what `makeframes.py` and `makeipad.py` expect, so the scripts still run from that folder.
 
 ## Why the pages are ours
 
@@ -83,8 +92,10 @@ Two things it has to get right, both learned the hard way:
 
 1. The iPad export sheet sits as a form sheet over the plan and does not use the width well. It is honest,
    and it does at least show the week behind the list, but it is the weakest of the ten.
-2. There is no iPad household frame. The same seeder works there — copy the container across as below, then
-   seed — it simply has not been shot.
+2. There is no iPad household frame. **The iPad simulator's installed build predates `HouseholdDemoSeed`**
+   (installed 13:25 on 2026-09-29, where the iPhone's is 14:11), so Settings there has no "Seed demo
+   household (debug)" row at all — that is why it cannot simply be shot. Install the current build on the
+   iPad first, set "Your name", then seed.
 
 ## Reshooting
 
