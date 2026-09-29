@@ -3,8 +3,11 @@
 Everything to paste into App Store Connect, plus the featuring nomination. Character counts are checked by
 `docs/appstore-counts.py`; run it after any edit here.
 
-**Before this goes live:** the two subscriptions still have to be created in App Store Connect. The terms and
-privacy URLs are real, live and pointed at by `Subscription/Products.swift` (item 4 below).
+**Before this goes live:** as of 2026-09-29 the App Store Connect side is set up — both subscriptions exist
+at their real prices with Billing Grace Period on, the age rating and App Privacy answers are in, and the
+terms and privacy URLs are live and pointed at by `Subscription/Products.swift`. **What is left is a build:**
+nothing has ever been archived or uploaded, and that one step gates TestFlight, the App Attest switch and the
+CloudKit production schema.
 
 **The listing now sells the household** (11c-iii). Every length-limited field was written before sharing
 existed and pitched scanning alone — which stopped being the whole story when typed recipes became free and
@@ -208,8 +211,11 @@ Do not add accessibility to **Helpful details** until it is checked on a device.
    claimed a ceiling that exists and an unlimitedness that typed recipes now genuinely have. Nothing
    user-facing says it any more. Still reshoot frame 1: it reads "17 of 20 free scans left" from the old
    limits.
-3. Real prices for both plans, and the two subscriptions created in App Store Connect with the product
-   ids above.
+3. ~~Real prices for both plans, and the two subscriptions created in App Store Connect with the product
+   ids above.~~ Done 2026-09-29 (Leon): both products exist at £1.99 monthly and £19.99 yearly, and
+   **Billing Grace Period is on** — the real protection for a household, since `atRisk` is only the backstop.
+   A build has still never been uploaded, so none of this has been exercised against a real purchase yet;
+   that happens on the first TestFlight pass.
 4. ~~Real terms and privacy URLs.~~ Written 2026-09-28 and living in `legal/` in this repository, served by
    GitHub Pages at `https://leonparsons.github.io/Page-and-Plate/legal/` — versioned alongside the behaviour
    they describe, because a privacy policy that drifts from the app is worse than none.
@@ -246,6 +252,6 @@ Do not add accessibility to **Helpful details** until it is checked on a device.
     two, and there is no demo mode. Without notes this is a plausible rejection rather than a bad one — say
     plainly that hosting needs a subscription, that the reviewer can create a household and see the invite
     flow with one account, and that a second account is needed only to accept.
-11. **Age rating questionnaire and the App Privacy answers** ("Data Not Collected" throughout — the app has no
-    accounts, and CloudKit private and shared databases are not developer collection). Neither can be skipped;
-    App Store Connect will not accept a submission without both.
+11. ~~**Age rating questionnaire and the App Privacy answers**~~ Both answered 2026-09-29 (Leon), "Data Not
+    Collected" throughout — the app has no accounts, and CloudKit private and shared databases are not
+    developer collection. These were the two that block a submission outright.
