@@ -183,12 +183,12 @@ No accounts, no analytics, no tracking, no advertising. Recipes, page photos and
 Thank you for reviewing.
 ```
 
-**One paragraph is a judgement call, not a fact: the fair-use ceiling.** Rule 9b says the 25-in-7-days limit is
-never shown to the user — in the app or in the Worker's error body — and it is not shown in either. A reviewer
-is not a user, though, and App Review reads a subscription's description as a claim: a ceiling they discover
-for themselves, on a subscription whose listing says it covers the week's cooking, is a misleading-subscription
-rejection. Disclosing it here is the cheap side of that bet. Cut the paragraph if you disagree; nothing else in
-the notes depends on it.
+**The fair-use paragraph stays** (Leon, 2026-09-29). Rule 9b keeps the 25-in-7-days ceiling from the user — in
+the app and in the Worker's error body — and it still does; a reviewer is not a user. App Review reads a
+subscription's description as a claim, so a ceiling they find for themselves, on a subscription whose listing
+says it covers the week's cooking, is a misleading-subscription rejection. Disclosed here it costs nothing;
+found there it costs a submission. **This is not a licence to soften rule 9b anywhere else** — App Review
+Information is not a user-facing surface, and nothing in the app or the Worker learned a number from it.
 
 **Also before submitting:** `ALLOW_SANDBOX_ENTITLEMENTS` must still be `"true"` in `api/wrangler.jsonc`.
 Every App Review purchase is a Sandbox transaction and `api/src/entitlement.ts` refuses one when the flag is
@@ -259,7 +259,12 @@ Built by one person for his own kitchen. The mark, a plate holding an open book,
 
 ### Accessibility — verify before claiming
 
-Do not add accessibility to **Helpful details** until it is checked on a device. What is true today:
+**What this actually gates: nothing in the submission.** No accessibility claim is made anywhere in the
+listing or the nomination today — **Helpful details** talks about the arithmetic constraint, and at 479 of 500
+characters it has no room for one. So the VoiceOver session does not block submitting, and does not block the
+nomination either. It gates *adding* the claim, and the better reason to do it is the app.
+
+What is true today, and safe to say:
 
 - All text uses Dynamic Type; the display face scales with it via `relativeTo:`.
 - Every brand colour was chosen against measured contrast ratios rather than by eye — body and accent text
@@ -268,6 +273,56 @@ Do not add accessibility to **Helpful details** until it is checked on a device.
 - Large type was walked on a real iPad at the largest accessibility size (2026-09-23) and nothing broke.
 
 **Not yet verified:** a deliberate VoiceOver session. Claim it to Apple only after sitting with the phone.
+
+#### The mechanical half — Accessibility Inspector, on the simulator
+
+Xcode → Open Developer Tool → Accessibility Inspector, point it at the simulator, run its audit on each
+screen. It finds unlabelled elements, small hit regions, clipped text and contrast failures without anyone
+having to hear anything, and it runs where the household cannot: the simulator has no iCloud.
+
+The same checks exist as `XCUIApplication.performAccessibilityAudit(for:)` (iOS 17, Xcode 15; types
+`contrast`, `elementDetection`, `hitRegion`, `sufficientElementDescription`, `dynamicType`, `textClipped`,
+`trait`). **There is no UI test target** — `ios/project.yml` has only `RecipeBasketTests`
+(`bundle.unit-test`) — so this would mean a new `bundle.ui-testing` target and a regenerate. Worth it only if
+the audit is to run on every change rather than once.
+
+#### The half that needs a human — VoiceOver, on a phone
+
+Settings → Accessibility → VoiceOver, and set Accessibility Shortcut to VoiceOver first so a triple-click of
+the side button gets out of it. Swipe right to advance, double-tap to activate, two-finger swipe up to read
+from the top. The household screens need a real phone anyway (no iCloud on the simulator); **`Seed demo
+household (debug)` in Settings** covers the shared week without a second person, but the plans list and the
+member rows need a real share, because the member rows read `share?.participants`.
+
+Walk these, and write down what is actually said:
+
+1. **Export sheet** — the one item 6 named. Each row should be a single element: label "flour, 200g, staple",
+   value "Ticked" / "Not ticked", hint "Double tap to leave out". Listen for the tick **and** `.isSelected`
+   double-announcing ("Selected… Ticked"), which is the likely flaw, not a missing label.
+2. **The list picker** inside it — `ExportSheet.swift:251` marks the chosen list with a bare `checkmark` and
+   no label or `.isSelected`, so the current list is probably silent.
+3. **Recipe form, pages column** — `RecipeFormView.swift:137` is an `Image(uiImage:)` with `.onTapGesture`
+   and no label, no button trait and no hint. Expect "Image", with no way to know it opens the page.
+   `PageViewerView` labels its pages "Page 1 photo"; this column does not.
+4. **`PageThumbnail`** (`CaptureView.swift:200`) — same shape, unlabelled, where `HomeView` labels its
+   thumbnail "Page photo".
+5. **Ingredient rows** in the recipe form — a `.plain` Button round `IngredientRowView` plus a chevron. Does
+   it say "Button", and is it clear a double-tap edits?
+6. **Star rating** — container `.contain`, label "Rated 3 of 5", value "3 stars", each star its own button
+   ("Rate 4 stars", "Clear rating"). Check a rating can actually be **set**, not just read.
+7. **Planner rows** — combined, so listen for the order: title, "for 4", "Has a note", "Added to Reminders".
+8. **Shared week, unavailable row** — should read "Chickpea arrabbiata. Recipe not available, so it can't be
+   cooked or shopped for." Check the swipe action "Remove" is offered through the Actions rotor.
+9. **Plans list** (`SharePlanSection.planRow`) — the tick carries `accessibilityLabel("Showing")` *and* the
+   row adds `.isSelected`. Expect a redundant "Showing, Selected"; one of the two should go.
+10. **Member rows** (`SharePlanSection.swift:298`) — the only composite row in the app with no explicit
+    grouping, so the name and "3 recipes, 2 in your plan" may be two swipes instead of one.
+11. **Welcome screen and the app mark** — decorative art is `accessibilityHidden(true)`; confirm nothing
+    reads as "Image".
+
+Items 2, 3, 4, 9 and 10 are visible in the code and need no device to believe; a session is for the ones only
+ears settle — order, redundancy, and whether the tick in the export sheet is discoverable at all. Fix what it
+finds **before** writing the claim, then say only what was walked.
 
 ---
 
@@ -303,9 +358,12 @@ Do not add accessibility to **Helpful details** until it is checked on a device.
 6. ~~A large-type pass.~~ Done 2026-09-23: Leon walked the recipe screen, export sheet, Settings, Review
    and the paywall on an iPad at the largest accessibility text size, and nothing broke. Code-side fixes
    landed the same day (see `docs/DECISIONS.md`).
-   **Still open: a deliberate VoiceOver session.** The accessibility paragraph in the nomination claims
-   VoiceOver support to Apple, so it stays marked do-not-send until someone has actually navigated the
-   export sheet with it and confirmed each row announces "Ticked" / "Not ticked".
+   **Still open: a deliberate VoiceOver session** — but it gates nothing at submission, which the earlier
+   wording here got wrong. It said the nomination claims VoiceOver support; it does not. No accessibility
+   claim is made in any field, and **Helpful details** is 479 of 500 characters, so there is no room for one
+   without cutting what is there. The session gates *adding* the claim, and there are five things worth
+   fixing in the app either way. The screen-by-screen script, with the expected announcement for each row
+   and the five suspect spots, is under **Accessibility — verify before claiming** above.
 7. **Set `ALLOW_SANDBOX_ENTITLEMENTS` to `"false"` in `api/wrangler.jsonc` and redeploy.** It is `"true"`
    so that development and TestFlight purchases — which are always Sandbox transactions — verify at all.
    Left true in production, an Apple sandbox account is a free unlimited subscription. This is the last

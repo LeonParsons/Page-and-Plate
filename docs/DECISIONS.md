@@ -1022,3 +1022,33 @@ household as it actually looks, rather than an invite sheet or a settings list.
 
 **What this does not cover:** the CloudKit sharing sheet, acceptance, and anything else needing two real
 accounts. Those still need phones, and still need App Review notes (checklist item 10).
+
+### 2026-09-29 · App Review notes, and what the accessibility item really gates
+
+**The review notes disclose the fair-use ceiling; rule 9b is unchanged.** The 25-scans-in-7-days limit is kept
+from the user in the app and in the Worker's error body, and still is. App Review Information is not a
+user-facing surface, and App Review reads a subscription's description as a claim — a ceiling a reviewer finds
+for themselves, on a subscription whose listing says it covers the week's cooking, is a misleading-subscription
+rejection. Disclosed in the notes it costs nothing; found in review it costs a submission. This is not licence
+to soften 9b anywhere else.
+
+**`ALLOW_SANDBOX_ENTITLEMENTS` has to stay `"true"` through review, not just through TestFlight.** Every App
+Review purchase is a Sandbox transaction and `api/src/entitlement.ts` refuses one when `allowSandbox` is false,
+so flipping it before submission leaves the reviewer subscribed and out of scans after 7 — and the same is true
+of every future update's review. The listing checklist said "before a public release", which reads as *before
+review* and would have been the wrong moment. The real argument this exposes: leaving it true for good and
+closing the hole with `REQUIRE_ATTESTATION` instead, since a Sandbox receipt still has to be signed by Apple
+and attested by a real device. Not settled; recorded so the next person does not flip it early.
+
+**Apple states the Notes limit in bytes, not characters** (App Store Connect Help, checked today), so the block
+is plain ASCII and `docs/appstore-counts.py` counts UTF-8 for that field and prints the unit. A curly quote is
+one character and three bytes, which is how a field passes a checker and is refused at upload.
+
+**The VoiceOver item gates nothing at submission**, which the checklist had wrong. It claimed the nomination
+already asserts VoiceOver support; no accessibility claim appears in any field, and **Helpful details** is 479
+of 500 characters, so one could not be added without cutting the arithmetic paragraph. What the session gates
+is adding the claim. Five spots are visible in the code without a device and are worth fixing regardless: the
+export sheet's list picker marks the current list with an unlabelled `checkmark`; `RecipeFormView`'s pages
+column is a tappable `Image` with no label, button trait or hint; `PageThumbnail` is unlabelled where
+`HomeView`'s equivalent says "Page photo"; `planRow` says both "Showing" and `.isSelected`; and the household's
+member rows are the only composite row with no explicit grouping.
