@@ -234,13 +234,21 @@ A household shares one week and cooks from each other's books, carried over the 
 
 ### Helpful details — 500 max
 
-Apple asks here for what makes the app stand out: the unique approach, or what went on behind it.
+Apple asks here for what makes the app stand out: the unique approach, or what went on behind it. **It is the
+one field written in a person's voice** — the description has already said what the app does, and an editor
+reading a great many of these is looking for the reason it exists. So this one is the kitchen it came from,
+and the technical constraint is left to earn its place as the *answer* to that problem rather than as a boast
+about the build. Rewritten 2026-09-29 (Leon): the previous version led with the constraint and put the person
+in a closing line, which had it the wrong way round.
 
 ```
-One constraint shapes the whole app: the model reads the page and never does arithmetic. Every scaling, rounding and formatting decision happens in tested code, pinned to hand-checked fixtures. That is an unusual line to draw in an app built on a model, and it is why the numbers can be trusted — the interesting failure is not a misread word, it is a confidently wrong quantity.
+Built by one person, for his own kitchen. He owned the cookbooks and rarely cooked from them: every recipe served four, he cooked for one, and each week meant halving at the counter and copying the list out by hand. The books stayed shut.
 
-Built by one person for his own kitchen. The mark, a plate holding an open book, is drawn in code.
+So the arithmetic is the part this app takes seriously. The model only reads the page; every sum is done in tested code, against fixtures checked by hand. A misread word a cook catches. A wrong quantity gets all the way home from the shop.
 ```
+
+The mark being drawn in code, and the paper-and-ink palette, are gone from this field on purpose — both are
+visible in the screenshots and the supplemental URL, and neither is worth the characters the origin needs.
 
 ### The structured fields
 
@@ -272,7 +280,10 @@ What is true today, and safe to say:
 - Controls are standard SwiftUI, so VoiceOver and Voice Control get the system behaviour.
 - Large type was walked on a real iPad at the largest accessibility size (2026-09-23) and nothing broke.
 
-**Not yet verified:** a deliberate VoiceOver session. Claim it to Apple only after sitting with the phone.
+**Parked, deliberately** (Leon, 2026-09-29). The five code-visible faults were fixed; the device session was
+not done and is not planned. Nothing needs it: no field claims accessibility, so there is nothing unverified
+being said to Apple. **The rule that matters is the one below — claim it only after sitting with the phone.**
+The script is kept because it is cheap to keep, not because it is owed.
 
 #### The mechanical half — Accessibility Inspector, on the simulator
 
@@ -360,12 +371,13 @@ Items 9 and 10 need a phone in a real household. Then say only what was walked.
 6. ~~A large-type pass.~~ Done 2026-09-23: Leon walked the recipe screen, export sheet, Settings, Review
    and the paywall on an iPad at the largest accessibility text size, and nothing broke. Code-side fixes
    landed the same day (see `docs/DECISIONS.md`).
-   **Still open: a deliberate VoiceOver session** — but it gates nothing at submission, which the earlier
+   ~~**A deliberate VoiceOver session.**~~ **Parked 2026-09-29, and not a blocker** — which the earlier
    wording here got wrong. It said the nomination claims VoiceOver support; it does not. No accessibility
    claim is made in any field, and **Helpful details** is 479 of 500 characters, so there is no room for one
    without cutting what is there. The session gates *adding* the claim, and there are five things worth
-   fixing in the app either way. The screen-by-screen script, with the expected announcement for each row
-   and the five suspect spots, is under **Accessibility — verify before claiming** above.
+   fixing in the app either way, and those five were fixed the same day. The script is kept under
+   **Accessibility — verify before claiming** above if it is ever wanted; the only live rule is that no
+   accessibility claim goes into any field until someone has sat with the phone.
 7. **Set `ALLOW_SANDBOX_ENTITLEMENTS` to `"false"` in `api/wrangler.jsonc` and redeploy.** It is `"true"`
    so that development and TestFlight purchases — which are always Sandbox transactions — verify at all.
    Left true in production, an Apple sandbox account is a free unlimited subscription. This is the last

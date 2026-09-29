@@ -1073,3 +1073,11 @@ these five plus six still open.
 
 **Adjacent and not done:** the picker's non-modifiable lists are `.disabled(...)`, so VoiceOver says "dimmed"
 without saying why. That is a copy decision, not an annotation fault.
+
+### 2026-09-29 · The VoiceOver session is parked, not owed
+
+Leon: no more time on accessibility. The five code-visible faults are fixed; the device session is not planned.
+Nothing is blocked by that — no listing or nomination field claims accessibility, so there is no unverified
+claim being made to Apple, and **Helpful details** is 479 of 500 characters so one could not be added anyway.
+The single rule that survives: no accessibility claim goes into any field until someone has actually sat with
+the phone. The script stays in `docs/APPSTORE.md` because keeping it costs nothing.
