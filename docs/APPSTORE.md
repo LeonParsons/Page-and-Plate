@@ -126,6 +126,75 @@ Prices confirmed 2026-09-28 and matching `ios/RecipeBasket.storekit`.
 The product IDs keep the old working name. They are never shown to anyone, and changing them now would orphan
 the existing StoreKit configuration.
 
+## App Review notes — 4000 max
+
+Pasted into **App Store Connect → the version → App Review Information → Notes** at submission. Not visible to
+customers, editable at any time. Apple's limit is 4000 **bytes**, not characters (App Store Connect Help,
+checked 2026-09-29), so this block is deliberately plain ASCII — no en dashes, curly quotes or ellipsis
+characters, which cost two or three bytes each and would make `appstore-counts.py` disagree with the form.
+
+It exists because **a reviewer cannot reach the household on their own** and the listing leads with it. They
+have one Apple Account; a household needs two, hosting is behind the subscription, and `HouseholdDemoSeed` —
+the thing that made marketing frame 5 possible — is `#if DEBUG`, so there is no demo household in the build
+they receive. Unexplained, that is a paywall in front of the headline feature with no way to finish the
+journey: a plausible rejection rather than an unfair one.
+
+```
+Page & Plate turns a photograph of a cookbook page into a scaled ingredient list, plans a week of meals, and sends the whole shop to Reminders.
+
+There is no account and no sign-in anywhere in the app, so there are no credentials to give you. Everything below works on a fresh install.
+
+WHAT NEEDS NO SETUP
+
+On "My recipes", the + menu offers "Scan a recipe" (photograph any recipe page) and "Type one in" (enter one by hand, which is free and unlimited and useful if no cookbook is nearby). Extracted ingredients are always shown for confirmation before anything is saved. Scale the portions on the recipe screen, add meals to days on the Week tab, then export to Reminders.
+
+Settings is in the toolbar overflow menu ("...") on "My recipes".
+
+SCANS AND THE SUBSCRIPTION
+
+The first 7 scans on a device are free. After that, scanning needs the subscription (GBP 1.99 monthly or GBP 19.99 yearly). Typing a recipe in never spends a scan and never needs the subscription.
+
+Subscribers also have a fair-use ceiling of 25 scans in any rolling 7 days, which exists to stop automated abuse of the extraction service. It is well above real cooking use and is not presented to users as a number, which is why nothing in the app or the listing calls the subscription "unlimited".
+
+THE HOUSEHOLD, AND WHY ONE ACCOUNT CANNOT SEE ALL OF IT
+
+A household is CloudKit sharing of the user's own data: one week that everyone edits, and a catalogue that is the union of everyone's recipes. It needs iCloud signed in on the device. Without it, Settings shows "Not signed in" and there is no household.
+
+Hosting a household requires the subscription. Joining one is free, deliberately: one person subscribes and their household cooks from it.
+
+With a single Apple Account you can reach everything up to acceptance:
+
+1. Settings, then "Subscribe...", and buy either plan.
+2. In Settings, under "Your household", fill in "Your name". iOS 17 removed the API that told apps a user's name, so the app asks for it; it is what the household sees beside a shared recipe.
+3. Tap "Share with your household...". Apple's own share sheet opens with a real invite link.
+
+That exercises hosting, the share and the invite. Accepting the invite needs a second Apple Account on a second device, and there is no demo or mock household in a release build, so the member side cannot be simulated for you. If you would like to see it, please email the contact address above and we will arrange a demonstration or provide a second test account.
+
+PERMISSIONS
+
+Reminders: requested the first time a shopping list is exported, and used only to add reminders. The app never reads, changes or deletes anything already in Reminders.
+
+Camera: the document scanner, for photographing a page. Photo library: optional, for a page already photographed.
+
+PRIVACY
+
+No accounts, no analytics, no tracking, no advertising. Recipes, page photos and the week are kept in the user's own private iCloud database, and a shared household week in the shared CloudKit database. Never on our servers. A page photo is sent to our extraction proxy, which passes it to an AI model and returns the ingredients; images are not stored or logged.
+
+Thank you for reviewing.
+```
+
+**One paragraph is a judgement call, not a fact: the fair-use ceiling.** Rule 9b says the 25-in-7-days limit is
+never shown to the user — in the app or in the Worker's error body — and it is not shown in either. A reviewer
+is not a user, though, and App Review reads a subscription's description as a claim: a ceiling they discover
+for themselves, on a subscription whose listing says it covers the week's cooking, is a misleading-subscription
+rejection. Disclosing it here is the cheap side of that bet. Cut the paragraph if you disagree; nothing else in
+the notes depends on it.
+
+**Also before submitting:** `ALLOW_SANDBOX_ENTITLEMENTS` must still be `"true"` in `api/wrangler.jsonc`.
+Every App Review purchase is a Sandbox transaction and `api/src/entitlement.ts` refuses one when the flag is
+false, so a reviewer would subscribe and then be told they had no scans left after 7 — see item 7, which reads
+"before public release" and means *after approval*, not before review.
+
 ---
 
 ## Featuring nomination
@@ -246,15 +315,21 @@ Do not add accessibility to **Helpful details** until it is checked on a device.
    attestation is refused until this matches. `REQUIRE_ATTESTATION` must become `"true"` to actually close
    the hole it exists for, but only once every install in the wild has attested; before that it locks
    people out. Turn the first on with the build, the second a release later.
+   **"Before a public release" means after approval, not before review.** Every App Review purchase is a
+   Sandbox transaction, so with `ALLOW_SANDBOX_ENTITLEMENTS` already false the reviewer's own subscription is
+   refused by the Worker and they run out of scans after 7 while paying — and the same is true of every future
+   update's review, which is the real argument for leaving it true for good and closing the hole with
+   `REQUIRE_ATTESTATION` instead.
 9. **Push the CloudKit schema to production.** It is created in the development environment on first run;
    a build shipped against it would sync into nothing. App Store Connect → the iCloud container →
    Deploy Schema Changes. The schema has grown a lot since it was last looked at —
    `SharedMember`, `SharedMeal.note` and `systemFields` on both shared types — so deploy after the final build
    is made, not before.
-10. **App Review notes explaining how to test sharing.** A reviewer has one Apple Account; a household needs
-    two, and there is no demo mode. Without notes this is a plausible rejection rather than a bad one — say
-    plainly that hosting needs a subscription, that the reviewer can create a household and see the invite
-    flow with one account, and that a second account is needed only to accept.
+10. ~~**App Review notes explaining how to test sharing.**~~ Drafted 2026-09-29 and living in
+    **App Review notes** above, counted by `appstore-counts.py` against Apple's 4000-*byte* limit.
+    **Still to do:** paste it into App Store Connect at submission (App Review Information → Notes), fill in
+    the contact name, email and phone beside it, and decide whether the fair-use paragraph stays — the
+    section says why it is there and why it is a judgement call.
 11. ~~**Age rating questionnaire and the App Privacy answers**~~ Both answered 2026-09-29 (Leon), "Data Not
     Collected" throughout — the app has no accounts, and CloudKit private and shared databases are not
     developer collection. These were the two that block a submission outright.

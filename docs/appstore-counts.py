@@ -26,7 +26,14 @@ LIMITS = {
     "Nomination name": 60,
     "Nomination description": 1000,
     "Helpful details": 500,
+    # App Review Information -> Notes. Apple states this one in *bytes* (App Store Connect Help, checked
+    # 2026-09-29), so it is counted as UTF-8 below rather than as characters.
+    "App Review notes": 4000,
 }
+
+# Fields whose limit Apple expresses in bytes rather than characters. Identical for ASCII; an en dash or a
+# curly quote costs three bytes and one character, which is how a field passes here and is refused at upload.
+BYTE_FIELDS = {"App Review notes"}
 
 # The in-app purchase table's columns, by header, -> limit. **Read from the document**, not copied here: these
 # were hardcoded, drifted from the table they were meant to be checking, and went on reporting "ok" for strings
@@ -85,12 +92,13 @@ def main():
     checked = set()
     for name, value in fields(text):
         limit = LIMITS[name]
-        count = len(value)
+        unit = "bytes" if name in BYTE_FIELDS else "chars"
+        count = len(value.encode("utf-8")) if name in BYTE_FIELDS else len(value)
         checked.add(name)
         status = "ok " if count <= limit else "OVER"
         if count > limit:
-            failures.append(f"{name}: {count} > {limit}")
-        print(f"  [{status}] {name:<20} {count:>5} / {limit}")
+            failures.append(f"{name}: {count} > {limit} {unit}")
+        print(f"  [{status}] {name:<22} {count:>5} / {limit} {unit}")
 
     iap = list(iap_rows(text))
     if not iap:
