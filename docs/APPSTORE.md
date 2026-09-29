@@ -268,7 +268,7 @@ visible in the screenshots and the supplemental URL, and neither is worth the ch
 ### Accessibility — verify before claiming
 
 **What this actually gates: nothing in the submission.** No accessibility claim is made anywhere in the
-listing or the nomination today — **Helpful details** talks about the arithmetic constraint, and at 479 of 500
+listing or the nomination today — **Helpful details** is the origin story and the arithmetic, and at 479 of 500
 characters it has no room for one. So the VoiceOver session does not block submitting, and does not block the
 nomination either. It gates *adding* the claim, and the better reason to do it is the app.
 
