@@ -39,7 +39,7 @@ struct CaptureView: View {
             } header: {
                 Text("Where is it?")
             } footer: {
-                Text("Only the ingredient list needs to be in the photo — the method stays in the book. If the list runs over a page turn, add the next page too, up to \(AddRecipeFlow.maxPages) pages.")
+                Text("Photograph the recipe ingredients page - If the recipe runs over a page turn, add the next page as well, up to \(AddRecipeFlow.maxPages) pages.")
             }
 
             if !flow.pages.isEmpty {

@@ -43,7 +43,7 @@ final class CloudAccount {
         case .syncing:
             "Your recipes, page photos and plan are kept in your own iCloud, so they appear on your other devices and survive a lost phone. They are never sent to our servers. Signing out of iCloud removes the copy on this device — they stay in iCloud, and come back when you sign in again."
         case .noAccount:
-            "Sign in to iCloud in Settings to keep your recipes on your other devices, and to see any you saved while signed in before."
+            "Sign in to iCloud in Settings to keep your recipes on your other devices."
         case .restricted:
             "iCloud is restricted on this device, so recipes stay here only."
         case .unavailable(let reason):

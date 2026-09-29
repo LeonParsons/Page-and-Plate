@@ -918,3 +918,40 @@ accepted an invite is looking at an empty week *now*.
 Worth noting the pattern, because it is the third of its kind today: the failure was silent and looked like
 nothing happening. A change token that is too new, a record name CloudKit refuses, an engine left running after
 its zone was deleted — none of them produced an error anywhere.
+
+### 2026-09-29 · Photograph the whole page, and other copy that had grown
+
+Leon, from using it: **the guidance to photograph only the ingredient list was wrong, and had been since the
+book and page fields landed.** A whole-page photograph works better, because the title is usually nowhere near
+the ingredients and the extraction fills it in when it can see it — so the narrower photograph was costing a
+field the app would otherwise have had. This reverses the capture note in the 2026-09-23 entry above (line
+~200), which reasoned from "the method stays in the book" to "only the list needs photographing". The first
+half is still true; the conclusion did not follow. The prompt already handled both framings
+(`api/src/prompt.ts` sets `title` to null rather than inventing one when no title is visible), so nothing
+changed on the model side.
+
+The shipped line is Leon's, and gives the instruction without the reason: *"Photograph the recipe ingredients
+page - If the recipe runs over a page turn, add the next page as well, up to N pages."* A first draft explained
+why the whole page helps; it was too long for a footer somebody reads once, and the reason is recorded here
+instead.
+
+**Still inconsistent, and Leon's to call:** `docs/APPSTORE.md` still opens the description with "Photograph the
+ingredient list on the page", and the featuring nomination says "Point it at the ingredient list on the page."
+Both now contradict the app.
+
+**The Reminders list type is named regionally.** It is "Shopping" on a UK device and "Groceries" on a US one,
+and the copy said Groceries in both places it appears, naming a setting a UK user cannot find. It now says
+Shopping, and the US aisle names ("Produce, Canned Goods") are gone rather than translated — they are regional
+too, and listing them was never the point. The symbol names and the `export.hasSeenGroceriesTip` key are
+unchanged: renaming the key would show the one-time tip again to everyone who has already seen it.
+
+`GroceriesTipTests` asserted `message.contains("Groceries")`. Switched naively to "Shopping" that assertion
+would have passed on the list *title* in the line above it and stopped testing anything — the sample list in
+the test is called Shopping too. It now asserts against the tip line alone.
+
+**Four Settings footers and one title, all shortened on Leon's read of them:** the Week footer loses the
+"nothing moves" reassurance, Sync's signed-out line loses its second clause, Your household loses a sentence
+and the "page photos are never shared" line, and Staples loses the exact-match rule. The privacy point still
+lives in the App Store description and the privacy policy, which is where someone deciding goes; a Settings
+footer is read by someone who has already decided. The recipes list is now titled **My recipes**, which the
+household made meaningful — it queries the device owner's own library, never the household's catalogue.

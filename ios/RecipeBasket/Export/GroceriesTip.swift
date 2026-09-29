@@ -2,7 +2,7 @@ import Foundation
 
 /// The one-time nudge after a first export (SPEC §8).
 ///
-/// Reminders sorts a Groceries-type list into aisles on its own, and the export's whole title format —
+/// Reminders sorts a shopping-type list into aisles on its own, and the export's whole title format —
 /// ingredient name first — exists to feed that. But the conversion is the user's to make: EventKit cannot
 /// create or even detect the type. Most people do not know list types exist, so without this the format pays
 /// off for nobody.
@@ -21,6 +21,6 @@ nonisolated enum GroceriesTip {
         let added = "Added \(count) \(count == 1 ? "item" : "items") to \(listTitle)."
         guard includingTip else { return added }
         // One line. It is an interruption, not documentation — the longer version lives in Settings.
-        return added + "\n\nTip: in Reminders, List Info → List Type → Groceries sorts these into aisles."
+        return added + "\n\nTip: in Reminders, List Info → List Type → Shopping sorts these into aisles."
     }
 }

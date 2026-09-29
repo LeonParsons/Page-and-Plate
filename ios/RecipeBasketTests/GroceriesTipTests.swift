@@ -48,11 +48,14 @@ struct GroceriesTipTests {
     func tipIsActionableAndShort() {
         let message = GroceriesTip.message(count: 3, listTitle: "Shopping", includingTip: true)
         #expect(message.hasPrefix("Added 3 items to Shopping."))
-        #expect(message.contains("List Info"))
-        #expect(message.contains("List Type"))
-        #expect(message.contains("Groceries"))
-        // An alert is an interruption; the reference version lives in Settings.
+        // Asserted against the tip line rather than the whole message: the list type is "Shopping" on a UK
+        // device, which is also what the list above it is called here, so `message.contains` would pass on
+        // the title alone and stop testing anything.
         let tip = message.split(separator: "\n").last.map(String.init) ?? ""
+        #expect(tip.contains("List Info"))
+        #expect(tip.contains("List Type"))
+        #expect(tip.contains("Shopping"))
+        // An alert is an interruption; the reference version lives in Settings.
         #expect(tip.count < 90, "the tip has grown to \(tip.count) characters")
     }
 }

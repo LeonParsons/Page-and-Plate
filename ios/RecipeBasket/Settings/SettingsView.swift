@@ -76,7 +76,7 @@ struct SettingsView: View {
                 } header: {
                     Text("Week")
                 } footer: {
-                    Text("Set this to the day you shop, so the week you plan is the week you buy for. Nothing moves: meals stay on their own days, and you can change it back whenever you like.")
+                    Text("Set this to the day you shop, so the week you plan is the week you buy for.")
                 }
 
                 Section {
@@ -125,7 +125,7 @@ struct SettingsView: View {
                 } header: {
                     Text("Staples")
                 } footer: {
-                    Text("Staples are unticked by default when adding to Reminders. Matched against the ingredient name exactly, ignoring case.")
+                    Text("Staples are unticked by default when adding to Reminders.")
                 }
 
                 Section {

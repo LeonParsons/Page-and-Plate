@@ -185,7 +185,7 @@ struct SharePlanSection: View {
         } header: {
             Text("Your household")
         } footer: {
-            Text("Everyone you invite sees and edits the same week, and cooks from everyone's recipes. Each person's recipes stay theirs and go with them if they leave. Page photos are never shared.\n\nYour name is how the others know which plan is yours, and who added a recipe. Only the people you share with see it.")
+            Text("Everyone you invite sees and edits the same week, and cooks from everyone's recipes. Each person's recipes stay theirs and go with them if they leave.\n\nYour name is how the others know which plan is yours, and who added a recipe.")
         }
         .alert("What should they call you?", isPresented: $isAskingName) {
             TextField("Your name", text: $myName)

@@ -56,7 +56,7 @@ struct HomeView: View {
                     .paperBackground()
                 }
             }
-            .navigationTitle("Recipes")
+            .navigationTitle("My recipes")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     // A menu rather than a button: typing a recipe in is not a fallback for a failed scan,
