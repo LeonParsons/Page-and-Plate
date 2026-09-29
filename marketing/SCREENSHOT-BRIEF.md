@@ -15,8 +15,9 @@ properly.** A quarter of a tin stays a quarter of a tin. Three recipes sharing g
 
 ## What's in `screenshots/raw/`
 
-Unretouched device captures at native resolution — no frames, no text, no scaling. Eleven files: nine you
-need, two spares.
+Unretouched device captures at native resolution — no frames, no text, no scaling. Thirteen files: the ten
+the store frames are built from, two spares, and two more screens (welcome and splash) that are not store
+frames but were asked for.
 
 | File | Screen | What it has to prove |
 |---|---|---|
@@ -31,6 +32,15 @@ need, two spares.
 | `ipad4.png` | iPad scaled recipe | Same ×¼ proof, wider |
 | `ipad6.png` | iPad export sheet | **The weak one** — a form sheet over the plan; it doesn't use the width |
 | `shot1-empty.png` | *Spare.* New recipe with nothing loaded | Use if a barer first frame works better |
+| `welcome.png` | The welcome screen, first launch | The mark, "Page & Plate", "Cook from the books you own.", and the five things the app does |
+| `splash.png` | The launch screen | **It is a plain `#FAF7F0` field and nothing else** — see below |
+
+**`splash.png` is deliberately empty.** The launch screen is declared as a colour and no content
+(`UILaunchScreen: UIColorName: LaunchBackground` in `ios/project.yml`), so a cold launch shows solid paper —
+`#FAF7F0` in light, `#1A1713` in dark — with no mark and no wordmark, and then the app appears. That is the
+real screen, not a failed capture. It was taken by holding the app at launch
+(`simctl launch --wait-for-debugger`), which is the only way to photograph a screen that is otherwise on
+display for a fraction of a second.
 
 ## Apple's requirements
 
@@ -85,6 +95,12 @@ at 4.5:1 or better.
    different figures, ask — they can be reshot, but they can't be edited in a graphics program.
 
 ## Known gaps
+
+- **There is no capture of the subscription page.** `SubscriptionStoreView` reads its plans and prices from
+  StoreKit, and only Xcode's own launch path loads `ios/RecipeBasket.storekit` into a simulator — there is no
+  `simctl` command for it (checked: `simctl` has no `storekit` subcommand). Launched any other way the screen
+  renders "Subscription Unavailable — The subscription is unavailable in the current storefront." Getting it
+  needs the app run from Xcode with ⌘R; the capture itself is then an ordinary `simctl io screenshot`.
 
 - **No iPad household frame.** The iPad simulator's build predates the demo-household seeder, so it has no
   household to show. Reshootable once that build is refreshed — see `marketing/README.md`.
