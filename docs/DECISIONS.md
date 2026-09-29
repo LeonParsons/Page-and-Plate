@@ -1052,3 +1052,24 @@ export sheet's list picker marks the current list with an unlabelled `checkmark`
 column is a tappable `Image` with no label, button trait or hint; `PageThumbnail` is unlabelled where
 `HomeView`'s equivalent says "Page photo"; `planRow` says both "Showing" and `.isSelected`; and the household's
 member rows are the only composite row with no explicit grouping.
+
+### 2026-09-29 · Five accessibility fixes, and what a device still has to settle
+
+Fixed ahead of the VoiceOver session so the session verifies rather than hunts: the reminder-list picker's
+unlabelled `checkmark` (now `.isSelected` on the row, the idiom the same file's tick rows already used);
+`RecipeFormView`'s iPad pages column, which opened a page with `.onTapGesture` and so **could not be opened
+with VoiceOver on at all** — a Button now, labelled like `PageThumbnailStrip`, the compact-width path to the
+same viewer; `PageThumbnail`, decorative at all seven call sites but only saying so at one, now hidden in the
+component with the constraint recorded (where it is the only content, the container carries the label);
+`planRow`, which announced both "Showing" and `.isSelected`; and the household member rows, the only composite
+row in the app with no `.accessibilityElement(children: .combine)`.
+
+**Verified by hand, deliberately.** `performAccessibilityAudit` would need a new `bundle.ui-testing` target,
+and two of these five sit behind a real `CKShare` — the member rows read `share?.participants`, which
+`HouseholdDemoSeed` does not fabricate — so a simulator audit could not reach them. The three suites stay green
+with no new warnings, which proves the edits compile and nothing broke; it proves nothing about how any of it
+sounds. That is still the device session, and the script in `docs/APPSTORE.md` now reads as a verification of
+these five plus six still open.
+
+**Adjacent and not done:** the picker's non-modifiable lists are `.disabled(...)`, so VoiceOver says "dimmed"
+without saying why. That is a copy decision, not an annotation fault.

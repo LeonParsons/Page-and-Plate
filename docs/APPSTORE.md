@@ -299,13 +299,14 @@ Walk these, and write down what is actually said:
 1. **Export sheet** — the one item 6 named. Each row should be a single element: label "flour, 200g, staple",
    value "Ticked" / "Not ticked", hint "Double tap to leave out". Listen for the tick **and** `.isSelected`
    double-announcing ("Selected… Ticked"), which is the likely flaw, not a missing label.
-2. **The list picker** inside it — `ExportSheet.swift:251` marks the chosen list with a bare `checkmark` and
-   no label or `.isSelected`, so the current list is probably silent.
-3. **Recipe form, pages column** — `RecipeFormView.swift:137` is an `Image(uiImage:)` with `.onTapGesture`
-   and no label, no button trait and no hint. Expect "Image", with no way to know it opens the page.
-   `PageViewerView` labels its pages "Page 1 photo"; this column does not.
-4. **`PageThumbnail`** (`CaptureView.swift:200`) — same shape, unlabelled, where `HomeView` labels its
-   thumbnail "Page photo".
+2. **The list picker** inside it — fixed 2026-09-29; the tick is hidden and the row carries `.isSelected`.
+   The list in use should say "Selected"; the others should not.
+3. **Recipe form, pages column** (iPad width) — fixed 2026-09-29; it was an `.onTapGesture`, invisible to
+   VoiceOver, so the page could be seen and never opened. Now a Button: each page should say "Page 1 photo,
+   Button" and open the viewer on a double-tap. **Check this on an iPad**, which is the only place the
+   column renders.
+4. **`PageThumbnail`** — fixed 2026-09-29; decorative in the component now, so it should be skipped
+   everywhere it appears, except where a container labels it (`HomeView`, `PageThumbnailStrip`).
 5. **Ingredient rows** in the recipe form — a `.plain` Button round `IngredientRowView` plus a chevron. Does
    it say "Button", and is it clear a double-tap edits?
 6. **Star rating** — container `.contain`, label "Rated 3 of 5", value "3 stars", each star its own button
@@ -313,16 +314,17 @@ Walk these, and write down what is actually said:
 7. **Planner rows** — combined, so listen for the order: title, "for 4", "Has a note", "Added to Reminders".
 8. **Shared week, unavailable row** — should read "Chickpea arrabbiata. Recipe not available, so it can't be
    cooked or shopped for." Check the swipe action "Remove" is offered through the Actions rotor.
-9. **Plans list** (`SharePlanSection.planRow`) — the tick carries `accessibilityLabel("Showing")` *and* the
-   row adds `.isSelected`. Expect a redundant "Showing, Selected"; one of the two should go.
-10. **Member rows** (`SharePlanSection.swift:298`) — the only composite row in the app with no explicit
-    grouping, so the name and "3 recipes, 2 in your plan" may be two swipes instead of one.
+9. **Plans list** (`SharePlanSection.planRow`) — fixed 2026-09-29; it said "Showing, Selected". Should now
+   be "My plan, You share this one, Selected, Button", once.
+10. **Member rows** (`SharePlanSection`) — fixed 2026-09-29; combined now, so a member should be one stop:
+    "Sara, 3 recipes, 2 in your plan". Needs a real share — the debug seed does not fabricate participants.
 11. **Welcome screen and the app mark** — decorative art is `accessibilityHidden(true)`; confirm nothing
     reads as "Image".
 
-Items 2, 3, 4, 9 and 10 are visible in the code and need no device to believe; a session is for the ones only
-ears settle — order, redundancy, and whether the tick in the export sheet is discoverable at all. Fix what it
-finds **before** writing the claim, then say only what was walked.
+**Items 2, 3, 4, 9 and 10 were fixed on 2026-09-29** — they were visible in the code and needed no device to
+believe, so the session verifies them rather than finding them. Everything else here is still open, and the
+ones only ears settle are order, redundancy, and whether the tick in the export sheet is discoverable at all.
+Items 9 and 10 need a phone in a real household. Then say only what was walked.
 
 ---
 
