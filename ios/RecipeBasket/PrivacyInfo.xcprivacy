@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  The app's privacy manifest. App Store Connect refuses an upload whose code calls a required-reason API without
+  declaring why (ITMS-91053). The only one this app uses is UserDefaults, for its own settings, list order and
+  household state: CA92.1, "information that is only accessible to the app itself". Nothing is tracked and nothing
+  is collected, matching the App Privacy answers ("Data Not Collected", docs/APPSTORE.md item 11). A new
+  required-reason API (file timestamps, boot time, disk space, active keyboards) needs its own entry here first.
+-->
+<plist version="1.0">
+<dict>
+	<key>NSPrivacyTracking</key>
+	<false/>
+	<key>NSPrivacyTrackingDomains</key>
+	<array/>
+	<key>NSPrivacyCollectedDataTypes</key>
+	<array/>
+	<key>NSPrivacyAccessedAPITypes</key>
+	<array>
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>CA92.1</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>
