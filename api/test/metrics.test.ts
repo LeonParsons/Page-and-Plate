@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { matchIngredients, normaliseName, quantitiesEqual, scorePage, summarise, unitsEqual, yieldsEqual } from "../src/eval/metrics.ts";
+import { PRICING, costOfCalls, matchIngredients, normaliseName, quantitiesEqual, scorePage, summarise, unitsEqual, yieldsEqual } from "../src/eval/metrics.ts";
 import type { Ingredient, Recipe } from "../src/schema.ts";
 
 function ing(name: string, quantity: number | null = null, unit: Ingredient["unit"] = null, quantityMax: number | null = null): Ingredient {
@@ -94,11 +94,9 @@ describe("scorePage and summarise", () => {
   it("micro-averages over pages and prices tokens per model", () => {
     const s1 = scorePage("a", "claude-sonnet-5", expected, predicted);
     const s2 = scorePage("b", "claude-sonnet-5", expected, expected);
-    const runs = [
-      { ok: true, latencyMs: 1000, inputTokens: 1_000_000, outputTokens: 100_000 },
-      { ok: true, latencyMs: 3000, inputTokens: 0, outputTokens: 0 },
-      { ok: false, latencyMs: 500, inputTokens: 0, outputTokens: 0 },
-    ];
+    const tokens = (inputTokens: number, outputTokens: number) => ({ inputTokens, outputTokens, cacheCreationInputTokens: 0, cacheReadInputTokens: 0 });
+    const run = (ok: boolean, latencyMs: number, usage: ReturnType<typeof tokens>) => ({ ok, latencyMs, ...usage, costUSD: costOfCalls([{ model: "claude-sonnet-5", usage }]) });
+    const runs = [run(true, 1000, tokens(1_000_000, 100_000)), run(true, 3000, tokens(0, 0)), run(false, 500, tokens(0, 0))];
     const summary = summarise("claude-sonnet-5", [s1, s2], runs, 4);
     expect(summary.pages).toBe(3);
     expect(summary.failedPages).toBe(1);
@@ -113,5 +111,30 @@ describe("scorePage and summarise", () => {
     expect(summary.meanLatencyMs).toBeCloseTo(1500);
     expect(summary.estimatedCostUSD).toBeCloseTo(2 + 1);
     expect(summarise("unknown-model", [], [], 0).estimatedCostUSD).toBeNull();
+    expect(summarise("claude-sonnet-5", [], [{ ...runs[0]!, costUSD: null }], 0).estimatedCostUSD).toBeNull();
+  });
+});
+
+describe("costOfCalls", () => {
+  const usage = (inputTokens: number, outputTokens: number, write = 0, read = 0) => ({ inputTokens, outputTokens, cacheCreationInputTokens: write, cacheReadInputTokens: read });
+
+  it("bills a cache write at 1.25× and a read at 0.1× of base input", () => {
+    expect(costOfCalls([{ model: "claude-sonnet-5", usage: usage(0, 0, 1_000_000, 0) }])).toBeCloseTo(2.5);
+    expect(costOfCalls([{ model: "claude-sonnet-5", usage: usage(0, 0, 0, 1_000_000) }])).toBeCloseTo(0.2);
+    expect(costOfCalls([{ model: "claude-opus-5-5", usage: usage(0, 0, 0, 1_000_000) }])).toBeCloseTo(0.2);
+  });
+
+  it("prices a fallback call at the fallback's own rate", () => {
+    const calls = [
+      { model: "claude-haiku-4-5", usage: usage(1_000_000, 0) },
+      { model: "claude-sonnet-5", usage: usage(1_000_000, 0) },
+    ];
+    expect(costOfCalls(calls)).toBeCloseTo(1 + 2);
+    expect(costOfCalls([])).toBe(0);
+  });
+
+  it("is null when any call's model has no price", () => {
+    expect(costOfCalls([{ model: "claude-haiku-4-5", usage: usage(1, 1) }, { model: "mystery", usage: usage(1, 1) }])).toBeNull();
+    expect(PRICING["gemini-3.1-flash-lite"]).toBeDefined();
   });
 });

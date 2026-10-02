@@ -1,9 +1,12 @@
 /**
  * npm run eval [-- --models a,b] [--only stem,stem] [--effort low|medium|high|xhigh|max] [--concurrency 3]
- *              [--no-negatives] [--draft]
+ *              [--fallback-model m] [--no-negatives] [--draft]
  *
  * Runs every fixtures/photos/<stem>.jpg that has a fixtures/expected/<stem>.json through the real extractor, per
  * model, and reports recall / precision / quantity & unit exact match / yield accuracy / latency / cost.
+ * `gemini-*` models go to Google (needs GEMINI_API_KEY), everything else to Anthropic. --fallback-model is the
+ * model for the one retry after an invalid reply, as ANTHROPIC_FALLBACK_MODEL is in the Worker; it applies only
+ * to models from the same provider.
  * Photos under fixtures/photos/negatives/ are expected to come back as no_recipe_found or unreadable.
  * --draft writes the first model's output for photos WITHOUT an expected file to fixtures/expected/_drafts/.
  */
@@ -11,10 +14,11 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 
 import { basename, dirname, extname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
-import { extractWithAnthropic, type ExtractOptions, type ExtractOutcome } from "../src/extract.ts";
-import { scorePage, summarise, type ModelSummary, type PageScore, type RunStats } from "../src/eval/metrics.ts";
+import type { ExtractOptions, ExtractOutcome, ModelCall } from "../src/extract.ts";
+import { costOfCalls, scorePage, summarise, type ModelSummary, type PageScore, type RunStats } from "../src/eval/metrics.ts";
+import { extractorFor, providerOf, type Provider } from "../src/eval/providers.ts";
 import { ExtractionResponseSchema, type ExtractionResponse } from "../src/schema.ts";
-import { resolveAnthropicKey } from "./lib/devvars.ts";
+import { resolveAnthropicKey, resolveGeminiKey } from "./lib/devvars.ts";
 import { prepareImage } from "./lib/images.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -30,6 +34,7 @@ const { values: args } = parseArgs({
     models: { type: "string", default: process.env["EVAL_MODELS"] ?? "claude-sonnet-5,claude-opus-5" },
     only: { type: "string" },
     effort: { type: "string" },
+    "fallback-model": { type: "string" },
     concurrency: { type: "string", default: "3" },
     "no-negatives": { type: "boolean", default: false },
     draft: { type: "boolean", default: false },
@@ -40,7 +45,8 @@ const models = args.models!.split(",").map((m) => m.trim()).filter(Boolean);
 const only = args.only ? new Set(args.only.split(",").map((s) => s.trim())) : null;
 const concurrency = Math.max(1, Number.parseInt(args.concurrency!, 10) || 1);
 const effort = args.effort as ExtractOptions["effort"] | undefined;
-let apiKey = "";
+const fallbackModel = args["fallback-model"];
+const apiKeys: Partial<Record<Provider, string>> = {};
 
 const isPhoto = (f: string) => [".jpg", ".jpeg", ".png"].includes(extname(f).toLowerCase());
 const stemOf = (f: string) => basename(f, extname(f));
@@ -67,6 +73,9 @@ type PageRun = {
   attempts: number;
   inputTokens: number;
   outputTokens: number;
+  cacheCreationInputTokens: number;
+  cacheReadInputTokens: number;
+  calls: ModelCall[];
   score: PageScore | null;
   predicted: ExtractionResponse | null;
   detail: string | null;
@@ -91,14 +100,16 @@ const secs = (ms: number) => `${(ms / 1000).toFixed(1)}s`;
 
 async function runPage(model: string, page: { stem: string; path: string; expectedPath?: string }): Promise<PageRun> {
   const image = await prepareImage(page.path);
-  const outcome = await extractWithAnthropic([image], { apiKey, model, ...(effort ? { effort } : {}) });
+  const options: ExtractOptions = { apiKey: apiKeys[providerOf(model)]!, model, ...(effort ? { effort } : {}) };
+  if (fallbackModel && providerOf(fallbackModel) === providerOf(model)) options.fallbackModel = fallbackModel;
+  const outcome = await extractorFor(model)([image], options);
   const base = {
     stem: page.stem,
     kind: outcome.kind,
     latencyMs: outcome.latencyMs,
     attempts: outcome.attempts,
-    inputTokens: outcome.usage.inputTokens,
-    outputTokens: outcome.usage.outputTokens,
+    ...outcome.usage,
+    calls: outcome.calls,
   };
   if (outcome.kind !== "ok") {
     const detail = "reason" in outcome ? outcome.reason : "detail" in outcome ? outcome.detail : null;
@@ -128,7 +139,8 @@ function printPage(run: PageRun) {
   }
 }
 
-function printSummary(s: ModelSummary, negativeRuns: PageRun[]) {
+function printSummary(s: ModelSummary, runs: PageRun[], negativeRuns: PageRun[]) {
+  const retried = runs.filter((r) => r.attempts > 1).length;
   const rows: [string, string][] = [
     ["pages", `${s.pages}${s.failedPages ? ` (${s.failedPages} failed)` : ""}`],
     ["ingredient recall", `${pct(s.recall)}  (${s.matched}/${s.expectedLines})`],
@@ -139,7 +151,10 @@ function printSummary(s: ModelSummary, negativeRuns: PageRun[]) {
     ["yield accuracy", pct(s.yieldAccuracy)],
     ["mean latency", secs(s.meanLatencyMs)],
     ["tokens in / out", `${s.inputTokens} / ${s.outputTokens}`],
+    ["cache write / read", `${s.cacheCreationInputTokens} / ${s.cacheReadInputTokens}`],
     ["estimated cost", s.estimatedCostUSD === null ? "n/a" : `$${s.estimatedCostUSD.toFixed(3)}`],
+    ["cost per page", s.estimatedCostUSD === null || s.pages === 0 ? "n/a" : `${((s.estimatedCostUSD / s.pages) * 100).toFixed(2)}¢`],
+    ["retried pages", `${retried}${retried && fallbackModel && providerOf(fallbackModel) === providerOf(s.model) ? ` (on ${fallbackModel})` : ""}`],
   ];
   if (negativeRuns.length) {
     const rejected = negativeRuns.filter((r) => r.kind === "no_recipe_found" || r.kind === "unreadable").length;
@@ -149,12 +164,18 @@ function printSummary(s: ModelSummary, negativeRuns: PageRun[]) {
 }
 
 async function main() {
-  apiKey = resolveAnthropicKey(join(here, "../.dev.vars"));
+  const devVars = join(here, "../.dev.vars");
+  const providers = new Set(models.map(providerOf));
+  if (providers.has("anthropic")) apiKeys.anthropic = resolveAnthropicKey(devVars);
+  if (providers.has("google")) apiKeys.google = resolveGeminiKey(devVars);
   mkdirSync(resultsDir, { recursive: true });
   const startedAt = new Date();
-  const report: Record<string, unknown> = { startedAt: startedAt.toISOString(), effort: effort ?? "default", models: {} };
+  const report: Record<string, unknown> = { startedAt: startedAt.toISOString(), effort: effort ?? "default", fallbackModel: fallbackModel ?? null, models: {} };
 
-  console.log(`Eval: ${scored.length} scored page(s), ${negatives.length} negative(s), ${unscored.length} unscored — models: ${models.join(", ")}${effort ? ` — effort ${effort}` : ""}`);
+  console.log(
+    `Eval: ${scored.length} scored page(s), ${negatives.length} negative(s), ${unscored.length} unscored — models: ${models.join(", ")}` +
+      `${effort ? ` — effort ${effort}` : ""}${fallbackModel ? ` — fallback ${fallbackModel}` : ""}`,
+  );
 
   for (const model of models) {
     console.log(`\n=== ${model} ===`);
@@ -167,13 +188,21 @@ async function main() {
       console.log(`  ${good ? "✔" : "✘"} negatives/${r.stem.padEnd(24)} ${r.kind}${r.detail ? ` — ${r.detail}` : ""}${r.predicted ? ` (extracted ${r.predicted.recipe.ingredients.length} lines)` : ""}  ${secs(r.latencyMs)}`);
     }
 
-    const stats: RunStats[] = runs.map((r) => ({ ok: r.score !== null, latencyMs: r.latencyMs, inputTokens: r.inputTokens, outputTokens: r.outputTokens }));
+    const stats: RunStats[] = runs.map((r) => ({
+      ok: r.score !== null,
+      latencyMs: r.latencyMs,
+      inputTokens: r.inputTokens,
+      outputTokens: r.outputTokens,
+      cacheCreationInputTokens: r.cacheCreationInputTokens,
+      cacheReadInputTokens: r.cacheReadInputTokens,
+      costUSD: costOfCalls(r.calls),
+    }));
     const failedExpectedLines = runs
       .filter((r) => r.score === null)
       .reduce((n, r) => n + ExtractionResponseSchema.parse(JSON.parse(readFileSync(join(expectedDir, `${r.stem}.json`), "utf8"))).recipe.ingredients.length, 0);
     const summary = summarise(model, runs.flatMap((r) => (r.score ? [r.score] : [])), stats, failedExpectedLines);
     console.log("");
-    printSummary(summary, negativeRuns);
+    printSummary(summary, runs, negativeRuns);
     (report["models"] as Record<string, unknown>)[model] = { summary, pages: runs, negatives: negativeRuns };
 
     if (args.draft && model === models[0] && unscored.length) {

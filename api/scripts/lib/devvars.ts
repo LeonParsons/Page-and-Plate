@@ -19,10 +19,15 @@ export function readDevVars(path: string): Record<string, string> {
   return vars;
 }
 
-export function resolveAnthropicKey(devVarsPath: string): string {
-  const key = process.env["ANTHROPIC_API_KEY"] || readDevVars(devVarsPath)["ANTHROPIC_API_KEY"];
+function resolveKey(name: string, devVarsPath: string): string {
+  const key = process.env[name] || readDevVars(devVarsPath)[name];
   if (!key) {
-    throw new Error(`No ANTHROPIC_API_KEY in the environment or in ${devVarsPath} (copy .dev.vars.example).`);
+    throw new Error(`No ${name} in the environment or in ${devVarsPath} (copy .dev.vars.example).`);
   }
   return key;
 }
+
+export const resolveAnthropicKey = (devVarsPath: string) => resolveKey("ANTHROPIC_API_KEY", devVarsPath);
+
+/** Only the eval reads this: a Google AI Studio key on a billing-enabled project (see .dev.vars.example). */
+export const resolveGeminiKey = (devVarsPath: string) => resolveKey("GEMINI_API_KEY", devVarsPath);

@@ -1,4 +1,5 @@
 import type { Ingredient, Recipe, RecipeYield } from "../schema.ts";
+import type { ModelCall, TokenUsage } from "../extract.ts";
 
 /**
  * Pure scoring for `npm run eval` (SPEC §10 Phase 1): ingredient recall/precision matched on name, quantity and
@@ -132,7 +133,8 @@ export function scorePage(stem: string, model: string, expected: Recipe, predict
   };
 }
 
-export type RunStats = { ok: boolean; latencyMs: number; inputTokens: number; outputTokens: number };
+/** One page's run. `costUSD` is priced per call (see `costOfCalls`), null when any call's model has no price. */
+export type RunStats = { ok: boolean; latencyMs: number; costUSD: number | null } & TokenUsage;
 
 export type ModelSummary = {
   model: string;
@@ -150,19 +152,59 @@ export type ModelSummary = {
   meanLatencyMs: number;
   inputTokens: number;
   outputTokens: number;
+  cacheCreationInputTokens: number;
+  cacheReadInputTokens: number;
   estimatedCostUSD: number | null;
 };
 
-/** USD per million tokens (input, output). Unknown models get a null cost. */
-export const PRICING: Record<string, [number, number]> = {
-  "claude-opus-5": [5, 25],
-  "claude-opus-4-8": [5, 25],
-  "claude-opus-4-7": [5, 25],
-  "claude-opus-4-6": [5, 25],
-  "claude-sonnet-5": [2, 10],
-  "claude-sonnet-4-6": [3, 15],
-  "claude-haiku-4-5": [1, 5],
+/** USD per million tokens. `input` is the uncached rate; cache writes and reads are billed separately. */
+export type Price = { input: number; output: number; cacheWrite: number; cacheRead: number };
+
+/** Anthropic's standard multipliers: a 5-minute cache write is 1.25× input, a read 0.1× (Opus 5.5: 0.05×). */
+const anthropic = (input: number, output: number, readMultiplier = 0.1): Price => ({ input, output, cacheWrite: input * 1.25, cacheRead: input * readMultiplier });
+
+/**
+ * Anthropic rates from platform.claude.com/docs/en/about-claude/pricing (fetched 2026-09-30). Gemini rates are
+ * from third-party price lists (Google's page could not be fetched): verify them against
+ * ai.google.dev/gemini-api/docs/pricing before quoting a Gemini cost. Implicit-cache reads are 0.1× there too.
+ * Unknown models get a null cost.
+ */
+export const PRICING: Record<string, Price> = {
+  "claude-opus-5-5": anthropic(4, 20, 0.05),
+  "claude-opus-5": anthropic(5, 25),
+  "claude-opus-4-8": anthropic(5, 25),
+  "claude-opus-4-7": anthropic(5, 25),
+  "claude-opus-4-6": anthropic(5, 25),
+  "claude-sonnet-5-5": anthropic(2, 10),
+  "claude-sonnet-5": anthropic(2, 10),
+  "claude-sonnet-4-6": anthropic(3, 15),
+  "claude-haiku-4-5": anthropic(1, 5),
+  "gemini-3.1-flash-lite": { input: 0.25, output: 1.5, cacheWrite: 0.25, cacheRead: 0.025 },
+  "gemini-3.5-flash-lite": { input: 0.3, output: 2.5, cacheWrite: 0.3, cacheRead: 0.03 },
+  "gemini-3.6-flash": { input: 0.75, output: 3.75, cacheWrite: 0.75, cacheRead: 0.075 },
+  "gemini-3.7-flash": { input: 0.75, output: 3.75, cacheWrite: 0.75, cacheRead: 0.075 },
+  "gemini-3.8-flash": { input: 0.75, output: 3.75, cacheWrite: 0.75, cacheRead: 0.075 },
 };
+
+/** Prices each call at its own model's rate, so a Sonnet retry behind Haiku costs what Sonnet costs. */
+export function costOfCalls(calls: ModelCall[]): number | null {
+  let total = 0;
+  for (const call of calls) {
+    const price = PRICING[call.model];
+    if (!price) return null;
+    total += costUSD(price, call.usage);
+  }
+  return total;
+}
+
+export function costUSD(price: Price, usage: TokenUsage): number {
+  return (
+    usage.inputTokens * price.input +
+    usage.outputTokens * price.output +
+    usage.cacheCreationInputTokens * price.cacheWrite +
+    usage.cacheReadInputTokens * price.cacheRead
+  ) / 1_000_000;
+}
 
 const ratio = (num: number, den: number) => (den === 0 ? 0 : num / den);
 
@@ -171,9 +213,13 @@ export function summarise(model: string, scores: PageScore[], runs: RunStats[], 
   const expectedLines = scores.reduce((n, s) => n + s.expectedLines, 0) + failedExpectedLines;
   const predictedLines = scores.reduce((n, s) => n + s.predictedLines, 0);
   const matched = scores.reduce((n, s) => n + s.matched, 0);
-  const inputTokens = runs.reduce((n, r) => n + r.inputTokens, 0);
-  const outputTokens = runs.reduce((n, r) => n + r.outputTokens, 0);
-  const price = PRICING[model];
+  const usage: TokenUsage = {
+    inputTokens: runs.reduce((n, r) => n + r.inputTokens, 0),
+    outputTokens: runs.reduce((n, r) => n + r.outputTokens, 0),
+    cacheCreationInputTokens: runs.reduce((n, r) => n + r.cacheCreationInputTokens, 0),
+    cacheReadInputTokens: runs.reduce((n, r) => n + r.cacheReadInputTokens, 0),
+  };
+  const priced = PRICING[model] !== undefined && runs.every((r) => r.costUSD !== null);
   return {
     model,
     pages: runs.length,
@@ -188,8 +234,7 @@ export function summarise(model: string, scores: PageScore[], runs: RunStats[], 
     quantityAndUnitExact: ratio(scores.reduce((n, s) => n + s.bothExact, 0), matched),
     yieldAccuracy: ratio(scores.filter((s) => s.yieldCorrect).length, runs.length),
     meanLatencyMs: ratio(runs.reduce((n, r) => n + r.latencyMs, 0), runs.length),
-    inputTokens,
-    outputTokens,
-    estimatedCostUSD: price ? (inputTokens * price[0] + outputTokens * price[1]) / 1_000_000 : null,
+    ...usage,
+    estimatedCostUSD: priced ? runs.reduce((n, r) => n + r.costUSD!, 0) : null,
   };
 }
