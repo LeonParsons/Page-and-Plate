@@ -1,7 +1,7 @@
 import Foundation
 
 /// Where the app finds the Worker (SPEC §6). Values come from Info.plist, which XcodeGen fills from
-/// ios/Config/Secrets.xcconfig (git-ignored; copy Secrets.example.xcconfig). The Anthropic key is never here.
+/// ios/Config/Secrets.xcconfig (git-ignored; copy Secrets.example.xcconfig). No model provider's key is ever here.
 nonisolated struct AppConfiguration: Sendable, Equatable {
     let apiBaseURL: URL
     let appKey: String

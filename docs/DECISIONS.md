@@ -1191,3 +1191,59 @@ quantity or ingredient differs from the page; convention differences are not cou
 - At this sample size the Sonnet and Flash rows are a tie (SPEC §10). The gaps to Haiku and Flash-Lite are real,
   because those are misreads and inventions, not points.
 - Gemini prices are still third-party figures; see the next entry.
+
+### 2026-10-02 · Gemini 3.8 Flash reads the page, and Sonnet is the backup
+
+Leon chose to launch on **Gemini 3.8 Flash at low effort, with Sonnet 5 at low effort behind it**, after the
+comparison above. A second run of exactly that setup:
+
+- **Accuracy:** 99.7 % recall and 99.0 % quantity and unit. Every yield was right and every photo page was
+  rejected.
+- **Cost and speed:** 0.75¢ a page at 6.5s, and the fallback was never needed.
+- **One misread:** the ⅓ tsp of flour read as ½, the smallest print in the set. Flash read it right in both
+  earlier runs.
+
+**What Google's own pages said on 2026-10-02.** These supersede the third-party figures above.
+
+- **Price:** $0.75 / $3.75 per million tokens until 2026-12-31, then **$1.50 / $7.50 from 2027-01-01**. That is
+  about 1.5¢ a scan against about 2.1¢ for Sonnet at low effort, so the saving shrinks from about 65 % to about
+  30 % (APPSTORE item 16).
+- **Paid tier:** prompts and responses are not used to improve Google's products. Google logs them for **55 days**
+  for abuse monitoring, and authorised staff may review them. The free tier trains on what is sent. Anthropic
+  deletes API data within 30 days, unless it is flagged.
+- **Terms:**
+  - Only paid services may serve users in the UK, the EEA or Switzerland.
+  - **No use in an app "directed towards or … likely to be accessed by individuals under the age of 18".** Leon
+    judged that Page & Plate is not one (APPSTORE item 15). Anthropic allows apps that serve minors, provided
+    they add safeguards.
+
+**How it works.**
+
+- **Routing by name:** `providers.ts` names a model's provider (`gemini-*` → Google). `ExtractOptions` carries
+  `apiKeys`, one per provider, in place of `apiKey`.
+- **The routed extractor:** `extract-routed.ts` sends each attempt to its own model's provider. A provider's
+  attempts are built only when needed, so a scan Gemini answers never constructs an Anthropic client.
+- **When the fallback runs:** `runExtraction` now hands the scan to a fallback **from the other provider** when the
+  first provider fails outright: an outage, a quota, a region Google refuses, or a missing key. Before, only an
+  invalid reply did. A same-provider failure still ends the scan, because that client has already retried.
+- **Logging:** the outcome's `retried` gives the reason and status, and is logged with no text. How often Gemini
+  hands a scan to Claude, and why, is the cost to watch.
+- **Settings renamed:** `ANTHROPIC_MODEL` / `_FALLBACK_MODEL` / `_EFFORT` are now `EXTRACT_MODEL` /
+  `EXTRACT_FALLBACK_MODEL` / `EXTRACT_EFFORT`, and `GEMINI_API_KEY` is a new secret.
+- **Missing keys fail loudly:** a configured model without its key refuses every scan as `server_misconfigured`
+  and logs the missing name. A missing fallback key would otherwise only show on the day Google fails.
+- **The eval** uses the same routed extractor, so `--fallback-model` can cross providers. It runs the production
+  setup exactly.
+- **Verified live:**
+  - A page sent through `wrangler dev` was answered by Gemini in 4.9s.
+  - An eval run against a Gemini model that does not exist had Google refuse, and Sonnet read the page
+    correctly.
+- **No Gemini cache reads.** The Gemini prompt is about 1.4k tokens, and it was not pursued.
+
+**Privacy and App Review.**
+
+- `legal/privacy.html` names both services, their terms and how long each keeps the photo. It goes live with the
+  deploy (APPSTORE item 12).
+- The App Privacy answers stay "Data Not Collected", on Apple's definition of a third-party partner (item 13).
+- Guideline 5.1.2(i) asks for explicit permission before personal data goes to third-party AI. **Leon decided to
+  ship without an in-app consent step for now.** The review notes name the services instead (item 14).

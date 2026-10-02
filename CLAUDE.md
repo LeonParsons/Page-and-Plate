@@ -17,7 +17,7 @@ Each recipe can be exported on its own, or a planned week in one go. The week ex
 - **Export:** EventKit (`requestFullAccessToReminders`) for Reminders; SwiftUI `ShareLink` for plain text.
 - **Subscription:** StoreKit 2 (`Transaction.currentEntitlements` / `Transaction.updates`, `SubscriptionStoreView`); product ids in `Subscription/Products.swift`, mirrored in `ios/RecipeBasket.storekit` for the simulator (the scheme's StoreKit configuration). The free tier is `ScanAllowance` in RecipeCore plus a Keychain ledger.
 - **Core logic:** local Swift package `RecipeCore` (models, scaling, rounding, fraction formatting, line formatting). Tests use Swift Testing.
-- **API proxy:** Cloudflare Worker (TypeScript) + Hono + `@anthropic-ai/sdk` + Zod 4. Model name from env `ANTHROPIC_MODEL` (default `claude-sonnet-5`), optional `ANTHROPIC_FALLBACK_MODEL` for the one retry. The system prompt carries the only prompt-cache breakpoint, so keep it byte-identical across requests. API key is a Wrangler secret. Tests with Vitest.
+- **API proxy:** Cloudflare Worker (TypeScript) + Hono + Zod 4. **Gemini 3.8 Flash reads the page and Claude Sonnet 5 is the backup** (2026-10-02): `EXTRACT_MODEL` / `EXTRACT_FALLBACK_MODEL` / `EXTRACT_EFFORT` in `wrangler.jsonc`, routed by name (`gemini-*` → Google over plain `fetch`, anything else → `@anthropic-ai/sdk`). The fallback takes the one retry after an invalid reply, and the whole scan when Google fails or refuses. Each provider's key (`GEMINI_API_KEY`, `ANTHROPIC_API_KEY`) is a Wrangler secret; a configured model without its key refuses every scan. The Anthropic system prompt carries the only prompt-cache breakpoint, so keep it byte-identical across requests. Tests with Vitest.
 - **Dependencies:** no third-party Swift packages without asking first.
 
 ## Layout
@@ -59,8 +59,8 @@ cd api && npm run smoke -- ../fixtures/photos/chickpea-arrabbiata.jpg   # POST a
 cd api && npm run schema       # regenerate schema/extraction.schema.json from Zod
 swift ios/Tools/RenderAppIcon.swift   # re-render the three 1024 app-icon PNGs after a change to the mark
 python3 docs/appstore-counts.py       # check every App Store field against Apple's character limits
-cd api && npm run eval         # extraction accuracy against fixtures/photos (both models; ≈ $1 per run)
-cd api && npm run eval -- --models claude-haiku-4-5,gemini-3.1-flash-lite --fallback-model claude-sonnet-5   # compare cheap models; gemini-* is eval-only and needs GEMINI_API_KEY
+cd api && npm run eval -- --models gemini-3.8-flash --fallback-model claude-sonnet-5 --effort low   # the production setup against fixtures/photos (≈ 25¢)
+cd api && npm run eval -- --models claude-sonnet-5,gemini-3.5-flash-lite   # compare models; with no --models it runs Sonnet 5 and Opus 5 (≈ $1)
 cd api && npm run deploy       # after `npx wrangler login`, a KV namespace id in wrangler.jsonc and the two secrets (see docs/DECISIONS.md)
 cd api && bash scripts/make-test-pki.sh   # regenerate the certificate chains entitlement.test.ts signs with (committed; they expire in 2046)
 # StoreKit: only Xcode's own launch path syncs RecipeBasket.storekit to the simulator, so under `xcodebuild test`
@@ -71,7 +71,7 @@ xcodebuild build -project ios/RecipeBasket.xcodeproj -scheme RecipeBasket -desti
 xcrun devicectl device install app --device 00008150-00095D492140401C <DerivedData>/Build/Products/Debug-iphoneos/RecipeBasket.app
 ```
 
-`api/.dev.vars` (git-ignored, copy from `.dev.vars.example`) holds `ANTHROPIC_API_KEY` and `APP_KEY` for local dev and the eval, plus `GEMINI_API_KEY` (a billing-enabled Google AI Studio project) only when the eval runs a `gemini-*` model.
+`api/.dev.vars` (git-ignored, copy from `.dev.vars.example`) holds `GEMINI_API_KEY` (a billing-enabled Google AI Studio project, never the free tier), `ANTHROPIC_API_KEY` and `APP_KEY` for local dev and the eval.
 
 The app reads the Worker URL and app key from `ios/Config/Secrets.xcconfig` (git-ignored; `xcodegen generate` copies `Secrets.example.xcconfig` if it is missing). Put the same `APP_KEY` there as in `api/.dev.vars`. In the simulator the app talks to `wrangler dev` on `http://localhost:8787`, so run `npm run dev` first. Put fixture pages in the simulator's photo library with `xcrun simctl addmedia "iPhone 17 Pro" fixtures/photos/*.jpg`. The VisionKit document camera only works on a real device.
 
@@ -80,7 +80,7 @@ Definition of done for any task: `swift test` in RecipeCore, the Xcode test run,
 ## Non-negotiable rules
 
 1. **The model extracts; code calculates.** Scaling, rounding and formatting live in `RecipeCore` with tests. Never ask the model to do arithmetic or scale anything.
-2. **Never ship the Anthropic API key in the app.** The app only calls the Worker. Don't log images or raw model output in production.
+2. **Never ship a model API key in the app** — Google's or Anthropic's. The app only calls the Worker. Don't log images or raw model output in production. Google's key must belong to a billing-enabled project: its free tier lets Google train on what is sent, and its terms allow only paid use for users in the UK, the EEA and Switzerland.
 3. **One schema contract.** The Worker's Zod schema is the source of truth, exported to `schema/extraction.schema.json`. Swift `Codable` models must decode every file in `fixtures/expected/`; the Worker must validate the same files. Both test suites enforce this.
 4. **Validate every model response with Zod** in the Worker before returning it. On failure retry once, then return a typed error.
 5. **The user always reviews an extraction before it is saved.** Assume the model is sometimes wrong.
@@ -101,7 +101,7 @@ Definition of done for any task: `swift test` in RecipeCore, the Xcode test run,
 - **CloudKit will not tell you anybody's name — not even the user's own.** `CKUserIdentity.nameComponents` needs the user-discoverability permission, and iOS 17 removed that permission and every `discoverUserIdentity` API ("No longer supported", per the SDK header). So `CKShare.Participant` names are nil on every build this app can ship, and any feature that names a person must be fed by a name that person **typed** — `HouseholdAuthor.name`, published as a `SharedMember` record beside their recipes. Do not "fix" a blank name by re-reading the share; there is nothing there.
 - **A CloudKit record name may not begin with `_`, and a *user* record name always does.** So anything keyed on a person — `HouseholdAuthor.id`, a share participant's id — must be prefixed before it becomes a `CKRecord.ID` (`SharedWeekRecords.recordID(member:in:)`). CloudKit refuses the save outright, and a refusal is an ordinary failed save: it appears nowhere on screen, so the feature simply does nothing. Treat `.invalidArguments` and `.serverRejectedRequest` as bugs to log loudly, never as transient.
 9c. **Every `@Model` property must stay CloudKit-legal.** No `@Attribute(.unique)`, a default value on every non-optional attribute, and every relationship optional. Break one and the store silently stops syncing — `CloudKitSchemaTests` catches it, including by loading a real mirrored container. Read a to-many relationship through its accessor (`orderedPages`, `meals`), not the optional property.
-10. **Check current Apple, Anthropic and Cloudflare docs** rather than relying on memory. Record any deviation from this file in `docs/DECISIONS.md`.
+10. **Check current Apple, Google, Anthropic and Cloudflare docs** rather than relying on memory. Record any deviation from this file in `docs/DECISIONS.md`.
 
 ## Working style
 

@@ -1,7 +1,7 @@
 import Foundation
 import RecipeCore
 
-/// `POST /extract` on the Worker (SPEC §6). The app never talks to Anthropic directly.
+/// `POST /extract` on the Worker (SPEC §6). The app never talks to a model provider directly.
 nonisolated final class ExtractionClient: Sendable {
     private let configuration: AppConfiguration
     private let deviceID: UUID

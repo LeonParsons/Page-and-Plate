@@ -50,7 +50,7 @@ footer { margin-top: 56px; padding-top: 24px; border-top: 1px solid var(--rule);
 <main>
   <header>
     <h1>Privacy Policy</h1>
-    <p class="updated">Page &amp; Plate · Last updated 28 September 2026</p>
+    <p class="updated">Page &amp; Plate · Last updated 2 October 2026</p>
   </header>
 
   <p>Page &amp; Plate has no accounts and no sign-in. We do not know who you are, and there is nothing to log
@@ -71,13 +71,20 @@ footer { margin-top: 56px; padding-top: 24px; border-top: 1px solid var(--rule);
   <h3>Reading a cookbook page</h3>
 
   <p>When you photograph a page and ask the app to read it, that image is sent to our server and passed to
-  <strong>Anthropic's API</strong>, which reads the ingredients and returns them as text. This is the only time
-  a photograph of yours leaves your device, and it only happens when you ask for it.</p>
+  <strong>Google's Gemini API</strong>, which reads the ingredients and returns them as text. If Google cannot
+  answer — its service is down, or its reply cannot be used — the same image goes to <strong>Anthropic's Claude
+  API</strong> instead. This is the only time a photograph of yours leaves your device, and it only happens when
+  you ask for it.</p>
 
   <ul>
     <li>We do not store the image. It exists for the length of that one request and is then gone.</li>
     <li>We do not store the ingredients that come back. They are returned to your device and saved there.</li>
     <li>We never log the image or the text extracted from it.</li>
+    <li>Google and Anthropic read the image for us under their paid business terms, and neither uses it to train or
+      improve its AI models. Each keeps a copy for a limited time, solely to detect misuse of its service and to meet
+      legal obligations, and its authorised staff may review it for that purpose: Google for up to 55 days,
+      Anthropic for up to 30 days, or longer only if its systems flag the request as breaking its usage
+      policy.</li>
     <li>A recipe you <strong>type in yourself</strong> never leaves your device at all — nothing is sent, because
       there is nothing to read.</li>
   </ul>
@@ -137,7 +144,8 @@ footer { margin-top: 56px; padding-top: 24px; border-top: 1px solid var(--rule);
   <ul>
     <li>No advertising, no advertising identifiers, no ad networks.</li>
     <li>No analytics or tracking SDKs. Nothing follows you between apps or websites.</li>
-    <li>We do not sell, rent or share your information with anyone, because we do not have it.</li>
+    <li>We do not sell or rent your information, and we pass nothing on except the page photo you ask us to read,
+      to the two services named above.</li>
     <li>We do not build a profile of you, and we could not — there is no account to attach one to.</li>
   </ul>
 

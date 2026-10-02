@@ -405,3 +405,35 @@ Items 9 and 10 need a phone in a real household. Then say only what was walked.
 11. ~~**Age rating questionnaire and the App Privacy answers**~~ Both answered 2026-09-29 (Leon), "Data Not
     Collected" throughout — the app has no accounts, and CloudKit private and shared databases are not
     developer collection. These were the two that block a submission outright.
+12. **Gemini goes live with the next Worker deploy, in this order** (2026-10-02: Gemini 3.8 Flash reads the page,
+    Claude Sonnet 5 is the backup; see `docs/DECISIONS.md`). Deploying the new config without step b refuses
+    every scan as `server_misconfigured`, so until then the deployed Worker stays on Sonnet.
+    1. In Google AI Studio, check that the project behind `GEMINI_API_KEY` has **billing enabled** (paid tier).
+       The free tier lets Google train on users' pages, and Google's terms allow only paid use for users in the
+       UK, the EEA or Switzerland.
+    2. Set the secret from `api/`, piped from `.dev.vars` so it is never pasted or shown:
+       `grep '^GEMINI_API_KEY=' .dev.vars | cut -d= -f2- | tr -d '\n' | npx wrangler secret put GEMINI_API_KEY`.
+       `ANTHROPIC_API_KEY` stays: it is the backup now.
+    3. Merge to `main` and push, so GitHub Pages publishes the privacy policy that names Google and Anthropic.
+       The policy promises a change is published before it takes effect.
+    4. `npm run deploy`, then `curl https://recipe-basket-api.recipe-basket-api.workers.dev/health` should
+       answer `gemini-3.8-flash` with `claude-sonnet-5` behind it. Scan one page from the phone.
+    5. Put a **budget alert** on the Google Cloud billing account, alongside the Anthropic Console's spend limit.
+13. **The App Privacy answers stay "Data Not Collected"; nothing to change in App Store Connect.** Apple's
+    "collect" covers the developer and its "third-party partners", which Apple defines as vendors whose code is
+    in the app. Gemini and Claude are called from the Worker, which keeps nothing. That is Leon's reading
+    (2026-10-02), not a ruling: revisit it if Apple's wording changes or a reviewer asks.
+14. **App Review notes: name the AI services.** Add: *"Scanning a cookbook page sends that photo, only when the
+    user taps Extract, through our server to Google's Gemini API (or Anthropic's Claude API if Gemini fails) to
+    read the ingredient list. Nothing is stored; see the privacy policy."* Guideline 5.1.2(i) asks for
+    disclosure and explicit permission before personal data goes to third-party AI. Leon decided on 2026-10-02
+    to ship without an in-app consent step. If App Review cites 5.1.2(i), the fix is a one-time sheet before the
+    first Extract that names both services and links the privacy policy.
+15. **Google's terms bar apps "likely to be accessed by" under-18s.** Leon judged on 2026-10-02 that Page &
+    Plate is not one. Keep the listing, the screenshots and the age-rating answers consistent with that: nothing
+    aimed at children. If that ever changes, Gemini has to go. Anthropic allows apps that serve minors,
+    provided they add safeguards.
+16. **Gemini 3.8 Flash's price doubles on 1 January 2027**, from $0.75 / $3.75 to $1.50 / $7.50 per million
+    tokens: about 0.75¢ a scan becomes about 1.5¢, against about 2.1¢ for Sonnet at low effort. Update
+    `PRICING` in `api/src/eval/metrics.ts` that day, and weigh whether the saving still pays for a second
+    provider.
