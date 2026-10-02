@@ -9,6 +9,8 @@
   // `wrangler secret put` in production — never here.
   "vars": {
     "ANTHROPIC_MODEL": "claude-sonnet-5",
+    // Low effort matched the default on all 23 eval pages for about 30 % less (docs/DECISIONS.md, 2026-10-02).
+    "ANTHROPIC_EFFORT": "low",
     // Optional: the model for the one retry after an invalid or cut-off reply (e.g. "claude-sonnet-5" behind
     // "claude-haiku-4-5"). Unset retries on ANTHROPIC_MODEL. ANTHROPIC_EFFORT is never sent to a Haiku model.
     // "ANTHROPIC_FALLBACK_MODEL": "claude-sonnet-5",

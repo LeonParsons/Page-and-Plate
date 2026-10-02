@@ -1140,3 +1140,54 @@ Apple's commission. Prices below are from Anthropic's pricing page, fetched 2026
   - the App Store privacy details;
   - CLAUDE.md's stack line and rule 2;
   - a billing-enabled project only, never the free tier, whose terms have let Google use what is sent.
+
+### 2026-10-02 · Thirteen harder pages, and Sonnet at low effort
+
+The eval was saturated, so Leon photographed 14 more pages: the Bombay café book, the blue side-column book and
+a supermarket recipe card. Opus 5 drafted their expected files (`npm run eval:draft`); every line was checked
+against its photo and none was misread. The eval now has **23 pages and 298 lines**. One shot was the same page
+as `salli-boti` and is left out. The HEIC originals were converted with `sips` because `sharp` cannot decode
+them, and they are not committed.
+
+Eight calls the prompt does not settle went into the expected files (Leon, 2026-10-02):
+
+- "2 whole green chillies, plus an extra 10g roughly chopped" is two entries.
+- ⅓ is stored as `0.33`.
+- "MAKES 16–20" is "sticks".
+- Kejriwal's bread stays "each" while the poussins' pancetta is `slice`.
+- Knobs, wineglasses and sachets take the plain product name ("butter", "white wine", "squid ink").
+- "a small knob of butter" is 1 each.
+- The tagliarini's dried-spaghetti alternative is not optional.
+
+Results, one run each (`api/eval/results/`, git-ignored). "Wrong numbers" is a hand count of lines whose
+quantity or ingredient differs from the page; convention differences are not counted.
+
+| Setup | Recall | Qty & unit | Yield | Wrong numbers | Negatives | Per page |
+|---|---|---|---|---|---|---|
+| Sonnet 5 | 99.7 % | 97.6 % | 22/23 | 0 | 10/10 | 3.09¢ |
+| Sonnet 5, effort low | 99.0 % | 96.6 % | 23/23 | 0 | 10/10 | 2.13¢ |
+| Haiku 4.5 (two runs) | 98–99 % | 89–91 % | 22/23 | ~9–11 | 10/10 | 1.12¢ |
+| Gemini 3.8 Flash | 99.0 % | 99.0 % | 22/23 | 0 | 10/10 | 1.27¢ |
+| Gemini 3.8 Flash, effort low | 99.7 % | 98.3 % | 23/23 | 0 | 10/10 | 0.75¢ |
+| Gemini 3.5 Flash-Lite | 95.0 % | 95.4 % | 22/23 | ~4 | 9/10 | 0.46¢ |
+| Flash-Lite, Flash fallback | 99.3 % | 95.6 % | 23/23 | ~2 | 9/10 | 0.48¢ |
+
+- **Haiku is out.** It returns valid replies with wrong numbers: milk powder 350 g read as 150 g, the garlic and
+  ginger pastes swapped, 3 tsp of coriander turned into 150 g. The review screen is the only thing between that
+  and a shopping list. Its two runs made different mistakes and landed either side of SPEC §10's 90 %.
+- **A fallback model does not rescue a cheap model.** The Sonnet fallback behind Haiku never fired, and the Flash
+  fallback behind Flash-Lite fixed only the page Flash-Lite answered invalidly. Flash-Lite twice invented a full
+  ingredient list from the few cut-off letters at the edge of the Nilgiri photo page. That reply is valid, so no
+  retry sees it.
+- **Caching:** Sonnet reads ~4.9k cached tokens a call, so the injected schema is inside the cached prefix. Haiku
+  writes and reads nothing, which settles both open questions in the entry above.
+- **Effort:** output was 77 % of Sonnet's spend at the default effort. Low halves the output, costs about 30 %
+  less, nearly halves latency and loses nothing measurable. **`ANTHROPIC_EFFORT` is now `"low"`.**
+- **Every model was marked wrong on three of our own conventions.** These are worth revisiting before the next
+  comparison:
+  - ⅓ against `0.333`: the scorer compares to 1e-6.
+  - `slice` for bread: the prompt's own example contradicts the unit list.
+  - "Kachumber (page 121)" as 1 each: the prompt's sub-recipe rule says exactly that.
+- At this sample size the Sonnet and Flash rows are a tie (SPEC §10). The gaps to Haiku and Flash-Lite are real,
+  because those are misreads and inventions, not points.
+- Gemini prices are still third-party figures; see the next entry.

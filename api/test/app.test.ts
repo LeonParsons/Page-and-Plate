@@ -38,7 +38,7 @@ describe("POST /extract", () => {
     expect(extract).toHaveBeenCalledTimes(1);
     const [images, options] = extract.mock.calls[0]!;
     expect(images).toEqual([image]);
-    expect(options).toEqual({ apiKey: "test-anthropic-key", model: "claude-sonnet-5" });
+    expect(options).toEqual({ apiKey: "test-anthropic-key", model: "claude-sonnet-5", effort: "low" });
   });
 
   it("passes the configured model and a valid effort through", async () => {
@@ -50,7 +50,7 @@ describe("POST /extract", () => {
 
   it("passes the fallback model through only when one is configured", async () => {
     await post(app, { env: { ...testEnv, ANTHROPIC_MODEL: "claude-haiku-4-5", ANTHROPIC_FALLBACK_MODEL: "claude-sonnet-5" } });
-    expect(extract.mock.calls[0]![1]).toEqual({ apiKey: "test-anthropic-key", model: "claude-haiku-4-5", fallbackModel: "claude-sonnet-5" });
+    expect(extract.mock.calls[0]![1]).toEqual({ apiKey: "test-anthropic-key", model: "claude-haiku-4-5", fallbackModel: "claude-sonnet-5", effort: "low" });
     await post(app, { env: { ...testEnv, ANTHROPIC_FALLBACK_MODEL: "" } });
     expect("fallbackModel" in extract.mock.calls[1]![1]).toBe(false);
   });
