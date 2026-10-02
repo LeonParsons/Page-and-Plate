@@ -1,9 +1,9 @@
 # Copy to .dev.vars (git-ignored). Used by `wrangler dev` and, as a fallback, by `npm run eval`.
+# The Worker needs a key for each provider in EXTRACT_MODEL / EXTRACT_FALLBACK_MODEL (wrangler.jsonc): both, as shipped.
 ANTHROPIC_API_KEY=sk-ant-...
-# Only `npm run eval` with a gemini-* model reads this; the Worker never does. Create it in Google AI Studio on a
-# project with billing enabled. Google's free-tier terms have let it use what is sent to improve its products (check
-# the current terms on ai.google.dev before relying on either tier), and in production these would be users' pages.
-# GEMINI_API_KEY=...
+# Google AI Studio, on a project with billing enabled. Only the paid tier keeps what is sent out of Google's training
+# data, and Google's terms allow nothing else for users in the UK, the EEA or Switzerland (docs/DECISIONS.md).
+GEMINI_API_KEY=...
 # Shared secret the app sends as x-app-key. Any long random string.
 APP_KEY=change-me-to-a-long-random-string
 # Only for testing a purchase made through Xcode's local StoreKit configuration. Those transactions are

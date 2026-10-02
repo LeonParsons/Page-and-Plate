@@ -1,4 +1,4 @@
 import { createApp } from "./app.ts";
-import { extractWithAnthropic } from "./extract.ts";
+import { extract } from "./extract-routed.ts";
 
-export default createApp({ extract: extractWithAnthropic });
+export default createApp({ extract });

@@ -164,9 +164,11 @@ export type Price = { input: number; output: number; cacheWrite: number; cacheRe
 const anthropic = (input: number, output: number, readMultiplier = 0.1): Price => ({ input, output, cacheWrite: input * 1.25, cacheRead: input * readMultiplier });
 
 /**
- * Anthropic rates from platform.claude.com/docs/en/about-claude/pricing (fetched 2026-09-30). Gemini rates are
- * from third-party price lists (Google's page could not be fetched): verify them against
- * ai.google.dev/gemini-api/docs/pricing before quoting a Gemini cost. Implicit-cache reads are 0.1× there too.
+ * Anthropic rates from platform.claude.com/docs/en/about-claude/pricing (fetched 2026-09-30). Gemini 3.8 Flash and
+ * 3.5 Flash-Lite from ai.google.dev/gemini-api/docs/pricing (paid tier, fetched 2026-10-02); the other Gemini rows
+ * are third-party figures. **3.8 Flash's rate is introductory: it doubles to $1.50 / $7.50 (cache $0.15) on
+ * 2027-01-01.** Change the row then, or every cost the eval prints for it is half the truth. Implicit-cache reads
+ * are 0.1× there too.
  * Unknown models get a null cost.
  */
 export const PRICING: Record<string, Price> = {

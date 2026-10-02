@@ -14,7 +14,7 @@ import fixture from "../../fixtures/expected/chickpea-arrabbiata.json";
  */
 
 const baseEnv = env as unknown as Bindings;
-const testEnv: Bindings = { ...baseEnv, APP_KEY: "test-app-key", ANTHROPIC_API_KEY: "test-anthropic-key" };
+const testEnv: Bindings = { ...baseEnv, APP_KEY: "test-app-key", ANTHROPIC_API_KEY: "test-anthropic-key", GEMINI_API_KEY: "test-gemini-key" };
 
 const usage = { inputTokens: 1000, outputTokens: 200, cacheCreationInputTokens: 0, cacheReadInputTokens: 0 };
 const calls = [{ model: "claude-sonnet-5", usage }];

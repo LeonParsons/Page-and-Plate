@@ -1,12 +1,13 @@
 import { z } from "zod";
-import { MAX_TOKENS, runExtraction, type AttemptResult, type ExtractImage, type ExtractOptions, type Extractor, type TokenUsage } from "./extract.ts";
+import { MAX_TOKENS, runExtraction, type Attempt, type ExtractImage, type ExtractOptions, type Extractor, type TokenUsage } from "./extract.ts";
 import { SYSTEM_PROMPT, userInstruction } from "./prompt.ts";
+import { KEY_NAMES } from "./providers.ts";
 import { buildModelOutputJSONSchema } from "./schema.ts";
 
 /**
- * Google's Gemini over the REST API, for the eval only (docs/DECISIONS.md, 2026-10-02): the Worker still extracts
- * with Anthropic. Plain `fetch` rather than `@google/genai`, so comparing a provider costs no dependency. Field
- * names follow `googleapis/js-genai` `src/types.ts` (`responseJsonSchema`, `mediaResolution`, `thinkingLevel`).
+ * Google's Gemini over the REST API: the Worker's first choice since 2026-10-02 (docs/DECISIONS.md), with Anthropic
+ * as the fallback. Plain `fetch` rather than `@google/genai`, so the provider costs no dependency. Field names follow
+ * `googleapis/js-genai` `src/types.ts` (`responseJsonSchema`, `mediaResolution`, `thinkingLevel`).
  */
 const ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models";
 const TIMEOUT_MS = 120_000;
@@ -92,54 +93,61 @@ async function errorDetail(response: Response): Promise<string> {
   return `HTTP ${response.status}`;
 }
 
-export function extractWithGeminiFetch(fetchFn: FetchFn, sleep: SleepFn = (ms) => new Promise((r) => setTimeout(r, ms))): Extractor {
-  return (images, options) => {
-    const body = JSON.stringify(buildGeminiRequest(images, options));
+const wait: SleepFn = (ms) => new Promise((r) => setTimeout(r, ms));
 
-    const call = async (model: string): Promise<AttemptResult> => {
-      for (let retry = 0; ; retry += 1) {
-        let response: Response;
-        try {
-          response = await fetchFn(`${ENDPOINT}/${encodeURIComponent(model)}:generateContent`, {
-            method: "POST",
-            headers: { "content-type": "application/json", "x-goog-api-key": options.apiKey },
-            body,
-            signal: AbortSignal.timeout(TIMEOUT_MS),
-          });
-        } catch (error) {
-          if (retry < MAX_RETRIES) {
-            await sleep(1000 * 2 ** retry);
-            continue;
-          }
-          return { kind: "upstream", status: null, detail: error instanceof Error ? error.message : String(error) };
-        }
-        if (!response.ok) {
-          if (RETRYABLE.has(response.status) && retry < MAX_RETRIES) {
-            await sleep(1000 * 2 ** retry);
-            continue;
-          }
-          return { kind: "upstream", status: response.status, detail: await errorDetail(response) };
-        }
+/** One Gemini attempt, with its own retries for 429/5xx and network failures. */
+export function geminiAttempt(fetchFn: FetchFn, sleep: SleepFn, images: ExtractImage[], options: ExtractOptions): Attempt {
+  const apiKey = options.apiKeys.google;
+  if (!apiKey) return async () => ({ kind: "upstream", status: null, detail: `${KEY_NAMES.google} is not set` });
+  const body = JSON.stringify(buildGeminiRequest(images, options));
 
-        const parsed = GeminiResponseSchema.safeParse(await response.json().catch(() => null));
-        if (!parsed.success) {
-          return { kind: "reply", usage: usageFrom(undefined), text: null, problem: "unrecognised response envelope" };
+  return async (model) => {
+    for (let retry = 0; ; retry += 1) {
+      let response: Response;
+      try {
+        response = await fetchFn(`${ENDPOINT}/${encodeURIComponent(model)}:generateContent`, {
+          method: "POST",
+          headers: { "content-type": "application/json", "x-goog-api-key": apiKey },
+          body,
+          signal: AbortSignal.timeout(TIMEOUT_MS),
+        });
+      } catch (error) {
+        if (retry < MAX_RETRIES) {
+          await sleep(1000 * 2 ** retry);
+          continue;
         }
-        const usage = usageFrom(parsed.data.usageMetadata);
-        const blocked = parsed.data.promptFeedback?.blockReason;
-        if (blocked) return { kind: "reply", usage, text: null, problem: `blockReason ${blocked}` };
-
-        const candidate = parsed.data.candidates?.[0];
-        const finish = candidate?.finishReason;
-        if (finish && finish !== "STOP") return { kind: "reply", usage, text: null, problem: `finishReason ${finish}` };
-        const parts = (candidate?.content?.parts ?? []).filter((p) => !p.thought && typeof p.text === "string");
-        return { kind: "reply", usage, text: parts.length ? parts.map((p) => p.text).join("") : null, problem: null };
+        return { kind: "upstream", status: null, detail: error instanceof Error ? error.message : String(error) };
       }
-    };
+      if (!response.ok) {
+        if (RETRYABLE.has(response.status) && retry < MAX_RETRIES) {
+          await sleep(1000 * 2 ** retry);
+          continue;
+        }
+        return { kind: "upstream", status: response.status, detail: await errorDetail(response) };
+      }
 
-    return runExtraction(options, call);
+      const parsed = GeminiResponseSchema.safeParse(await response.json().catch(() => null));
+      if (!parsed.success) {
+        return { kind: "reply", usage: usageFrom(undefined), text: null, problem: "unrecognised response envelope" };
+      }
+      const usage = usageFrom(parsed.data.usageMetadata);
+      const blocked = parsed.data.promptFeedback?.blockReason;
+      if (blocked) return { kind: "reply", usage, text: null, problem: `blockReason ${blocked}` };
+
+      const candidate = parsed.data.candidates?.[0];
+      const finish = candidate?.finishReason;
+      if (finish && finish !== "STOP") return { kind: "reply", usage, text: null, problem: `finishReason ${finish}` };
+      const parts = (candidate?.content?.parts ?? []).filter((p) => !p.thought && typeof p.text === "string");
+      return { kind: "reply", usage, text: parts.length ? parts.map((p) => p.text).join("") : null, problem: null };
+    }
   };
 }
 
-/** `fetch` is wrapped rather than passed, because Workers refuse a detached `fetch` ("Illegal invocation"). */
-export const extractWithGemini: Extractor = extractWithGeminiFetch((input, init) => fetch(input, init));
+export function extractWithGeminiFetch(fetchFn: FetchFn, sleep: SleepFn = wait): Extractor {
+  return (images, options) => runExtraction(options, geminiAttempt(fetchFn, sleep, images, options));
+}
+
+/** Production attempts. `fetch` is wrapped rather than passed, because Workers refuse a detached `fetch` ("Illegal invocation"). */
+export function geminiAttemptWithKey(images: ExtractImage[], options: ExtractOptions): Attempt {
+  return geminiAttempt((input, init) => fetch(input, init), wait, images, options);
+}

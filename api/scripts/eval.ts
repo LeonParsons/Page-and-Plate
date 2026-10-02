@@ -5,8 +5,9 @@
  * Runs every fixtures/photos/<stem>.jpg that has a fixtures/expected/<stem>.json through the real extractor, per
  * model, and reports recall / precision / quantity & unit exact match / yield accuracy / latency / cost.
  * `gemini-*` models go to Google (needs GEMINI_API_KEY), everything else to Anthropic. --fallback-model is the
- * model for the one retry after an invalid reply, as ANTHROPIC_FALLBACK_MODEL is in the Worker; it applies only
- * to models from the same provider.
+ * model for the one retry, as EXTRACT_FALLBACK_MODEL is in the Worker, through the Worker's own routed extractor:
+ * from the other provider it also takes over when the first one fails outright. The production setup is
+ * `--models gemini-3.8-flash --fallback-model claude-sonnet-5 --effort low`.
  * Photos under fixtures/photos/negatives/ are expected to come back as no_recipe_found or unreadable.
  * --draft writes the first model's output for photos WITHOUT an expected file to fixtures/expected/_drafts/.
  */
@@ -16,7 +17,8 @@ import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import type { ExtractOptions, ExtractOutcome, ModelCall } from "../src/extract.ts";
 import { costOfCalls, scorePage, summarise, type ModelSummary, type PageScore, type RunStats } from "../src/eval/metrics.ts";
-import { extractorFor, providerOf, type Provider } from "../src/eval/providers.ts";
+import { extract } from "../src/extract-routed.ts";
+import { providerOf, type ProviderKeys } from "../src/providers.ts";
 import { ExtractionResponseSchema, type ExtractionResponse } from "../src/schema.ts";
 import { resolveAnthropicKey, resolveGeminiKey } from "./lib/devvars.ts";
 import { prepareImage } from "./lib/images.ts";
@@ -46,7 +48,7 @@ const only = args.only ? new Set(args.only.split(",").map((s) => s.trim())) : nu
 const concurrency = Math.max(1, Number.parseInt(args.concurrency!, 10) || 1);
 const effort = args.effort as ExtractOptions["effort"] | undefined;
 const fallbackModel = args["fallback-model"];
-const apiKeys: Partial<Record<Provider, string>> = {};
+const apiKeys: ProviderKeys = {};
 
 const isPhoto = (f: string) => [".jpg", ".jpeg", ".png"].includes(extname(f).toLowerCase());
 const stemOf = (f: string) => basename(f, extname(f));
@@ -100,9 +102,9 @@ const secs = (ms: number) => `${(ms / 1000).toFixed(1)}s`;
 
 async function runPage(model: string, page: { stem: string; path: string; expectedPath?: string }): Promise<PageRun> {
   const image = await prepareImage(page.path);
-  const options: ExtractOptions = { apiKey: apiKeys[providerOf(model)]!, model, ...(effort ? { effort } : {}) };
-  if (fallbackModel && providerOf(fallbackModel) === providerOf(model)) options.fallbackModel = fallbackModel;
-  const outcome = await extractorFor(model)([image], options);
+  const options: ExtractOptions = { apiKeys, model, ...(effort ? { effort } : {}) };
+  if (fallbackModel) options.fallbackModel = fallbackModel;
+  const outcome = await extract([image], options);
   const base = {
     stem: page.stem,
     kind: outcome.kind,
@@ -154,7 +156,7 @@ function printSummary(s: ModelSummary, runs: PageRun[], negativeRuns: PageRun[])
     ["cache write / read", `${s.cacheCreationInputTokens} / ${s.cacheReadInputTokens}`],
     ["estimated cost", s.estimatedCostUSD === null ? "n/a" : `$${s.estimatedCostUSD.toFixed(3)}`],
     ["cost per page", s.estimatedCostUSD === null || s.pages === 0 ? "n/a" : `${((s.estimatedCostUSD / s.pages) * 100).toFixed(2)}¢`],
-    ["retried pages", `${retried}${retried && fallbackModel && providerOf(fallbackModel) === providerOf(s.model) ? ` (on ${fallbackModel})` : ""}`],
+    ["retried pages", `${retried}${retried && fallbackModel ? ` (on ${fallbackModel})` : ""}`],
   ];
   if (negativeRuns.length) {
     const rejected = negativeRuns.filter((r) => r.kind === "no_recipe_found" || r.kind === "unreadable").length;
@@ -165,7 +167,7 @@ function printSummary(s: ModelSummary, runs: PageRun[], negativeRuns: PageRun[])
 
 async function main() {
   const devVars = join(here, "../.dev.vars");
-  const providers = new Set(models.map(providerOf));
+  const providers = new Set([...models, ...(fallbackModel ? [fallbackModel] : [])].map(providerOf));
   if (providers.has("anthropic")) apiKeys.anthropic = resolveAnthropicKey(devVars);
   if (providers.has("google")) apiKeys.google = resolveGeminiKey(devVars);
   mkdirSync(resultsDir, { recursive: true });

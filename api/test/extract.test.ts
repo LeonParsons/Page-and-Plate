@@ -1,6 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { describe, expect, it, vi } from "vitest";
-import { MAX_TOKENS, buildRequest, extractWithClient, type ExtractionClient } from "../src/extract.ts";
+import { MAX_TOKENS, anthropicAttemptWithKey, buildRequest, extractWithClient, runExtraction, type AttemptResult, type ExtractionClient } from "../src/extract.ts";
 import { SYSTEM_PROMPT } from "../src/prompt.ts";
 import fixture from "../../fixtures/expected/chickpea-arrabbiata.json";
 
@@ -10,7 +10,7 @@ const images = [
   { mediaType: "image/png" as const, data: "BBBB" },
   { mediaType: "image/webp" as const, data: "CCCC" },
 ];
-const options = { apiKey: "k", model: "claude-sonnet-5" as const };
+const options = { apiKeys: { anthropic: "k" }, model: "claude-sonnet-5" as const };
 
 function message(output: unknown, overrides: Record<string, unknown> = {}) {
   return {
@@ -175,5 +175,57 @@ describe("extractWithClient", () => {
   it("lets unexpected errors propagate", async () => {
     const { client } = fakeClient(async () => { throw new TypeError("bug"); });
     await expect(extractWithClient(client)(images, options)).rejects.toThrow("bug");
+  });
+});
+
+describe("runExtraction", () => {
+  const usage = { inputTokens: 100, outputTokens: 50, cacheCreationInputTokens: 0, cacheReadInputTokens: 0 };
+  const good: AttemptResult = { kind: "reply", usage, text: JSON.stringify(okOutput), problem: null };
+  const cutOff: AttemptResult = { kind: "reply", usage, text: null, problem: "finishReason MAX_TOKENS" };
+  const down = (status: number | null): AttemptResult => ({ kind: "upstream", status, detail: "unavailable" });
+  const scripted = (...results: AttemptResult[]) => {
+    const attempt = vi.fn(async (_model: string) => results.shift()!);
+    return attempt;
+  };
+  const crossProvider = { apiKeys: {}, model: "gemini-3.8-flash", fallbackModel: "claude-sonnet-5" };
+
+  it("hands the scan to the other provider when the first fails outright, and says why", async () => {
+    const attempt = scripted(down(503), good);
+    const outcome = await runExtraction(crossProvider, attempt);
+    expect(attempt.mock.calls.map(([model]) => model)).toEqual(["gemini-3.8-flash", "claude-sonnet-5"]);
+    expect(outcome).toMatchObject({ kind: "ok", model: "claude-sonnet-5", attempts: 2, retried: { reason: "upstream", status: 503 } });
+    // The failed call billed nothing, so only the fallback's call is priced.
+    expect(outcome.calls.map((c) => c.model)).toEqual(["claude-sonnet-5"]);
+  });
+
+  it("reports the fallback's failure when both providers fail outright", async () => {
+    const outcome = await runExtraction(crossProvider, scripted(down(400), down(null)));
+    expect(outcome).toMatchObject({ kind: "upstream", status: null, attempts: 2, retried: { reason: "upstream", status: 400 } });
+  });
+
+  it("does not retry an outright failure on the same provider, whose client has already retried it", async () => {
+    const attempt = scripted(down(529));
+    const outcome = await runExtraction({ apiKeys: {}, model: "claude-haiku-4-5", fallbackModel: "claude-sonnet-5" }, attempt);
+    expect(attempt).toHaveBeenCalledTimes(1);
+    expect(outcome).toMatchObject({ kind: "upstream", status: 529, attempts: 1 });
+    expect("retried" in outcome).toBe(false);
+    expect(await runExtraction({ apiKeys: {}, model: "gemini-3.8-flash" }, scripted(down(503)))).toMatchObject({ kind: "upstream", attempts: 1 });
+  });
+
+  it("names an invalid reply as the reason for a retry, and only when there was one", async () => {
+    expect(await runExtraction(crossProvider, scripted(cutOff, good))).toMatchObject({ kind: "ok", retried: { reason: "invalid_output" } });
+    expect("retried" in (await runExtraction(crossProvider, scripted(good)))).toBe(false);
+  });
+
+  it("gives up after the fallback's invalid reply too, still naming the first reason", async () => {
+    const outcome = await runExtraction(crossProvider, scripted(down(503), cutOff));
+    expect(outcome).toMatchObject({ kind: "invalid_output", attempts: 2, detail: "finishReason MAX_TOKENS", retried: { reason: "upstream", status: 503 } });
+  });
+});
+
+describe("anthropicAttemptWithKey", () => {
+  it("fails upstream without a key rather than constructing a client", async () => {
+    const attempt = anthropicAttemptWithKey(images, { apiKeys: { google: "g" }, model: "claude-sonnet-5" });
+    expect(await attempt("claude-sonnet-5")).toEqual({ kind: "upstream", status: null, detail: "ANTHROPIC_API_KEY is not set" });
   });
 });

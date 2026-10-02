@@ -5,7 +5,14 @@ import type { ExtractOutcome, Extractor } from "../src/extract.ts";
 import fixture from "../../fixtures/expected/chickpea-arrabbiata.json";
 
 const baseEnv = env as unknown as Bindings;
-const testEnv: Bindings = { ...baseEnv, APP_KEY: "test-app-key", ANTHROPIC_API_KEY: "test-anthropic-key" };
+const testEnv: Bindings = { ...baseEnv, APP_KEY: "test-app-key", ANTHROPIC_API_KEY: "test-anthropic-key", GEMINI_API_KEY: "test-gemini-key" };
+/** What the Worker passes the extractor as shipped: Gemini first, Sonnet behind it, both keys, low effort. */
+const shipped = {
+  apiKeys: { google: "test-gemini-key", anthropic: "test-anthropic-key" },
+  model: "gemini-3.8-flash",
+  fallbackModel: "claude-sonnet-5",
+  effort: "low",
+};
 
 const usage = { inputTokens: 1000, outputTokens: 200, cacheCreationInputTokens: 0, cacheReadInputTokens: 0 };
 const calls = [{ model: "claude-sonnet-5", usage }];
@@ -38,21 +45,34 @@ describe("POST /extract", () => {
     expect(extract).toHaveBeenCalledTimes(1);
     const [images, options] = extract.mock.calls[0]!;
     expect(images).toEqual([image]);
-    expect(options).toEqual({ apiKey: "test-anthropic-key", model: "claude-sonnet-5", effort: "low" });
+    expect(options).toEqual(shipped);
   });
 
-  it("passes the configured model and a valid effort through", async () => {
-    await post(app, { env: { ...testEnv, ANTHROPIC_MODEL: "claude-opus-5", ANTHROPIC_EFFORT: "medium" } });
-    expect(extract.mock.calls[0]![1]).toEqual({ apiKey: "test-anthropic-key", model: "claude-opus-5", effort: "medium" });
-    await post(app, { env: { ...testEnv, ANTHROPIC_EFFORT: "extreme" } });
+  it("passes the configured model and a valid effort through, with only the keys its providers need", async () => {
+    await post(app, { env: { ...testEnv, EXTRACT_MODEL: "claude-opus-5", EXTRACT_FALLBACK_MODEL: "", EXTRACT_EFFORT: "medium" } });
+    expect(extract.mock.calls[0]![1]).toEqual({ apiKeys: { anthropic: "test-anthropic-key" }, model: "claude-opus-5", effort: "medium" });
+    await post(app, { env: { ...testEnv, EXTRACT_EFFORT: "extreme" } });
     expect(extract.mock.calls[1]![1].effort).toBeUndefined();
   });
 
   it("passes the fallback model through only when one is configured", async () => {
-    await post(app, { env: { ...testEnv, ANTHROPIC_MODEL: "claude-haiku-4-5", ANTHROPIC_FALLBACK_MODEL: "claude-sonnet-5" } });
-    expect(extract.mock.calls[0]![1]).toEqual({ apiKey: "test-anthropic-key", model: "claude-haiku-4-5", fallbackModel: "claude-sonnet-5", effort: "low" });
-    await post(app, { env: { ...testEnv, ANTHROPIC_FALLBACK_MODEL: "" } });
-    expect("fallbackModel" in extract.mock.calls[1]![1]).toBe(false);
+    await post(app, { env: { ...testEnv, EXTRACT_MODEL: "claude-haiku-4-5", EXTRACT_FALLBACK_MODEL: "claude-sonnet-5" } });
+    expect(extract.mock.calls[0]![1]).toEqual({ apiKeys: { anthropic: "test-anthropic-key" }, model: "claude-haiku-4-5", fallbackModel: "claude-sonnet-5", effort: "low" });
+    await post(app, { env: { ...testEnv, EXTRACT_FALLBACK_MODEL: "" } });
+    expect(extract.mock.calls[1]![1]).toEqual({ apiKeys: { google: "test-gemini-key" }, model: "gemini-3.8-flash", effort: "low" });
+  });
+
+  it("logs why the fallback ran, and never the reply", async () => {
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    try {
+      extract.mockResolvedValueOnce({ ...okOutcome, attempts: 2, retried: { reason: "upstream", status: 503 } });
+      await post(app);
+      const line = JSON.parse(log.mock.calls.map(([l]) => String(l)).find((l) => l.includes('"event":"extract"'))!);
+      expect(line).toMatchObject({ model: "claude-sonnet-5", attempts: 2, retried: { reason: "upstream", status: 503 } });
+      expect(JSON.stringify(line)).not.toContain(fixture.recipe.ingredients[0]!.name);
+    } finally {
+      log.mockRestore();
+    }
   });
 
   it("401 without or with a wrong app key, and never calls the extractor", async () => {
@@ -63,10 +83,20 @@ describe("POST /extract", () => {
     expect(extract).not.toHaveBeenCalled();
   });
 
-  it("500 server_misconfigured when the secrets are missing", async () => {
-    expect((await post(app, { env: { ...testEnv, APP_KEY: "" } })).status).toBe(500);
-    expect((await post(app, { env: { ...testEnv, ANTHROPIC_API_KEY: "" } })).status).toBe(500);
-    expect(extract).not.toHaveBeenCalled();
+  it("500 server_misconfigured when the app key or a configured model's key is missing", async () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      expect((await post(app, { env: { ...testEnv, APP_KEY: "" } })).status).toBe(500);
+      expect((await post(app, { env: { ...testEnv, GEMINI_API_KEY: "" } })).status).toBe(500);
+      // The fallback's key too: a missing one would only show up on the day Google fails.
+      expect((await post(app, { env: { ...testEnv, ANTHROPIC_API_KEY: "" } })).status).toBe(500);
+      expect(extract).not.toHaveBeenCalled();
+      expect(error.mock.calls.map(([l]) => JSON.parse(String(l)).missing)).toEqual([["APP_KEY"], ["GEMINI_API_KEY"], ["ANTHROPIC_API_KEY"]]);
+    } finally {
+      error.mockRestore();
+    }
+    // A key no configured model needs is not required.
+    expect((await post(app, { env: { ...testEnv, ANTHROPIC_API_KEY: "", EXTRACT_FALLBACK_MODEL: "" } })).status).toBe(200);
   });
 
   it("400 without a UUID device id", async () => {
@@ -131,7 +161,7 @@ describe("POST /extract", () => {
 
   it("the default limit from wrangler.jsonc is 30", () => {
     expect(baseEnv.DAILY_LIMIT).toBe("30");
-    expect(baseEnv.ANTHROPIC_MODEL).toBe("claude-sonnet-5");
+    expect([baseEnv.EXTRACT_MODEL, baseEnv.EXTRACT_FALLBACK_MODEL, baseEnv.EXTRACT_EFFORT]).toEqual(["gemini-3.8-flash", "claude-sonnet-5", "low"]);
   });
 
   describe("the scan gate (SPEC §9)", () => {
@@ -270,10 +300,12 @@ describe("POST /extract", () => {
 });
 
 describe("GET /health", () => {
-  it("reports the configured model", async () => {
+  it("reports the configured models", async () => {
     const app = createApp({ extract: vi.fn<Extractor>() });
-    const res = await app.request("http://worker/health", {}, { ...testEnv, ANTHROPIC_MODEL: "claude-opus-5" });
-    expect(res.status).toBe(200);
+    const shippedRes = await app.request("http://worker/health", {}, testEnv);
+    expect(shippedRes.status).toBe(200);
+    expect(await shippedRes.json()).toEqual({ ok: true, model: "gemini-3.8-flash", fallbackModel: "claude-sonnet-5" });
+    const res = await app.request("http://worker/health", {}, { ...testEnv, EXTRACT_MODEL: "claude-opus-5", EXTRACT_FALLBACK_MODEL: "" });
     expect(await res.json()).toEqual({ ok: true, model: "claude-opus-5" });
   });
 });

@@ -5,15 +5,16 @@
   "compatibility_date": "2026-09-19",
   "compatibility_flags": ["nodejs_compat"],
   "observability": { "enabled": true },
-  // Non-secret configuration. Secrets (ANTHROPIC_API_KEY, APP_KEY) live in .dev.vars locally and
-  // `wrangler secret put` in production — never here.
+  // Non-secret configuration. Secrets (GEMINI_API_KEY, ANTHROPIC_API_KEY, APP_KEY) live in .dev.vars locally and
+  // `wrangler secret put` in production — never here. Each model needs its provider's key, or every scan is refused
+  // as server_misconfigured.
   "vars": {
-    "ANTHROPIC_MODEL": "claude-sonnet-5",
-    // Low effort matched the default on all 23 eval pages for about 30 % less (docs/DECISIONS.md, 2026-10-02).
-    "ANTHROPIC_EFFORT": "low",
-    // Optional: the model for the one retry after an invalid or cut-off reply (e.g. "claude-sonnet-5" behind
-    // "claude-haiku-4-5"). Unset retries on ANTHROPIC_MODEL. ANTHROPIC_EFFORT is never sent to a Haiku model.
-    // "ANTHROPIC_FALLBACK_MODEL": "claude-sonnet-5",
+    // Gemini 3.8 Flash reads the page; Sonnet takes the one retry after an invalid reply, and the scan outright when
+    // Google fails or refuses. Both at low effort, which matched the default on all 23 eval pages for half the
+    // output (docs/DECISIONS.md, 2026-10-02). `gemini-*` goes to Google, anything else to Anthropic.
+    "EXTRACT_MODEL": "gemini-3.8-flash",
+    "EXTRACT_FALLBACK_MODEL": "claude-sonnet-5",
+    "EXTRACT_EFFORT": "low",
     "DAILY_LIMIT": "30",
     "FREE_SCANS": "7",          // the trial, for the life of the device — must match ScanAllowance.trialScans
     "WEEKLY_SCANS": "25",       // the subscription's ceiling — must match ScanAllowance.weeklyScans, and is never shown

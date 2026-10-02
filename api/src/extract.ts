@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { SYSTEM_PROMPT, userInstruction } from "./prompt.ts";
+import { KEY_NAMES, providerOf, type ProviderKeys } from "./providers.ts";
 import { ModelOutputSchema, buildModelOutputJSONSchema, type ExtractionResponse } from "./schema.ts";
 
 export type ExtractImage = {
@@ -9,11 +10,18 @@ export type ExtractImage = {
 };
 
 export type ExtractOptions = {
-  apiKey: string;
+  /** Each attempt uses the key of its own model's provider. */
+  apiKeys: ProviderKeys;
   model: string;
-  /** The model for the second attempt, after an invalid or cut-off reply. Omitted → `model` again. */
+  /**
+   * The model for the second attempt, after an invalid or cut-off reply. Omitted → `model` again. From the other
+   * provider it also takes over when the first provider fails outright (see `runExtraction`).
+   */
   fallbackModel?: string;
-  /** Anthropic `output_config.effort`; omitted → the API default (high). Never sent to Haiku, which rejects it. */
+  /**
+   * Anthropic `output_config.effort` or Gemini's thinking level; omitted → each API's default. Never sent to Haiku,
+   * which rejects it.
+   */
   effort?: "low" | "medium" | "high" | "xhigh" | "max";
 };
 
@@ -28,6 +36,9 @@ export type TokenUsage = {
 /** One billed model call. A retry on the fallback is a second call on a different model, priced at its own rate. */
 export type ModelCall = { model: string; usage: TokenUsage };
 
+/** Why a second attempt was made: never any of the reply's text, so it can be logged. */
+export type RetryCause = { reason: "upstream"; status: number | null } | { reason: "invalid_output" };
+
 type OutcomeBase = {
   /** The model that made the last attempt, so a fallback's answer is attributed to the fallback. */
   model: string;
@@ -38,6 +49,8 @@ type OutcomeBase = {
   usage: TokenUsage;
   /** Each call that returned a reply, in order (a call that failed upstream bills nothing and is not listed). */
   calls: ModelCall[];
+  /** Present when there was a second attempt. */
+  retried?: RetryCause;
 };
 
 /** Everything the Worker and the eval need to know about one extraction. Errors are values, not throws. */
@@ -63,25 +76,51 @@ const MAX_ATTEMPTS = 2;
 
 export const emptyUsage = (): TokenUsage => ({ inputTokens: 0, outputTokens: 0, cacheCreationInputTokens: 0, cacheReadInputTokens: 0 });
 
+/** One attempt on one model: a reply to validate, or an upstream failure. */
+export type Attempt = (model: string) => Promise<AttemptResult>;
+
 /**
  * The provider-independent half of an extraction: two attempts at most (the second on `fallbackModel` when set),
  * usage summed across them, and every reply parsed and validated with Zod before anything is returned (rule 4).
+ *
+ * An upstream failure ends the extraction when the fallback is the same provider, whose client has already retried
+ * it. When the fallback is the other provider it gets the second attempt instead: an outage, a quota or a region
+ * one provider refuses says nothing about the other.
  */
-export async function runExtraction(options: ExtractOptions, attempt: (model: string) => Promise<AttemptResult>): Promise<ExtractOutcome> {
+export async function runExtraction(options: ExtractOptions, attempt: Attempt): Promise<ExtractOutcome> {
   const startedAt = Date.now();
   const usage = emptyUsage();
   const calls: ModelCall[] = [];
   let attempts = 0;
   let model = options.model;
   let lastDetail = "";
+  let retried: RetryCause | undefined;
+  const crossProvider = options.fallbackModel !== undefined && providerOf(options.fallbackModel) !== providerOf(options.model);
 
-  const finish = <T extends object>(rest: T) => ({ model, latencyMs: Date.now() - startedAt, attempts, usage, calls, ...rest });
+  const finish = <T extends object>(rest: T) => ({
+    model,
+    latencyMs: Date.now() - startedAt,
+    attempts,
+    usage,
+    calls,
+    ...(retried ? { retried } : {}),
+    ...rest,
+  });
+  const invalid = (detail: string) => {
+    lastDetail = detail;
+    if (attempts === 1) retried = { reason: "invalid_output" };
+  };
 
   while (attempts < MAX_ATTEMPTS) {
     model = attempts === 0 ? options.model : (options.fallbackModel ?? options.model);
     attempts += 1;
     const result = await attempt(model);
     if (result.kind === "upstream") {
+      if (attempts === 1 && crossProvider) {
+        retried = { reason: "upstream", status: result.status };
+        lastDetail = result.detail;
+        continue;
+      }
       return finish({ kind: "upstream", status: result.status, detail: result.detail });
     }
 
@@ -92,24 +131,24 @@ export async function runExtraction(options: ExtractOptions, attempt: (model: st
     usage.cacheReadInputTokens += result.usage.cacheReadInputTokens;
 
     if (result.problem !== null) {
-      lastDetail = result.problem;
+      invalid(result.problem);
       continue;
     }
     if (result.text === null) {
-      lastDetail = "no text in the response";
+      invalid("no text in the response");
       continue;
     }
     let json: unknown;
     try {
       json = JSON.parse(result.text);
     } catch (error) {
-      lastDetail = `output is not JSON: ${error instanceof Error ? error.message : String(error)}`;
+      invalid(`output is not JSON: ${error instanceof Error ? error.message : String(error)}`);
       continue;
     }
     // Zod enforces what the grammar cannot (positive quantities, range order, unit-with-quantity).
     const parsed = ModelOutputSchema.safeParse(json);
     if (!parsed.success) {
-      lastDetail = parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).slice(0, 5).join("; ");
+      invalid(parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).slice(0, 5).join("; "));
       continue;
     }
 
@@ -159,36 +198,43 @@ export function buildRequest(images: ExtractImage[], options: ExtractOptions): A
   };
 }
 
-/** Validates the model output with Zod; retries once on invalid output; maps everything to an outcome. */
-export function extractWithClient(client: ExtractionClient): Extractor {
-  return (images, options) =>
-    runExtraction(options, async (model) => {
-      let message: Anthropic.Message;
-      try {
-        message = await client.messages.create(buildRequest(images, { ...options, model }));
-      } catch (error) {
-        if (error instanceof Anthropic.APIConnectionError) {
-          return { kind: "upstream", status: null, detail: error.message };
-        }
-        if (error instanceof Anthropic.APIError) {
-          return { kind: "upstream", status: error.status ?? null, detail: error.message };
-        }
-        throw error;
+/** One Anthropic attempt: the call, its usage, and a cut-off or refused reply flagged so it is never read. */
+export function anthropicAttempt(client: ExtractionClient, images: ExtractImage[], options: ExtractOptions): Attempt {
+  return async (model) => {
+    let message: Anthropic.Message;
+    try {
+      message = await client.messages.create(buildRequest(images, { ...options, model }));
+    } catch (error) {
+      if (error instanceof Anthropic.APIConnectionError) {
+        return { kind: "upstream", status: null, detail: error.message };
       }
-      const usage: TokenUsage = {
-        inputTokens: message.usage?.input_tokens ?? 0,
-        outputTokens: message.usage?.output_tokens ?? 0,
-        cacheCreationInputTokens: message.usage?.cache_creation_input_tokens ?? 0,
-        cacheReadInputTokens: message.usage?.cache_read_input_tokens ?? 0,
-      };
-      if (message.stop_reason === "max_tokens" || message.stop_reason === "refusal") {
-        return { kind: "reply", usage, text: null, problem: `stop_reason ${message.stop_reason}` };
+      if (error instanceof Anthropic.APIError) {
+        return { kind: "upstream", status: error.status ?? null, detail: error.message };
       }
-      const text = message.content.find((block) => block.type === "text")?.text ?? null;
-      return { kind: "reply", usage, text, problem: null };
-    });
+      throw error;
+    }
+    const usage: TokenUsage = {
+      inputTokens: message.usage?.input_tokens ?? 0,
+      outputTokens: message.usage?.output_tokens ?? 0,
+      cacheCreationInputTokens: message.usage?.cache_creation_input_tokens ?? 0,
+      cacheReadInputTokens: message.usage?.cache_read_input_tokens ?? 0,
+    };
+    if (message.stop_reason === "max_tokens" || message.stop_reason === "refusal") {
+      return { kind: "reply", usage, text: null, problem: `stop_reason ${message.stop_reason}` };
+    }
+    const text = message.content.find((block) => block.type === "text")?.text ?? null;
+    return { kind: "reply", usage, text, problem: null };
+  };
 }
 
-/** Production extractor: a fresh client per request (no module-level state in Workers). */
-export const extractWithAnthropic: Extractor = (images, options) =>
-  extractWithClient(new Anthropic({ apiKey: options.apiKey, maxRetries: 2, timeout: 120_000 }))(images, options);
+/** Validates the model output with Zod; retries once on invalid output; maps everything to an outcome. */
+export function extractWithClient(client: ExtractionClient): Extractor {
+  return (images, options) => runExtraction(options, anthropicAttempt(client, images, options));
+}
+
+/** Production attempts: a fresh client per request (no module-level state in Workers). */
+export function anthropicAttemptWithKey(images: ExtractImage[], options: ExtractOptions): Attempt {
+  const apiKey = options.apiKeys.anthropic;
+  if (!apiKey) return async () => ({ kind: "upstream", status: null, detail: `${KEY_NAMES.anthropic} is not set` });
+  return anthropicAttempt(new Anthropic({ apiKey, maxRetries: 2, timeout: 120_000 }), images, options);
+}

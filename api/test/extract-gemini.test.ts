@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { MAX_TOKENS, extractWithAnthropic } from "../src/extract.ts";
-import { buildGeminiRequest, extractWithGemini, extractWithGeminiFetch, type FetchFn } from "../src/extract-gemini.ts";
-import { extractorFor, providerOf } from "../src/eval/providers.ts";
+import { MAX_TOKENS } from "../src/extract.ts";
+import { buildGeminiRequest, extractWithGeminiFetch, type FetchFn } from "../src/extract-gemini.ts";
 import { SYSTEM_PROMPT } from "../src/prompt.ts";
 import fixture from "../../fixtures/expected/chickpea-arrabbiata.json";
 
@@ -10,7 +9,7 @@ const images = [
   { mediaType: "image/jpeg" as const, data: "AAAA" },
   { mediaType: "image/png" as const, data: "BBBB" },
 ];
-const options = { apiKey: "g-key", model: "gemini-3.1-flash-lite" };
+const options = { apiKeys: { google: "g-key" }, model: "gemini-3.1-flash-lite" };
 const metadata = { promptTokenCount: 3000, candidatesTokenCount: 500, thoughtsTokenCount: 200, cachedContentTokenCount: 1000 };
 
 function reply(output: unknown, overrides: Record<string, unknown> = {}, parts?: unknown[]) {
@@ -132,11 +131,14 @@ describe("extractWithGeminiFetch", () => {
   });
 });
 
-describe("extractorFor", () => {
-  it("sends gemini-* to Google and everything else to Anthropic", () => {
-    expect(providerOf("gemini-3.1-flash-lite")).toBe("google");
-    expect(providerOf("claude-haiku-4-5")).toBe("anthropic");
-    expect(extractorFor("gemini-3.6-flash")).toBe(extractWithGemini);
-    expect(extractorFor("claude-sonnet-5")).toBe(extractWithAnthropic);
+describe("without a key", () => {
+  it("fails upstream without calling Google", async () => {
+    const { extract, fetchFn } = fake();
+    expect(await extract(images, { apiKeys: { anthropic: "a" }, model: "gemini-3.8-flash" })).toMatchObject({
+      kind: "upstream",
+      status: null,
+      detail: "GEMINI_API_KEY is not set",
+    });
+    expect(fetchFn).not.toHaveBeenCalled();
   });
 });

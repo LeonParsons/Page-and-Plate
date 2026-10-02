@@ -6,17 +6,25 @@ import { makeAssertionVerifier, makeAttestationVerifier, type AssertionVerifier,
 import { consumeChallenge, fromBase64, issueChallenge, readAttestedKey, writeAttestedKey } from "./challenge.ts";
 import { APPLE_APP_ATTEST_ROOT_PEM } from "./apple-root.ts";
 import { checkFreeQuota, checkWeeklyQuota, consumeDailyQuota, recordFreeScan, recordWeeklyScan } from "./quota.ts";
+import { KEY_NAMES, providerOf, type Provider, type ProviderKeys } from "./providers.ts";
 import { ExtractRequestSchema } from "./schema.ts";
 
 export type Bindings = {
-  /** Secret. */
-  ANTHROPIC_API_KEY: string;
+  /** Secret: needed when EXTRACT_MODEL or EXTRACT_FALLBACK_MODEL is a Claude model. */
+  ANTHROPIC_API_KEY?: string;
+  /** Secret: needed when either model is a `gemini-*` model. A billing-enabled project only (docs/DECISIONS.md). */
+  GEMINI_API_KEY?: string;
   /** Secret: the shared key the app sends as x-app-key. */
   APP_KEY: string;
-  ANTHROPIC_MODEL?: string;
-  /** The model for the retry after an invalid or cut-off reply, e.g. Sonnet behind Haiku. Unset → ANTHROPIC_MODEL. */
-  ANTHROPIC_FALLBACK_MODEL?: string;
-  ANTHROPIC_EFFORT?: string;
+  /** The model for the first attempt; `gemini-*` goes to Google, anything else to Anthropic. */
+  EXTRACT_MODEL?: string;
+  /**
+   * The model for the retry after an invalid or cut-off reply. From the other provider it also takes over when the
+   * first one fails outright. Unset → EXTRACT_MODEL again.
+   */
+  EXTRACT_FALLBACK_MODEL?: string;
+  /** Anthropic's effort and Gemini's thinking level, for both attempts. */
+  EXTRACT_EFFORT?: string;
   DAILY_LIMIT?: string;
   /** The free trial: successful scans per device, ever (SPEC §9). */
   FREE_SCANS?: string;
@@ -49,7 +57,7 @@ export type AppDeps = {
   verifyAssertion?: AssertionVerifier;
 };
 
-export const DEFAULT_MODEL = "claude-sonnet-5";
+export const DEFAULT_MODEL = "gemini-3.8-flash";
 const DEFAULT_DAILY_LIMIT = 30;
 const DEFAULT_FREE_SCANS = 7;
 const DEFAULT_WEEKLY_SCANS = 25;
@@ -83,6 +91,26 @@ function intSetting(value: string | undefined, fallback: number): number {
   return Number.isFinite(n) && n > 0 ? n : fallback;
 }
 
+/** The extraction settings, with the key of every provider they can reach and the names of any that are missing. */
+function extractConfig(env: Bindings): { options: ExtractOptions; missingKeys: string[] } {
+  const model = env.EXTRACT_MODEL || DEFAULT_MODEL;
+  const fallbackModel = env.EXTRACT_FALLBACK_MODEL || undefined;
+  const secrets: Record<Provider, string | undefined> = { anthropic: env.ANTHROPIC_API_KEY, google: env.GEMINI_API_KEY };
+  const apiKeys: ProviderKeys = {};
+  const missingKeys: string[] = [];
+  for (const provider of new Set([model, ...(fallbackModel ? [fallbackModel] : [])].map(providerOf))) {
+    const key = secrets[provider];
+    if (key) apiKeys[provider] = key;
+    else missingKeys.push(KEY_NAMES[provider]);
+  }
+  const options: ExtractOptions = { apiKeys, model };
+  if (fallbackModel) options.fallbackModel = fallbackModel;
+  if (env.EXTRACT_EFFORT && EFFORTS.has(env.EXTRACT_EFFORT)) {
+    options.effort = env.EXTRACT_EFFORT as ExtractOptions["effort"];
+  }
+  return { options, missingKeys };
+}
+
 export function createApp(deps: AppDeps) {
   const now = deps.now ?? (() => new Date());
   const app = new Hono<{ Bindings: Bindings }>();
@@ -92,7 +120,10 @@ export function createApp(deps: AppDeps) {
     return errorResponse(c, "internal");
   });
 
-  app.get("/health", (c) => c.json({ ok: true, model: c.env.ANTHROPIC_MODEL ?? DEFAULT_MODEL }));
+  app.get("/health", (c) => {
+    const { options } = extractConfig(c.env);
+    return c.json({ ok: true, model: options.model, ...(options.fallbackModel ? { fallbackModel: options.fallbackModel } : {}) });
+  });
 
   /** A one-time challenge. Everything an attested device signs is signed over one of these. */
   app.post("/attest/challenge", async (c) => {
@@ -146,8 +177,10 @@ export function createApp(deps: AppDeps) {
     c.header("x-request-id", requestId);
     const startedAt = Date.now();
 
-    // 1. Shared app key.
-    if (!c.env.APP_KEY || !c.env.ANTHROPIC_API_KEY) {
+    // 1. Shared app key, and a key for every provider the configured models reach.
+    const { options, missingKeys } = extractConfig(c.env);
+    if (!c.env.APP_KEY || missingKeys.length) {
+      console.error(JSON.stringify({ event: "misconfigured", missing: [...(c.env.APP_KEY ? [] : ["APP_KEY"]), ...missingKeys] }));
       return errorResponse(c, "server_misconfigured");
     }
     const appKey = c.req.header("x-app-key") ?? "";
@@ -283,14 +316,6 @@ export function createApp(deps: AppDeps) {
     }
 
     // 7. Extract.
-    const options: ExtractOptions = {
-      apiKey: c.env.ANTHROPIC_API_KEY,
-      model: c.env.ANTHROPIC_MODEL ?? DEFAULT_MODEL,
-    };
-    if (c.env.ANTHROPIC_FALLBACK_MODEL) options.fallbackModel = c.env.ANTHROPIC_FALLBACK_MODEL;
-    if (c.env.ANTHROPIC_EFFORT && EFFORTS.has(c.env.ANTHROPIC_EFFORT)) {
-      options.effort = c.env.ANTHROPIC_EFFORT as ExtractOptions["effort"];
-    }
     const outcome = await deps.extract(parsed.data.images, options);
     if (outcome.kind === "ok") {
       // The week is recorded either way, so subscribing mid-week starts from the true count.
@@ -308,6 +333,9 @@ export function createApp(deps: AppDeps) {
         model: outcome.model,
         outcome: outcome.kind,
         attempts: outcome.attempts,
+        // Why the fallback ran, as a reason and a status: how often Gemini hands a scan to Claude, and whether
+        // that is an outage or a bad reply, is the cost to watch.
+        ...(outcome.retried ? { retried: outcome.retried } : {}),
         usage: outcome.usage,
         modelLatencyMs: outcome.latencyMs,
         totalLatencyMs: Date.now() - startedAt,
