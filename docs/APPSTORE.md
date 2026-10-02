@@ -382,9 +382,10 @@ Items 9 and 10 need a phone in a real household. Then say only what was walked.
    so that development and TestFlight purchases — which are always Sandbox transactions — verify at all.
    Left true in production, an Apple sandbox account is a free unlimited subscription. This is the last
    thing to flip before a public release, *after* TestFlight is finished with.
-8. **App Attest switches, both in `api/wrangler.jsonc`.** `APPATTEST_DEVELOPMENT` must become `"false"`
-   for any TestFlight or App Store build — a distributed build attests with a different aaguid, and every
-   attestation is refused until this matches. `REQUIRE_ATTESTATION` must become `"true"` to actually close
+8. **App Attest switches, both in `api/wrangler.jsonc`.** ~~`APPATTEST_DEVELOPMENT` must become `"false"`
+   for any TestFlight or App Store build.~~ Done and deployed 2026-10-02, before the first upload. TestFlight
+   and App Store builds attest in production whatever the entitlement says. A build run from Xcode is now
+   refused when it attests a new key, and scans unattested. `REQUIRE_ATTESTATION` must become `"true"` to actually close
    the hole it exists for, but only once every install in the wild has attested; before that it locks
    people out. Turn the first on with the build, the second a release later.
    **"Before a public release" means after approval, not before review.** Every App Review purchase is a

@@ -30,8 +30,11 @@
     // Attest at all — so simulator work needs it false. Another release-checklist item in docs/APPSTORE.md.
     "REQUIRE_ATTESTATION": "false",
     // A development build attests with the `appattestdevelop` aaguid; a distributed one uses `appattest`.
-    // This must become "false" for a TestFlight or App Store build, or every attestation is refused.
-    "APPATTEST_DEVELOPMENT": "true"
+    // "false" since 2026-10-02, ahead of the first TestFlight upload: TestFlight and App Store builds always
+    // attest in production, whatever the app's entitlement says. A build run from Xcode now has its new
+    // attestations refused. With REQUIRE_ATTESTATION false it still scans, counted against its device id, and
+    // keys it attested before keep working. Set "true" only to test App Attest itself from Xcode.
+    "APPATTEST_DEVELOPMENT": "false"
   },
   // Per-device daily extraction counter (SPEC §9). Replace the id with `wrangler kv namespace create QUOTA` on deploy.
   "kv_namespaces": [{ "binding": "QUOTA", "id": "a99437ed2a2940b8839ac8a803141076" }]

@@ -80,8 +80,9 @@ targets:
           - iCloud.com.leonparsons.RecipeBasket
         # Xcode rewrites this to `production` when archiving for distribution.
         aps-environment: development
-        # App Attest (Phase 8b). `development` here must agree with APPATTEST_DEVELOPMENT in the Worker's
-        # wrangler.jsonc — a build attesting in one environment is refused by a server expecting the other.
+        # App Attest (Phase 8b). Only builds run from Xcode honour this: TestFlight and App Store builds always
+        # attest in production, which is what the Worker expects (APPATTEST_DEVELOPMENT "false" since
+        # 2026-10-02). So a build from Xcode attests in development and is refused, and scans unattested.
         com.apple.developer.devicecheck.appattest-environment: development
     settings:
       base:
