@@ -357,8 +357,8 @@ Items 9 and 10 need a phone in a real household. Then say only what was walked.
    GitHub Pages at `https://leonparsons.github.io/Page-and-Plate/legal/` — versioned alongside the behaviour
    they describe, because a privacy policy that drifts from the app is worse than none.
    Pushed and Pages turned on 2026-09-28; all three URLs verified returning 200 the same day.
-   **One thing left:** `legal/index.html` links to both pages but carries no contact route of its own, and it
-   is also the **Support URL**. A reviewer landing there should see the email without clicking through.
+   ~~**One thing left:** `legal/index.html` is also the **Support URL** and carried no contact route of its
+   own.~~ Done 2026-10-02: it opens with a Support heading and the email.
 5. ~~Screenshots.~~ Nine frames, **reshot 2026-09-29** against the current copy and the current limits — the
    2026-09-23 set showed "17 of 20 free scans left" and the capture help text that was reversed the same day.
    Three of them now prove their headline in the picture rather than near it. See `marketing/README.md`.
@@ -437,3 +437,7 @@ Items 9 and 10 need a phone in a real household. Then say only what was walked.
     tokens: about 0.75¢ a scan becomes about 1.5¢, against about 2.1¢ for Sonnet at low effort. Update
     `PRICING` in `api/src/eval/metrics.ts` that day, and weigh whether the saving still pays for a second
     provider.
+17. ~~**A privacy manifest.**~~ Added 2026-10-02: `ios/RecipeBasket/PrivacyInfo.xcprivacy`. App Store Connect
+    refuses an upload whose code calls a required-reason API without declaring why (ITMS-91053), and the app
+    uses `UserDefaults` (reason `CA92.1`, its own data only). No tracking and no collected data, matching
+    item 11. Any new required-reason API needs an entry there before it ships.
