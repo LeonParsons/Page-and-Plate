@@ -178,7 +178,7 @@ Camera: the document scanner, for photographing a page. Photo library: optional,
 
 PRIVACY
 
-No accounts, no analytics, no tracking, no advertising. Recipes, page photos and the week are kept in the user's own private iCloud database, and a shared household week in the shared CloudKit database. Never on our servers. A page photo is sent to our extraction proxy, which passes it to an AI model and returns the ingredients; images are not stored or logged.
+No accounts, no analytics, no tracking, no advertising. Recipes, page photos and the week are kept in the user's own private iCloud database, and a shared household week in the shared CloudKit database. Never on our servers. A page photo leaves the device only when the user taps Extract: our extraction proxy passes it to Google's Gemini API, or to Anthropic's Claude API if Gemini fails, to read the ingredient list. We do not store or log images, and neither provider uses them to train its models. The privacy policy names both.
 
 Thank you for reviewing.
 ```
@@ -423,10 +423,9 @@ Items 9 and 10 need a phone in a real household. Then say only what was walked.
     "collect" covers the developer and its "third-party partners", which Apple defines as vendors whose code is
     in the app. Gemini and Claude are called from the Worker, which keeps nothing. That is Leon's reading
     (2026-10-02), not a ruling: revisit it if Apple's wording changes or a reviewer asks.
-14. **App Review notes: name the AI services.** Add: *"Scanning a cookbook page sends that photo, only when the
-    user taps Extract, through our server to Google's Gemini API (or Anthropic's Claude API if Gemini fails) to
-    read the ingredient list. Nothing is stored; see the privacy policy."* Guideline 5.1.2(i) asks for
-    disclosure and explicit permission before personal data goes to third-party AI. Leon decided on 2026-10-02
+14. **The App Review notes name the AI services.** Their PRIVACY paragraph above says which, and when a photo
+    is sent. Guideline 5.1.2(i) asks for disclosure and explicit permission before personal data goes to
+    third-party AI. Leon decided on 2026-10-02
     to ship without an in-app consent step. If App Review cites 5.1.2(i), the fix is a one-time sheet before the
     first Extract that names both services and links the privacy policy.
 15. **Google's terms bar apps "likely to be accessed by" under-18s.** Leon judged on 2026-10-02 that Page &
