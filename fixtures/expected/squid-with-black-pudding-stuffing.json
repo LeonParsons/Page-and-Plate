@@ -1,0 +1,200 @@
+{
+  "recipe": {
+    "title": "Squid with black pudding stuffing and sticky tomato sauce",
+    "yield": {
+      "quantity": 4,
+      "quantityMax": null,
+      "unit": "servings",
+      "rawText": "serves 4"
+    },
+    "ingredients": [
+      {
+        "rawText": "olive oil",
+        "section": null,
+        "quantity": null,
+        "quantityMax": null,
+        "unit": null,
+        "packageSize": null,
+        "name": "olive oil",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "100g/3oz smoked streaky bacon or pancetta, chopped",
+        "section": null,
+        "quantity": 100,
+        "quantityMax": null,
+        "unit": "g",
+        "packageSize": null,
+        "name": "smoked streaky bacon",
+        "preparation": "chopped, or pancetta",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "1 small red onion, peeled and finely chopped",
+        "section": null,
+        "quantity": 1,
+        "quantityMax": null,
+        "unit": "each",
+        "packageSize": null,
+        "name": "small red onion",
+        "preparation": "peeled and finely chopped",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "1 tablespoon fresh thyme leaves",
+        "section": null,
+        "quantity": 1,
+        "quantityMax": null,
+        "unit": "tbsp",
+        "packageSize": null,
+        "name": "fresh thyme leaves",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "200g/7oz black pudding, peeled and chopped",
+        "section": null,
+        "quantity": 200,
+        "quantityMax": null,
+        "unit": "g",
+        "packageSize": null,
+        "name": "black pudding",
+        "preparation": "peeled and chopped",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "2 handfuls of good-quality stale bread",
+        "section": null,
+        "quantity": 2,
+        "quantityMax": null,
+        "unit": "handful",
+        "packageSize": null,
+        "name": "good-quality stale bread",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "zest of 1 lemon",
+        "section": null,
+        "quantity": 1,
+        "quantityMax": null,
+        "unit": "each",
+        "packageSize": null,
+        "name": "lemon",
+        "preparation": "zested",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "sea salt and freshly ground black pepper",
+        "section": null,
+        "quantity": null,
+        "quantityMax": null,
+        "unit": null,
+        "packageSize": null,
+        "name": "sea salt",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "sea salt and freshly ground black pepper",
+        "section": null,
+        "quantity": null,
+        "quantityMax": null,
+        "unit": null,
+        "packageSize": null,
+        "name": "black pepper",
+        "preparation": "freshly ground",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "8 small or 4 medium squid, prepared as on page 286, leaving the tubes whole",
+        "section": null,
+        "quantity": 8,
+        "quantityMax": null,
+        "unit": "each",
+        "packageSize": null,
+        "name": "small squid",
+        "preparation": "or 4 medium, prepared as on page 286, leaving the tubes whole",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "1 dried red chilli, crumbled",
+        "section": null,
+        "quantity": 1,
+        "quantityMax": null,
+        "unit": "each",
+        "packageSize": null,
+        "name": "dried red chilli",
+        "preparation": "crumbled",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "2 cloves of garlic, peeled and finely sliced",
+        "section": null,
+        "quantity": 2,
+        "quantityMax": null,
+        "unit": "clove",
+        "packageSize": null,
+        "name": "garlic",
+        "preparation": "peeled and finely sliced",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "400g/14oz red and yellow cherry tomatoes, sliced in half",
+        "section": null,
+        "quantity": 400,
+        "quantityMax": null,
+        "unit": "g",
+        "packageSize": null,
+        "name": "red and yellow cherry tomatoes",
+        "preparation": "sliced in half",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "extra virgin olive oil",
+        "section": null,
+        "quantity": null,
+        "quantityMax": null,
+        "unit": null,
+        "packageSize": null,
+        "name": "extra virgin olive oil",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      }
+    ]
+  },
+  "warnings": [
+    "Squid preparation refers to page 286.",
+    "\"smoked streaky bacon or pancetta\" offers alternatives that change what to buy.",
+    "\"8 small or 4 medium squid\" offers alternative sizes; 8 small recorded."
+  ]
+}

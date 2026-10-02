@@ -1,0 +1,98 @@
+{
+  "recipe": {
+    "title": "CHEESE & MASALA STICKS",
+    "yield": {
+      "quantity": 16,
+      "quantityMax": 20,
+      "unit": "sticks",
+      "rawText": "MAKES 16–20"
+    },
+    "ingredients": [
+      {
+        "rawText": "1 sheet of ready-made puff pastry (320g), about 35 x 23cm",
+        "section": null,
+        "quantity": 1,
+        "quantityMax": null,
+        "unit": "sheet",
+        "packageSize": {
+          "quantity": 320,
+          "unit": "g"
+        },
+        "name": "ready-made puff pastry",
+        "preparation": "about 35 x 23cm",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "Flour, for dusting",
+        "section": null,
+        "quantity": null,
+        "quantityMax": null,
+        "unit": null,
+        "packageSize": null,
+        "name": "flour",
+        "preparation": "for dusting",
+        "optional": false,
+        "scalable": false,
+        "confidence": "high"
+      },
+      {
+        "rawText": "1 egg white, beaten",
+        "section": null,
+        "quantity": 1,
+        "quantityMax": null,
+        "unit": "each",
+        "packageSize": null,
+        "name": "egg white",
+        "preparation": "beaten",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "1¼–1½ tsp chaat masala",
+        "section": "For the topping",
+        "quantity": 1.25,
+        "quantityMax": 1.5,
+        "unit": "tsp",
+        "packageSize": null,
+        "name": "chaat masala",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "40g mature Cheddar, finely grated",
+        "section": "For the topping",
+        "quantity": 40,
+        "quantityMax": null,
+        "unit": "g",
+        "packageSize": null,
+        "name": "mature Cheddar",
+        "preparation": "finely grated",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "4 tsp chopped coriander leaves",
+        "section": "For the topping",
+        "quantity": 4,
+        "quantityMax": null,
+        "unit": "tsp",
+        "packageSize": null,
+        "name": "coriander leaves",
+        "preparation": "chopped",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      }
+    ]
+  },
+  "warnings": [
+    "The yield line \"MAKES 16–20\" states no noun; unit assumed to be sticks.",
+    "A \"Cinnamon sugar sticks\" variation in the method lists extra ingredients (sugar, ground cinnamon) that were not included."
+  ]
+}

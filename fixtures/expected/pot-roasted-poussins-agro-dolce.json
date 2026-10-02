@@ -1,0 +1,202 @@
+{
+  "recipe": {
+    "title": "Pot-roasted poussins agro dolce",
+    "yield": {
+      "quantity": 4,
+      "quantityMax": null,
+      "unit": "servings",
+      "rawText": "serves 4"
+    },
+    "ingredients": [
+      {
+        "rawText": "1 orange, quartered",
+        "section": null,
+        "quantity": 1,
+        "quantityMax": null,
+        "unit": "each",
+        "packageSize": null,
+        "name": "orange",
+        "preparation": "quartered",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "2 cinnamon sticks, broken in half",
+        "section": null,
+        "quantity": 2,
+        "quantityMax": null,
+        "unit": "stick",
+        "packageSize": null,
+        "name": "cinnamon",
+        "preparation": "broken in half",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "6 sprigs of fresh rosemary",
+        "section": null,
+        "quantity": 6,
+        "quantityMax": null,
+        "unit": "sprig",
+        "packageSize": null,
+        "name": "fresh rosemary",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "4 poussins, preferably free-range or organic",
+        "section": null,
+        "quantity": 4,
+        "quantityMax": null,
+        "unit": "each",
+        "packageSize": null,
+        "name": "poussins",
+        "preparation": "preferably free-range or organic",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "olive oil",
+        "section": null,
+        "quantity": null,
+        "quantityMax": null,
+        "unit": null,
+        "packageSize": null,
+        "name": "olive oil",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "2 knobs of butter",
+        "section": null,
+        "quantity": 2,
+        "quantityMax": null,
+        "unit": "each",
+        "packageSize": null,
+        "name": "butter",
+        "preparation": "knobs",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "2 red onions, peeled and finely sliced",
+        "section": null,
+        "quantity": 2,
+        "quantityMax": null,
+        "unit": "each",
+        "packageSize": null,
+        "name": "red onions",
+        "preparation": "peeled and finely sliced",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "4 sticks of celery, trimmed and finely sliced",
+        "section": null,
+        "quantity": 4,
+        "quantityMax": null,
+        "unit": "stick",
+        "packageSize": null,
+        "name": "celery",
+        "preparation": "trimmed and finely sliced",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "1 x 280g jar sun-dried tomatoes in oil, drained",
+        "section": null,
+        "quantity": 1,
+        "quantityMax": null,
+        "unit": "jar",
+        "packageSize": {
+          "quantity": 280,
+          "unit": "g"
+        },
+        "name": "sun-dried tomatoes in oil",
+        "preparation": "drained",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "3 wineglasses of Chianti",
+        "section": null,
+        "quantity": 3,
+        "quantityMax": null,
+        "unit": "each",
+        "packageSize": null,
+        "name": "Chianti",
+        "preparation": "wineglasses",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "6 tablespoons red wine vinegar",
+        "section": null,
+        "quantity": 6,
+        "quantityMax": null,
+        "unit": "tbsp",
+        "packageSize": null,
+        "name": "red wine vinegar",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "a handful of sultanas",
+        "section": null,
+        "quantity": 1,
+        "quantityMax": null,
+        "unit": "handful",
+        "packageSize": null,
+        "name": "sultanas",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "a handful of pinenuts",
+        "section": null,
+        "quantity": 1,
+        "quantityMax": null,
+        "unit": "handful",
+        "packageSize": null,
+        "name": "pinenuts",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "16 slices of thinly sliced smoked pancetta",
+        "section": null,
+        "quantity": 16,
+        "quantityMax": null,
+        "unit": "slice",
+        "packageSize": null,
+        "name": "smoked pancetta",
+        "preparation": "thinly sliced",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      }
+    ]
+  },
+  "warnings": [
+    "\"2 knobs of butter\" and \"3 wineglasses of Chianti\" use non-standard units; recorded as counts.",
+    "Intro text suggests one large chicken may be used instead of poussins."
+  ]
+}

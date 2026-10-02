@@ -1,0 +1,120 @@
+{
+  "recipe": {
+    "title": "KEJRIWAL",
+    "yield": {
+      "quantity": 1,
+      "quantityMax": null,
+      "unit": "servings",
+      "rawText": "SERVES 1"
+    },
+    "ingredients": [
+      {
+        "rawText": "80g mature Cheddar, grated",
+        "section": null,
+        "quantity": 80,
+        "quantityMax": null,
+        "unit": "g",
+        "packageSize": null,
+        "name": "mature Cheddar",
+        "preparation": "grated",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "1 or 2 thick slices of white bloomer, sourdough or brioche (depending on size and level of hunger)",
+        "section": null,
+        "quantity": 1,
+        "quantityMax": 2,
+        "unit": "each",
+        "packageSize": null,
+        "name": "thick slices of white bloomer, sourdough or brioche",
+        "preparation": "depending on size and level of hunger",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "2 spring onions, chopped",
+        "section": null,
+        "quantity": 2,
+        "quantityMax": null,
+        "unit": "each",
+        "packageSize": null,
+        "name": "spring onions",
+        "preparation": "chopped",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "1 green chilli, very finely chopped",
+        "section": null,
+        "quantity": 1,
+        "quantityMax": null,
+        "unit": "each",
+        "packageSize": null,
+        "name": "green chilli",
+        "preparation": "very finely chopped",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "1 tsp vegetable oil (optional)",
+        "section": null,
+        "quantity": 1,
+        "quantityMax": null,
+        "unit": "tsp",
+        "packageSize": null,
+        "name": "vegetable oil",
+        "preparation": null,
+        "optional": true,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "1 or 2 large eggs (one per slice of toast)",
+        "section": null,
+        "quantity": 1,
+        "quantityMax": 2,
+        "unit": "each",
+        "packageSize": null,
+        "name": "large eggs",
+        "preparation": "one per slice of toast",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "Coarsely ground black pepper",
+        "section": null,
+        "quantity": null,
+        "quantityMax": null,
+        "unit": null,
+        "packageSize": null,
+        "name": "black pepper",
+        "preparation": "coarsely ground",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "Tomato ketchup",
+        "section": "To serve",
+        "quantity": null,
+        "quantityMax": null,
+        "unit": null,
+        "packageSize": null,
+        "name": "tomato ketchup",
+        "preparation": "to serve",
+        "optional": false,
+        "scalable": false,
+        "confidence": "high"
+      }
+    ]
+  },
+  "warnings": [
+    "The bread line lists alternatives (white bloomer, sourdough or brioche), which changes what to buy."
+  ]
+}

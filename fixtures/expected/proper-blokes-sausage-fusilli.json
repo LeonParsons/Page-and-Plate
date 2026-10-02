@@ -1,0 +1,187 @@
+{
+  "recipe": {
+    "title": "Proper blokes' sausage fusilli",
+    "yield": {
+      "quantity": 4,
+      "quantityMax": null,
+      "unit": "servings",
+      "rawText": "serves 4"
+    },
+    "ingredients": [
+      {
+        "rawText": "2 heaped teaspoons fennel seeds",
+        "section": null,
+        "quantity": 2,
+        "quantityMax": null,
+        "unit": "tsp",
+        "packageSize": null,
+        "name": "fennel seeds",
+        "preparation": "heaped",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "2 dried red chillies, crumbled",
+        "section": null,
+        "quantity": 2,
+        "quantityMax": null,
+        "unit": "each",
+        "packageSize": null,
+        "name": "dried red chillies",
+        "preparation": "crumbled",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "olive oil",
+        "section": null,
+        "quantity": null,
+        "quantityMax": null,
+        "unit": null,
+        "packageSize": null,
+        "name": "olive oil",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "600g/1lb 6oz good-quality coarse Italian or Cumberland sausages",
+        "section": null,
+        "quantity": 600,
+        "quantityMax": null,
+        "unit": "g",
+        "packageSize": null,
+        "name": "good-quality coarse Italian or Cumberland sausages",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "1 tablespoon dried oregano",
+        "section": null,
+        "quantity": 1,
+        "quantityMax": null,
+        "unit": "tbsp",
+        "packageSize": null,
+        "name": "dried oregano",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "a wineglass of white wine",
+        "section": null,
+        "quantity": 1,
+        "quantityMax": null,
+        "unit": "each",
+        "packageSize": null,
+        "name": "white wine",
+        "preparation": "wineglass",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "zest and juice of 1 lemon",
+        "section": null,
+        "quantity": 1,
+        "quantityMax": null,
+        "unit": "each",
+        "packageSize": null,
+        "name": "lemon",
+        "preparation": "zest and juice",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "500g/1lb 2oz good-quality fusilli or penne",
+        "section": null,
+        "quantity": 500,
+        "quantityMax": null,
+        "unit": "g",
+        "packageSize": null,
+        "name": "good-quality fusilli or penne",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "sea salt and freshly ground black pepper",
+        "section": null,
+        "quantity": null,
+        "quantityMax": null,
+        "unit": null,
+        "packageSize": null,
+        "name": "sea salt",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "sea salt and freshly ground black pepper",
+        "section": null,
+        "quantity": null,
+        "quantityMax": null,
+        "unit": null,
+        "packageSize": null,
+        "name": "black pepper",
+        "preparation": "freshly ground",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "a couple of knobs of butter",
+        "section": null,
+        "quantity": 2,
+        "quantityMax": null,
+        "unit": "each",
+        "packageSize": null,
+        "name": "butter",
+        "preparation": "a couple of knobs",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "a handful of freshly grated Parmesan cheese, plus extra for serving",
+        "section": null,
+        "quantity": 1,
+        "quantityMax": null,
+        "unit": "handful",
+        "packageSize": null,
+        "name": "Parmesan cheese",
+        "preparation": "freshly grated, plus extra for serving",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "a small bunch of fresh flat-leaf parsley, leaves picked and chopped",
+        "section": null,
+        "quantity": 1,
+        "quantityMax": null,
+        "unit": "bunch",
+        "packageSize": null,
+        "name": "fresh flat-leaf parsley",
+        "preparation": "small, leaves picked and chopped",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      }
+    ]
+  },
+  "warnings": [
+    "The sausage line offers alternatives (Italian or Cumberland) which changes what to buy.",
+    "The pasta line offers alternatives (fusilli or penne) which changes what to buy.",
+    "\"a wineglass of white wine\" is an imprecise measure."
+  ]
+}

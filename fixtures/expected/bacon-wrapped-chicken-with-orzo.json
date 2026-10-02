@@ -1,0 +1,111 @@
+{
+  "recipe": {
+    "title": "Bacon-wrapped chicken with spinach & orzo",
+    "yield": {
+      "quantity": 2,
+      "quantityMax": null,
+      "unit": "servings",
+      "rawText": "Serves 2"
+    },
+    "ingredients": [
+      {
+        "rawText": "380g pack slower reared 2 chicken breast fillets",
+        "section": null,
+        "quantity": 1,
+        "quantityMax": null,
+        "unit": "packet",
+        "packageSize": {
+          "quantity": 380,
+          "unit": "g"
+        },
+        "name": "slower reared chicken breast fillets",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "300g pack spinach Mornay",
+        "section": null,
+        "quantity": 1,
+        "quantityMax": null,
+        "unit": "packet",
+        "packageSize": {
+          "quantity": 300,
+          "unit": "g"
+        },
+        "name": "spinach Mornay",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "4 rashers No.1 British Free Range Unsmoked Streaky Bacon",
+        "section": null,
+        "quantity": 4,
+        "quantityMax": null,
+        "unit": "each",
+        "packageSize": null,
+        "name": "No.1 British Free Range Unsmoked Streaky Bacon rashers",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "1 tbsp olive oil",
+        "section": null,
+        "quantity": 1,
+        "quantityMax": null,
+        "unit": "tbsp",
+        "packageSize": null,
+        "name": "olive oil",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "1 leek, halved lengthways and finely sliced",
+        "section": null,
+        "quantity": 1,
+        "quantityMax": null,
+        "unit": "each",
+        "packageSize": null,
+        "name": "leek",
+        "preparation": "halved lengthways and finely sliced",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "200g orzo",
+        "section": null,
+        "quantity": 200,
+        "quantityMax": null,
+        "unit": "g",
+        "packageSize": null,
+        "name": "orzo",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "400ml fresh chicken stock",
+        "section": null,
+        "quantity": 400,
+        "quantityMax": null,
+        "unit": "ml",
+        "packageSize": null,
+        "name": "fresh chicken stock",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      }
+    ]
+  },
+  "warnings": []
+}

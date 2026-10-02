@@ -1,0 +1,240 @@
+{
+  "recipe": {
+    "title": "SALLI BOTI",
+    "yield": {
+      "quantity": 4,
+      "quantityMax": 6,
+      "unit": "servings",
+      "rawText": "SERVES 4–6"
+    },
+    "ingredients": [
+      {
+        "rawText": "150ml vegetable oil",
+        "section": null,
+        "quantity": 150,
+        "quantityMax": null,
+        "unit": "ml",
+        "packageSize": null,
+        "name": "vegetable oil",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "1 cinnamon stick",
+        "section": null,
+        "quantity": 1,
+        "quantityMax": null,
+        "unit": "stick",
+        "packageSize": null,
+        "name": "cinnamon",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "2 bay leaves",
+        "section": null,
+        "quantity": 2,
+        "quantityMax": null,
+        "unit": "each",
+        "packageSize": null,
+        "name": "bay leaves",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "500g red onions, diced",
+        "section": null,
+        "quantity": 500,
+        "quantityMax": null,
+        "unit": "g",
+        "packageSize": null,
+        "name": "red onions",
+        "preparation": "diced",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "1kg boneless leg of lamb, cut into 3cm pieces",
+        "section": null,
+        "quantity": 1,
+        "quantityMax": null,
+        "unit": "kg",
+        "packageSize": null,
+        "name": "boneless leg of lamb",
+        "preparation": "cut into 3cm pieces",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "50g garlic paste (page 353)",
+        "section": null,
+        "quantity": 50,
+        "quantityMax": null,
+        "unit": "g",
+        "packageSize": null,
+        "name": "garlic paste",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "35g ginger paste (page 353)",
+        "section": null,
+        "quantity": 35,
+        "quantityMax": null,
+        "unit": "g",
+        "packageSize": null,
+        "name": "ginger paste",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "2 tsp deggi mirch chilli powder",
+        "section": null,
+        "quantity": 2,
+        "quantityMax": null,
+        "unit": "tsp",
+        "packageSize": null,
+        "name": "deggi mirch chilli powder",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "1 tsp ground turmeric",
+        "section": null,
+        "quantity": 1,
+        "quantityMax": null,
+        "unit": "tsp",
+        "packageSize": null,
+        "name": "ground turmeric",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "2 tsp fine sea salt",
+        "section": null,
+        "quantity": 2,
+        "quantityMax": null,
+        "unit": "tsp",
+        "packageSize": null,
+        "name": "fine sea salt",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "400g tin chopped tomatoes",
+        "section": null,
+        "quantity": 1,
+        "quantityMax": null,
+        "unit": "tin",
+        "packageSize": {
+          "quantity": 400,
+          "unit": "g"
+        },
+        "name": "chopped tomatoes",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "40ml distilled white vinegar (pickling vinegar)",
+        "section": null,
+        "quantity": 40,
+        "quantityMax": null,
+        "unit": "ml",
+        "packageSize": null,
+        "name": "distilled white vinegar (pickling vinegar)",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "35g jaggery",
+        "section": null,
+        "quantity": 35,
+        "quantityMax": null,
+        "unit": "g",
+        "packageSize": null,
+        "name": "jaggery",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "1 tsp garam masala (page 356)",
+        "section": null,
+        "quantity": 1,
+        "quantityMax": null,
+        "unit": "tsp",
+        "packageSize": null,
+        "name": "garam masala",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "Salli (page 173)",
+        "section": "To serve",
+        "quantity": null,
+        "quantityMax": null,
+        "unit": null,
+        "packageSize": null,
+        "name": "salli",
+        "preparation": "to serve",
+        "optional": false,
+        "scalable": false,
+        "confidence": "high"
+      },
+      {
+        "rawText": "Chapatis (page 368)",
+        "section": "To serve",
+        "quantity": null,
+        "quantityMax": null,
+        "unit": null,
+        "packageSize": null,
+        "name": "chapatis",
+        "preparation": "to serve",
+        "optional": false,
+        "scalable": false,
+        "confidence": "high"
+      },
+      {
+        "rawText": "Kachumber (page 121)",
+        "section": "To serve",
+        "quantity": null,
+        "quantityMax": null,
+        "unit": null,
+        "packageSize": null,
+        "name": "kachumber",
+        "preparation": "to serve",
+        "optional": false,
+        "scalable": false,
+        "confidence": "high"
+      }
+    ]
+  },
+  "warnings": [
+    "Sub-recipe references: garlic paste and ginger paste (page 353), garam masala (page 356), salli (page 173), chapatis (page 368), kachumber (page 121)."
+  ]
+}

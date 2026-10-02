@@ -1,0 +1,186 @@
+{
+  "recipe": {
+    "title": "Black angel tagliarini",
+    "yield": {
+      "quantity": 4,
+      "quantityMax": null,
+      "unit": "servings",
+      "rawText": "serves 4"
+    },
+    "ingredients": [
+      {
+        "rawText": "1 x basic pasta dough recipe (see page 84) and 2 sachets of squid ink or 500g/1lb 2oz good-quality dried black spaghetti",
+        "section": null,
+        "quantity": 1,
+        "quantityMax": null,
+        "unit": "each",
+        "packageSize": null,
+        "name": "basic pasta dough recipe",
+        "preparation": "see page 84",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "1 x basic pasta dough recipe (see page 84) and 2 sachets of squid ink or 500g/1lb 2oz good-quality dried black spaghetti",
+        "section": null,
+        "quantity": 2,
+        "quantityMax": null,
+        "unit": "each",
+        "packageSize": null,
+        "name": "squid ink",
+        "preparation": "sachets",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "1 x basic pasta dough recipe (see page 84) and 2 sachets of squid ink or 500g/1lb 2oz good-quality dried black spaghetti",
+        "section": null,
+        "quantity": 500,
+        "quantityMax": null,
+        "unit": "g",
+        "packageSize": null,
+        "name": "good-quality dried black spaghetti",
+        "preparation": "or, instead of the fresh pasta dough and squid ink",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "sea salt and freshly ground black pepper",
+        "section": null,
+        "quantity": null,
+        "quantityMax": null,
+        "unit": null,
+        "packageSize": null,
+        "name": "sea salt",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "sea salt and freshly ground black pepper",
+        "section": null,
+        "quantity": null,
+        "quantityMax": null,
+        "unit": null,
+        "packageSize": null,
+        "name": "black pepper",
+        "preparation": "freshly ground",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "delicate extra virgin olive oil",
+        "section": null,
+        "quantity": null,
+        "quantityMax": null,
+        "unit": null,
+        "packageSize": null,
+        "name": "delicate extra virgin olive oil",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "8 large fresh scallops, sliced in half lengthways and scored",
+        "section": null,
+        "quantity": 8,
+        "quantityMax": null,
+        "unit": "each",
+        "packageSize": null,
+        "name": "large fresh scallops",
+        "preparation": "sliced in half lengthways and scored",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "1–2 fresh red chillies, deseeded and finely chopped",
+        "section": null,
+        "quantity": 1,
+        "quantityMax": 2,
+        "unit": "each",
+        "packageSize": null,
+        "name": "fresh red chillies",
+        "preparation": "deseeded and finely chopped",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "3 cloves of garlic, peeled and finely sliced",
+        "section": null,
+        "quantity": 3,
+        "quantityMax": null,
+        "unit": "clove",
+        "packageSize": null,
+        "name": "garlic",
+        "preparation": "peeled and finely sliced",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "a large bunch of fresh flat-leaf parsley, leaves and stalks very finely chopped",
+        "section": null,
+        "quantity": 1,
+        "quantityMax": null,
+        "unit": "bunch",
+        "packageSize": null,
+        "name": "fresh flat-leaf parsley",
+        "preparation": "large, leaves and stalks very finely chopped",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "2 wineglasses of white wine",
+        "section": null,
+        "quantity": 2,
+        "quantityMax": null,
+        "unit": "each",
+        "packageSize": null,
+        "name": "white wine",
+        "preparation": "wineglasses",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "3 large knobs of butter",
+        "section": null,
+        "quantity": 3,
+        "quantityMax": null,
+        "unit": "each",
+        "packageSize": null,
+        "name": "butter",
+        "preparation": "large knobs",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "½ a lemon",
+        "section": null,
+        "quantity": 0.5,
+        "quantityMax": null,
+        "unit": "each",
+        "packageSize": null,
+        "name": "lemon",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      }
+    ]
+  },
+  "warnings": [
+    "The first ingredient line references the basic pasta dough recipe on page 84.",
+    "The first line offers an alternative that changes what to buy: fresh pasta dough plus squid ink, or 500g/1lb 2oz dried black spaghetti."
+  ]
+}

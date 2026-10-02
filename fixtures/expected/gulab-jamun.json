@@ -1,0 +1,146 @@
+{
+  "recipe": {
+    "title": "GULAB JAMUN",
+    "yield": {
+      "quantity": 14,
+      "quantityMax": 16,
+      "unit": "servings",
+      "rawText": "SERVES 14–16"
+    },
+    "ingredients": [
+      {
+        "rawText": "100g semolina",
+        "section": "For the dough",
+        "quantity": 100,
+        "quantityMax": null,
+        "unit": "g",
+        "packageSize": null,
+        "name": "semolina",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "350g milk powder",
+        "section": "For the dough",
+        "quantity": 350,
+        "quantityMax": null,
+        "unit": "g",
+        "packageSize": null,
+        "name": "milk powder",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "50g plain flour",
+        "section": "For the dough",
+        "quantity": 50,
+        "quantityMax": null,
+        "unit": "g",
+        "packageSize": null,
+        "name": "plain flour",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "25g ghee (or vegetable oil)",
+        "section": "For the dough",
+        "quantity": 25,
+        "quantityMax": null,
+        "unit": "g",
+        "packageSize": null,
+        "name": "ghee",
+        "preparation": "or vegetable oil",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "60g mascarpone cheese",
+        "section": "For the filling",
+        "quantity": 60,
+        "quantityMax": null,
+        "unit": "g",
+        "packageSize": null,
+        "name": "mascarpone cheese",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "30g pistachio nuts, finely chopped",
+        "section": "For the filling",
+        "quantity": 30,
+        "quantityMax": null,
+        "unit": "g",
+        "packageSize": null,
+        "name": "pistachio nuts",
+        "preparation": "finely chopped",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "800g granulated sugar",
+        "section": "For the syrup",
+        "quantity": 800,
+        "quantityMax": null,
+        "unit": "g",
+        "packageSize": null,
+        "name": "granulated sugar",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "Vegetable oil for deep-frying",
+        "section": "To cook",
+        "quantity": null,
+        "quantityMax": null,
+        "unit": null,
+        "packageSize": null,
+        "name": "vegetable oil",
+        "preparation": "for deep-frying",
+        "optional": false,
+        "scalable": false,
+        "confidence": "high"
+      },
+      {
+        "rawText": "Vanilla ice cream (optional)",
+        "section": "To serve",
+        "quantity": null,
+        "quantityMax": null,
+        "unit": null,
+        "packageSize": null,
+        "name": "vanilla ice cream",
+        "preparation": "to serve",
+        "optional": true,
+        "scalable": false,
+        "confidence": "high"
+      },
+      {
+        "rawText": "Chopped pistachio nuts",
+        "section": "To serve",
+        "quantity": null,
+        "quantityMax": null,
+        "unit": null,
+        "packageSize": null,
+        "name": "pistachio nuts",
+        "preparation": "chopped, to serve",
+        "optional": false,
+        "scalable": false,
+        "confidence": "high"
+      }
+    ]
+  },
+  "warnings": [
+    "The dough line offers an alternative: ghee or vegetable oil."
+  ]
+}

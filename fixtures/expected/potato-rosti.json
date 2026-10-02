@@ -1,0 +1,107 @@
+{
+  "recipe": {
+    "title": "Potato rösti",
+    "yield": {
+      "quantity": 4,
+      "quantityMax": null,
+      "unit": "servings",
+      "rawText": "serves 4"
+    },
+    "ingredients": [
+      {
+        "rawText": "olive oil",
+        "section": null,
+        "quantity": null,
+        "quantityMax": null,
+        "unit": null,
+        "packageSize": null,
+        "name": "olive oil",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "a small knob of butter",
+        "section": null,
+        "quantity": 1,
+        "quantityMax": null,
+        "unit": "each",
+        "packageSize": null,
+        "name": "butter",
+        "preparation": "small knob",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "600g/1lb 6oz floury potatoes, peeled and cut into matchsticks (see page 431)",
+        "section": null,
+        "quantity": 600,
+        "quantityMax": null,
+        "unit": "g",
+        "packageSize": null,
+        "name": "floury potatoes",
+        "preparation": "peeled and cut into matchsticks (see page 431)",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "sea salt and freshly ground black pepper",
+        "section": null,
+        "quantity": null,
+        "quantityMax": null,
+        "unit": null,
+        "packageSize": null,
+        "name": "sea salt",
+        "preparation": null,
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "sea salt and freshly ground black pepper",
+        "section": null,
+        "quantity": null,
+        "quantityMax": null,
+        "unit": null,
+        "packageSize": null,
+        "name": "black pepper",
+        "preparation": "freshly ground",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "a few sprigs of fresh rosemary, leaves picked",
+        "section": null,
+        "quantity": null,
+        "quantityMax": null,
+        "unit": null,
+        "packageSize": null,
+        "name": "fresh rosemary",
+        "preparation": "a few sprigs, leaves picked",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      },
+      {
+        "rawText": "6 cloves of garlic, peeled",
+        "section": null,
+        "quantity": 6,
+        "quantityMax": null,
+        "unit": "clove",
+        "packageSize": null,
+        "name": "garlic",
+        "preparation": "peeled",
+        "optional": false,
+        "scalable": true,
+        "confidence": "high"
+      }
+    ]
+  },
+  "warnings": [
+    "The potato line refers to a cutting technique on page 431, not shown."
+  ]
+}
