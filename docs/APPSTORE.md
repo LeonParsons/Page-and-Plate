@@ -405,9 +405,10 @@ Items 9 and 10 need a phone in a real household. Then say only what was walked.
 11. ~~**Age rating questionnaire and the App Privacy answers**~~ Both answered 2026-09-29 (Leon), "Data Not
     Collected" throughout — the app has no accounts, and CloudKit private and shared databases are not
     developer collection. These were the two that block a submission outright.
-12. **Gemini goes live with the next Worker deploy, in this order** (2026-10-02: Gemini 3.8 Flash reads the page,
-    Claude Sonnet 5 is the backup; see `docs/DECISIONS.md`). Deploying the new config without step b refuses
-    every scan as `server_misconfigured`, so until then the deployed Worker stays on Sonnet.
+12. ~~**Gemini goes live with the next Worker deploy.**~~ Done 2026-10-02 (Leon): secret set, policy published,
+    deployed, a scan verified from his phone, and a Google Cloud budget alert in place. The steps are kept for a
+    redeploy from scratch (2026-10-02: Gemini 3.8 Flash reads the page, Claude Sonnet 5 is the backup; see
+    `docs/DECISIONS.md`). Deploying the config without step 2 refuses every scan as `server_misconfigured`.
     1. In Google AI Studio, check that the project behind `GEMINI_API_KEY` has **billing enabled** (paid tier).
        The free tier lets Google train on users' pages, and Google's terms allow only paid use for users in the
        UK, the EEA or Switzerland.
