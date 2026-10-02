@@ -17,7 +17,7 @@ Each recipe can be exported on its own, or a planned week in one go. The week ex
 - **Export:** EventKit (`requestFullAccessToReminders`) for Reminders; SwiftUI `ShareLink` for plain text.
 - **Subscription:** StoreKit 2 (`Transaction.currentEntitlements` / `Transaction.updates`, `SubscriptionStoreView`); product ids in `Subscription/Products.swift`, mirrored in `ios/RecipeBasket.storekit` for the simulator (the scheme's StoreKit configuration). The free tier is `ScanAllowance` in RecipeCore plus a Keychain ledger.
 - **Core logic:** local Swift package `RecipeCore` (models, scaling, rounding, fraction formatting, line formatting). Tests use Swift Testing.
-- **API proxy:** Cloudflare Worker (TypeScript) + Hono + `@anthropic-ai/sdk` + Zod 4. Model name from env `ANTHROPIC_MODEL` (default `claude-sonnet-5`). API key is a Wrangler secret. Tests with Vitest.
+- **API proxy:** Cloudflare Worker (TypeScript) + Hono + `@anthropic-ai/sdk` + Zod 4. Model name from env `ANTHROPIC_MODEL` (default `claude-sonnet-5`), optional `ANTHROPIC_FALLBACK_MODEL` for the one retry. The system prompt carries the only prompt-cache breakpoint, so keep it byte-identical across requests. API key is a Wrangler secret. Tests with Vitest.
 - **Dependencies:** no third-party Swift packages without asking first.
 
 ## Layout
@@ -60,6 +60,7 @@ cd api && npm run schema       # regenerate schema/extraction.schema.json from Z
 swift ios/Tools/RenderAppIcon.swift   # re-render the three 1024 app-icon PNGs after a change to the mark
 python3 docs/appstore-counts.py       # check every App Store field against Apple's character limits
 cd api && npm run eval         # extraction accuracy against fixtures/photos (both models; ≈ $1 per run)
+cd api && npm run eval -- --models claude-haiku-4-5,gemini-3.1-flash-lite --fallback-model claude-sonnet-5   # compare cheap models; gemini-* is eval-only and needs GEMINI_API_KEY
 cd api && npm run deploy       # after `npx wrangler login`, a KV namespace id in wrangler.jsonc and the two secrets (see docs/DECISIONS.md)
 cd api && bash scripts/make-test-pki.sh   # regenerate the certificate chains entitlement.test.ts signs with (committed; they expire in 2046)
 # StoreKit: only Xcode's own launch path syncs RecipeBasket.storekit to the simulator, so under `xcodebuild test`
@@ -70,7 +71,7 @@ xcodebuild build -project ios/RecipeBasket.xcodeproj -scheme RecipeBasket -desti
 xcrun devicectl device install app --device 00008150-00095D492140401C <DerivedData>/Build/Products/Debug-iphoneos/RecipeBasket.app
 ```
 
-`api/.dev.vars` (git-ignored, copy from `.dev.vars.example`) holds `ANTHROPIC_API_KEY` and `APP_KEY` for local dev and the eval.
+`api/.dev.vars` (git-ignored, copy from `.dev.vars.example`) holds `ANTHROPIC_API_KEY` and `APP_KEY` for local dev and the eval, plus `GEMINI_API_KEY` (a billing-enabled Google AI Studio project) only when the eval runs a `gemini-*` model.
 
 The app reads the Worker URL and app key from `ios/Config/Secrets.xcconfig` (git-ignored; `xcodegen generate` copies `Secrets.example.xcconfig` if it is missing). Put the same `APP_KEY` there as in `api/.dev.vars`. In the simulator the app talks to `wrangler dev` on `http://localhost:8787`, so run `npm run dev` first. Put fixture pages in the simulator's photo library with `xcrun simctl addmedia "iPhone 17 Pro" fixtures/photos/*.jpg`. The VisionKit document camera only works on a real device.
 

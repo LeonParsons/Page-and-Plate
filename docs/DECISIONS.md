@@ -1081,3 +1081,62 @@ Nothing is blocked by that — no listing or nomination field claims accessibili
 claim being made to Apple, and **Helpful details** is 479 of 500 characters so one could not be added anyway.
 The single rule that survives: no accessibility claim goes into any field until someone has actually sat with
 the phone. The script stays in `docs/APPSTORE.md` because keeping it costs nothing.
+
+### 2026-10-02 · Scans have to be cheap at scale, so the eval now compares providers
+
+Leon expects a lot of users and asked whether a cheaper API could do the job. Today a scan costs 2–4¢ on
+Sonnet 5, and in the 2026-09-20 eval **output was ~60 % of the spend**, most of it default adaptive thinking. A
+subscriber at the weekly ceiling (~107 scans a month) costs about $3.20, more than £1.99 nets after VAT and
+Apple's commission. Prices below are from Anthropic's pricing page, fetched 2026-09-30.
+
+- **Prompt caching is on. This supersedes "Prompt caching not used" (2026-09-20).** The system prompt plus the
+  injected output schema are ~5.5k tokens of every request, byte-identical every time. Anthropic's cache is
+  shared across the organisation, so at volume nearly every scan reads that prefix at 0.1×. The breakpoint is
+  one explicit `cache_control` on the system block. Top-level automatic caching was not used: it would put the
+  breakpoint on the photo, which never repeats, so it would only ever write. **Not yet confirmed:**
+  - whether the injected schema sits inside the cached prefix;
+  - whether Haiku 4.5 caches at all. Its minimum prefix is 4,096 tokens and its older tokenizer makes ours
+    shorter.
+
+  The eval's new `cache write / read` row answers both on its first real run.
+- **A fallback model for the retry** (`ANTHROPIC_FALLBACK_MODEL`, unset by default). The cheap design is Haiku
+  first, with Sonnet taking the one retry after an invalid, cut-off or refused reply.
+  - It does not catch a reply that is valid but wrong. That is what the review screen is for (rule 5).
+  - Upstream failures still do not retry on the fallback, because the SDK has already retried them.
+  - `outcome.model` names the model that answered, and `outcome.calls` lists each billed call, so the eval
+    prices a Sonnet retry at Sonnet's rate.
+- **`effort` is never sent to a `claude-haiku-*` model**, which answers it with a 400. With Haiku in front,
+  `ANTHROPIC_EFFORT` therefore applies only to the Sonnet retry.
+- **Gemini is in the eval, not in the Worker.** Estimated cost per one-page scan:
+
+  | Option | Price per MTok (in / out) | Per scan (estimate) |
+  |---|---|---|
+  | Sonnet 5 | $2 / $10 | ~3¢ |
+  | Haiku 4.5 | $1 / $5 | ~0.6–1¢ |
+  | Gemini Flash | ~$0.75 / $3.75 | ~0.6–1.2¢ |
+  | Gemini Flash-Lite | ~$0.25–0.30 / $1.50–2.50 | ~0.25–0.45¢ |
+
+  The Gemini rates come from third-party price lists, because Google's pricing page could not be reached from
+  the session. Verify them before quoting a Gemini cost (`PRICING` in `api/src/eval/metrics.ts` says so too).
+  - `api/src/extract-gemini.ts` calls the REST API with plain `fetch`, so there is no `@google/genai`
+    dependency. Field names follow `googleapis/js-genai` `src/types.ts`.
+  - It shares `runExtraction` with the Anthropic path, so Zod validation, the single retry and the outcome
+    mapping are the same code.
+  - Pages go at `MEDIA_RESOLUTION_HIGH` (1,120 tokens). `effort` maps onto `thinkingLevel` and is only sent
+    when set, because older Gemini models take a thinking budget instead. Thinking tokens count as output.
+  - **It has never made a real request.** The session had no Google key, so the first eval run is the first
+    call. A 400 naming a schema keyword means `buildModelOutputJSONSchema()` needs adapting for Google.
+- **Apple's on-device text recognition was considered and not taken.** Sending recognised text instead of the
+  photo would save ~0.4¢ of a 2–4¢ scan. It would lose the layout, small printed fractions, and the model's
+  view of glare and cut-off lines, which is how it decides "unreadable" and when to warn.
+- **The eval cannot choose yet.** It is saturated: both models scored 100 % on ten clean pages, so a cheap
+  model scoring 100 % there says little. About ten harder pages from the 2026-09-20 caveat list come first.
+  Then one run picks the cheapest setup that holds SPEC §10 (≥ 95 % recall, ≥ 90 % quantity and unit):
+  `npm run eval -- --models claude-sonnet-5,claude-haiku-4-5,<flash-lite id>,<flash id>`, plus Haiku with
+  `--fallback-model claude-sonnet-5` and Sonnet with `--effort low`.
+- **A live switch to Google would be its own change.** It needs:
+  - Worker wiring and a `wrangler secret`;
+  - `legal/privacy.html`, which tells users their page photos go to Anthropic's API;
+  - the App Store privacy details;
+  - CLAUDE.md's stack line and rule 2;
+  - a billing-enabled project only, never the free tier, whose terms have let Google use what is sent.
