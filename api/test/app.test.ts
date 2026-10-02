@@ -7,8 +7,9 @@ import fixture from "../../fixtures/expected/chickpea-arrabbiata.json";
 const baseEnv = env as unknown as Bindings;
 const testEnv: Bindings = { ...baseEnv, APP_KEY: "test-app-key", ANTHROPIC_API_KEY: "test-anthropic-key" };
 
-const usage = { inputTokens: 1000, outputTokens: 200 };
-const okOutcome: ExtractOutcome = { kind: "ok", response: fixture as any, model: "claude-sonnet-5", latencyMs: 1234, attempts: 1, usage };
+const usage = { inputTokens: 1000, outputTokens: 200, cacheCreationInputTokens: 0, cacheReadInputTokens: 0 };
+const calls = [{ model: "claude-sonnet-5", usage }];
+const okOutcome: ExtractOutcome = { kind: "ok", response: fixture as any, model: "claude-sonnet-5", latencyMs: 1234, attempts: 1, usage, calls };
 
 const image = { mediaType: "image/jpeg", data: "AAAA" };
 const validBody = JSON.stringify({ images: [image] });
@@ -45,6 +46,13 @@ describe("POST /extract", () => {
     expect(extract.mock.calls[0]![1]).toEqual({ apiKey: "test-anthropic-key", model: "claude-opus-5", effort: "medium" });
     await post(app, { env: { ...testEnv, ANTHROPIC_EFFORT: "extreme" } });
     expect(extract.mock.calls[1]![1].effort).toBeUndefined();
+  });
+
+  it("passes the fallback model through only when one is configured", async () => {
+    await post(app, { env: { ...testEnv, ANTHROPIC_MODEL: "claude-haiku-4-5", ANTHROPIC_FALLBACK_MODEL: "claude-sonnet-5" } });
+    expect(extract.mock.calls[0]![1]).toEqual({ apiKey: "test-anthropic-key", model: "claude-haiku-4-5", fallbackModel: "claude-sonnet-5" });
+    await post(app, { env: { ...testEnv, ANTHROPIC_FALLBACK_MODEL: "" } });
+    expect("fallbackModel" in extract.mock.calls[1]![1]).toBe(false);
   });
 
   it("401 without or with a wrong app key, and never calls the extractor", async () => {
@@ -238,7 +246,7 @@ describe("POST /extract", () => {
   });
 
   it("maps the failure outcomes to typed errors", async () => {
-    const base = { model: "claude-sonnet-5", latencyMs: 10, attempts: 2, usage };
+    const base = { model: "claude-sonnet-5", latencyMs: 10, attempts: 2, usage, calls };
     const cases: [ExtractOutcome, number, Record<string, unknown>][] = [
       [{ ...base, kind: "no_recipe_found", reason: "Only a photograph" }, 422, { error: "no_recipe_found", message: "Only a photograph" }],
       [{ ...base, kind: "unreadable", reason: null }, 422, { error: "unreadable" }],

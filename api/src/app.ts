@@ -14,6 +14,8 @@ export type Bindings = {
   /** Secret: the shared key the app sends as x-app-key. */
   APP_KEY: string;
   ANTHROPIC_MODEL?: string;
+  /** The model for the retry after an invalid or cut-off reply, e.g. Sonnet behind Haiku. Unset → ANTHROPIC_MODEL. */
+  ANTHROPIC_FALLBACK_MODEL?: string;
   ANTHROPIC_EFFORT?: string;
   DAILY_LIMIT?: string;
   /** The free trial: successful scans per device, ever (SPEC §9). */
@@ -285,6 +287,7 @@ export function createApp(deps: AppDeps) {
       apiKey: c.env.ANTHROPIC_API_KEY,
       model: c.env.ANTHROPIC_MODEL ?? DEFAULT_MODEL,
     };
+    if (c.env.ANTHROPIC_FALLBACK_MODEL) options.fallbackModel = c.env.ANTHROPIC_FALLBACK_MODEL;
     if (c.env.ANTHROPIC_EFFORT && EFFORTS.has(c.env.ANTHROPIC_EFFORT)) {
       options.effort = c.env.ANTHROPIC_EFFORT as ExtractOptions["effort"];
     }

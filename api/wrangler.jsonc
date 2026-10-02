@@ -9,6 +9,9 @@
   // `wrangler secret put` in production — never here.
   "vars": {
     "ANTHROPIC_MODEL": "claude-sonnet-5",
+    // Optional: the model for the one retry after an invalid or cut-off reply (e.g. "claude-sonnet-5" behind
+    // "claude-haiku-4-5"). Unset retries on ANTHROPIC_MODEL. ANTHROPIC_EFFORT is never sent to a Haiku model.
+    // "ANTHROPIC_FALLBACK_MODEL": "claude-sonnet-5",
     "DAILY_LIMIT": "30",
     "FREE_SCANS": "7",          // the trial, for the life of the device — must match ScanAllowance.trialScans
     "WEEKLY_SCANS": "25",       // the subscription's ceiling — must match ScanAllowance.weeklyScans, and is never shown

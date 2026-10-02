@@ -38,7 +38,7 @@ describe("buildRequest", () => {
     const req = buildRequest(images, { ...options, effort: "medium" });
     expect(req.model).toBe("claude-sonnet-5");
     expect(req.max_tokens).toBe(MAX_TOKENS);
-    expect(req.system).toBe(SYSTEM_PROMPT);
+    expect(req.system).toEqual([{ type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }]);
     expect(req.messages).toHaveLength(1);
     const content = req.messages[0]!.content as Anthropic.ContentBlockParam[];
     expect(content.slice(0, 3).map((c) => (c.type === "image" && c.source.type === "base64" ? [c.source.media_type, c.source.data] : null))).toEqual([
@@ -55,6 +55,19 @@ describe("buildRequest", () => {
     expect("effort" in req.output_config!).toBe(false);
     expect((req.messages[0]!.content as Anthropic.ContentBlockParam[])[1]).toEqual({ type: "text", text: "Extract the ingredient list and yield from this cookbook page." });
   });
+
+  it("never sends effort to Haiku, which refuses it", () => {
+    const req = buildRequest(images, { ...options, model: "claude-haiku-4-5", effort: "low" });
+    expect(req.model).toBe("claude-haiku-4-5");
+    expect("effort" in req.output_config!).toBe(false);
+  });
+
+  it("keeps everything per-request out of the cached system block", () => {
+    const a = buildRequest([images[0]!], options);
+    const b = buildRequest(images, { ...options, effort: "low" });
+    expect(JSON.stringify(a.system)).toBe(JSON.stringify(b.system));
+    expect(JSON.stringify(a.output_config!.format)).toBe(JSON.stringify(b.output_config!.format));
+  });
 });
 
 describe("extractWithClient", () => {
@@ -65,7 +78,8 @@ describe("extractWithClient", () => {
     expect(outcome.kind).toBe("ok");
     if (outcome.kind !== "ok") return;
     expect(outcome.response).toEqual({ recipe: fixture.recipe, warnings: ["Check the tin size"] });
-    expect(outcome.usage).toEqual({ inputTokens: 1000, outputTokens: 300 });
+    expect(outcome.usage).toEqual({ inputTokens: 1000, outputTokens: 300, cacheCreationInputTokens: 0, cacheReadInputTokens: 0 });
+    expect(outcome.calls).toEqual([{ model: "claude-sonnet-5", usage: outcome.usage }]);
     expect(outcome.attempts).toBe(1);
     expect(outcome.model).toBe("claude-sonnet-5");
     expect(outcome.latencyMs).toBeGreaterThanOrEqual(0);
@@ -99,8 +113,36 @@ describe("extractWithClient", () => {
       const outcome = await extractWithClient(client)(images, options);
       expect(parse).toHaveBeenCalledTimes(2);
       expect(outcome.kind).toBe("ok");
-      expect(outcome.usage).toEqual({ inputTokens: 2000, outputTokens: 600 });
+      expect(outcome.usage).toEqual({ inputTokens: 2000, outputTokens: 600, cacheCreationInputTokens: 0, cacheReadInputTokens: 0 });
     }
+  });
+
+  it("counts cache writes and reads apart from base input, summed across attempts", async () => {
+    const cached = (write: number, read: number) => ({ input_tokens: 2500, output_tokens: 400, cache_creation_input_tokens: write, cache_read_input_tokens: read });
+    const { client } = fakeClient(
+      async () => message("{ not json", { usage: cached(5500, 0) }),
+      async () => message(okOutput, { usage: cached(0, 5500) }),
+    );
+    const outcome = await extractWithClient(client)(images, options);
+    expect(outcome.usage).toEqual({ inputTokens: 5000, outputTokens: 800, cacheCreationInputTokens: 5500, cacheReadInputTokens: 5500 });
+  });
+
+  it("makes the second attempt on the fallback model and attributes the answer to it", async () => {
+    const { client, parse } = fakeClient(async () => message("{ not json"), async () => message(okOutput));
+    const outcome = await extractWithClient(client)(images, { ...options, model: "claude-haiku-4-5", fallbackModel: "claude-sonnet-5", effort: "low" });
+    expect(parse.mock.calls.map(([req]) => [req.model, req.output_config?.effort])).toEqual([
+      ["claude-haiku-4-5", undefined],
+      ["claude-sonnet-5", "low"],
+    ]);
+    expect(outcome).toMatchObject({ kind: "ok", model: "claude-sonnet-5", attempts: 2 });
+    expect(outcome.calls.map((c) => c.model)).toEqual(["claude-haiku-4-5", "claude-sonnet-5"]);
+  });
+
+  it("does not touch the fallback when the first reply is good", async () => {
+    const { client, parse } = fakeClient(async () => message(okOutput));
+    const outcome = await extractWithClient(client)(images, { ...options, model: "claude-haiku-4-5", fallbackModel: "claude-sonnet-5" });
+    expect(parse).toHaveBeenCalledTimes(1);
+    expect(outcome).toMatchObject({ kind: "ok", model: "claude-haiku-4-5", attempts: 1 });
   });
 
   it("validates the output against the schema refinements", async () => {

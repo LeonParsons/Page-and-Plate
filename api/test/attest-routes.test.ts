@@ -16,8 +16,9 @@ import fixture from "../../fixtures/expected/chickpea-arrabbiata.json";
 const baseEnv = env as unknown as Bindings;
 const testEnv: Bindings = { ...baseEnv, APP_KEY: "test-app-key", ANTHROPIC_API_KEY: "test-anthropic-key" };
 
-const usage = { inputTokens: 1000, outputTokens: 200 };
-const okOutcome: ExtractOutcome = { kind: "ok", response: fixture as never, model: "claude-sonnet-5", latencyMs: 1, attempts: 1, usage };
+const usage = { inputTokens: 1000, outputTokens: 200, cacheCreationInputTokens: 0, cacheReadInputTokens: 0 };
+const calls = [{ model: "claude-sonnet-5", usage }];
+const okOutcome: ExtractOutcome = { kind: "ok", response: fixture as never, model: "claude-sonnet-5", latencyMs: 1, attempts: 1, usage, calls };
 const validBody = JSON.stringify({ images: [{ mediaType: "image/jpeg", data: "AAAA" }] });
 
 /** A key id of its own per test: KV outlives a test, and a shared one would share a spent trial. */
