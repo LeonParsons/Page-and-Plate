@@ -142,7 +142,7 @@ one Apple Account, a household needs two, hosting is behind the subscription, an
 recording**, below) is what shows them the member's side.
 
 ```
-Answers to the Guideline 2.1 questions, numbered as asked. This text is also our reply.
+Answers to the Guideline 2.1 questions, numbered as asked; also our reply. We are resubmitting 1.0 together with its two subscriptions, which the first submission lacked.
 
 1. SCREEN RECORDINGS
 Two recordings of the submitted build from TestFlight, attached to our reply and in App Review Information:
@@ -164,7 +164,6 @@ Sample pages, recipes we wrote: https://leonparsons.github.io/Page-and-Plate/rev
 - Settings: the gear at the top of either tab, or in its (...) menu.
 Subscription: 7 free scans per device, then GBP 1.99 a month or GBP 19.99 a year (Settings > Subscribe...). Typing recipes never needs it. Subscribers have a fair-use ceiling of 25 scans in any rolling 7 days, against automated abuse. It is far above real cooking and not shown to users as a number, so nothing calls the subscription unlimited.
 Household: needs iCloud. Hosting needs the subscription; joining is free. With one account: subscribe, fill in Settings > Your household > Your name, tap "Share with your household..." for Apple's invite sheet. Accepting needs a second account and device: see recording 2, or ask us for a live demonstration.
-Permissions: Reminders (the app only adds) and Camera (the scanner).
 
 4. EXTERNAL SERVICES
 - Google Gemini API (Gemini 3.8 Flash) reads the ingredients from the page photo; Anthropic Claude API (Claude Sonnet 5) is the fallback if Gemini fails. Only our proxy calls them, only when the user taps Extract. We never store or log images, and neither provider trains on them.
@@ -211,8 +210,9 @@ would not be the app App Review has.
 - **The paywall works in TestFlight.** Settings → Subscribe… lists Monthly £1.99 and Yearly £19.99. "Subscription
   Unavailable — the subscription is unavailable in the current storefront" means the App Store returned no
   products. Check, in order: the Paid Apps Agreement is Active (Business → Agreements; it is not while banking is
-  processing); both plans are attached to the version under In-App Purchases and Subscriptions; and any Sandbox
-  Apple Account signed in on the phone (Settings → Developer) is in the United Kingdom.
+  processing); both plans have a review screenshot under Review Information, without which App Store Connect will
+  not put them in a submission and the sandbox may not offer them; and any Sandbox Apple Account signed in on the
+  phone (Settings → Developer) is in the United Kingdom.
 - **Fresh free scans.** The trial is kept in the Keychain, which survives deleting the app and is shared by Xcode
   and TestFlight builds. The Worker counts against the phone's attested key, or its device id. So a phone used for
   development has none left, and "Reset scans (debug)" alone does not help. To start over:
@@ -264,11 +264,21 @@ AirDrop both recordings to the Mac and watch them through for notifications or a
 large to attach, use QuickTime → Export As → 1080p, or `avconvert --preset Preset1920x1080 --source in.MOV
 --output out.mp4`. Then:
 
-1. App Store Connect → App Review → Resolve → **Reply to App Review**: paste the notes block, attach both
-   recordings, and Reply.
-2. Paste the same block into the version's App Review Information → Notes, and put the recordings under
-   Attachment.
-3. If asked, resubmit the **same** build.
+1. App Store Connect → App Review → the submission with App Review's message → **Resolve** → **Reply to App
+   Review**: paste the notes block, attach both recordings, and Reply.
+2. On the same submission, hold the pointer over **iOS App 1.0** and click the delete button (–). It is the
+   submission's only item, so the submission moves to Completed. That is why the reply comes first: App Review's
+   message thread goes with it.
+3. On the version page (iOS App 1.0), paste the same block into App Review Information → Notes, put the
+   recordings under Attachment, and Save. Then click **Add for Review** and choose the existing draft that holds
+   the subscription group and both plans.
+4. App Review → that draft: it should list iOS App 1.0, the group, Monthly and Yearly. Click **Submit for
+   Review**. It is the same build; upload nothing new.
+
+The version has to go to the plans, not the other way round. Since 15 July 2026, subscriptions go to review from
+Monetization → Subscriptions → **Add for Review**, which puts them in a draft submission. A first subscription
+has to share a submission with an app version, and a submission with Unresolved Issues takes no new items (App
+Store Connect Help, "Manage a submission with unresolved issues").
 
 If the iOS version differs from the block's "iOS 27.0.1", change the block first.
 
@@ -532,14 +542,18 @@ Items 9 and 10 need a phone in a real household. Then say only what was walked.
       sandbox, which is TestFlight and App Review alike, returns no products until it is Active.
     - **The two subscriptions were never submitted with 1.0.** App Store Connect showed "Unable to Submit for
       Review: new subscription groups must be submitted with an auto-renewable subscription from within that
-      group". They go to review by being added to the version's In-App Purchases and Subscriptions section.
+      group". Since 15 July 2026 they go to review from Monetization → Subscriptions → Add for Review, which
+      first refused them for want of a review screenshot each (taken from the simulator, which shows the local
+      StoreKit prices) and then put them in a new draft. They could not join 1.0, whose submission has Unresolved
+      Issues and so takes no new items. 1.0 has to move into their draft instead (**Sending it**, above).
 
     Leon's phone also had no free scans left in TestFlight, from development. **Start over as a new device
     (debug)** in Settings is the fix.
 
     Still to do, in order:
-    1. The agreement shows Active.
-    2. Both plans are attached to 1.0.
+    1. ~~The agreement shows Active.~~ Done 2026-10-04.
+    2. ~~Both plans complete, and in a draft submission.~~ Done 2026-10-04.
     3. TestFlight's paywall lists £1.99 and £19.99.
     4. Record.
-    5. Reply with the recordings attached, paste the block into Notes, and resubmit the same build.
+    5. Send it in the order under **App Review screen recording → Sending it**: reply first, then move 1.0 into
+       the plans' draft and submit the same build.
