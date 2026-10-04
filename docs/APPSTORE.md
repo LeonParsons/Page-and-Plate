@@ -142,7 +142,7 @@ one Apple Account, a household needs two, hosting is behind the subscription, an
 recording**, below) is what shows them the member's side.
 
 ```
-Answers to the Guideline 2.1 questions, numbered as asked; also our reply. We are resubmitting 1.0 together with its two subscriptions, which the first submission lacked.
+Answers to the Guideline 2.1 questions, numbered as asked; also our reply. We are resubmitting 1.0 with its two subscriptions, which the first submission lacked.
 
 1. SCREEN RECORDINGS
 Two recordings of the submitted build from TestFlight, attached to our reply and in App Review Information:
@@ -156,7 +156,7 @@ Paid: scanning after 7 free scans, and hosting a household.
 For adults who cook from cookbooks they own, and their households. The recipe serves four; the cook is feeding one, or six. The app reads a photographed page's ingredients and yield, the user checks them, and every quantity scales to the portions wanted. A week of recipes becomes one shopping list in Apple Reminders, planned together by the household. Nothing is aimed at children.
 
 3. SETUP
-No setup or credentials; it works on a fresh install.
+No setup or credentials needed.
 Sample pages, recipes we wrote: https://leonparsons.github.io/Page-and-Plate/review/ - save one to Photos, then Recipes > + > Scan a recipe > Choose photos > Extract.
 - Recipes tab: + > Scan a recipe, or Type one in (free, unlimited, no scan spent). Ingredients are always shown for review before Save.
 - A recipe: "I want" scales it; More (...) > Add to plan.
@@ -168,11 +168,11 @@ Household: needs iCloud. Hosting needs the subscription; joining is free. With o
 4. EXTERNAL SERVICES
 - Google Gemini API (Gemini 3.8 Flash) reads the ingredients from the page photo; Anthropic Claude API (Claude Sonnet 5) is the fallback if Gemini fails. Only our proxy calls them, only when the user taps Extract. We never store or log images, and neither provider trains on them.
 - Cloudflare Workers runs that proxy; Cloudflare KV keeps per-device scan counts.
-- Apple: StoreKit (subscriptions; the only payment processor), iCloud and CloudKit (sync and household sharing, in users' own iCloud), App Attest (checks scans come from the app), EventKit (Reminders), VisionKit (scanner).
+- Apple: StoreKit (subscriptions; the only payment processor), iCloud and CloudKit (sync and household sharing, in users' own iCloud), App Attest, EventKit (Reminders), VisionKit (scanner).
 No sign-in, analytics, advertising or tracking services.
 
 5. REGIONS
-United Kingdom only. Every feature works the same throughout; English only.
+United Kingdom only, so the plans load only in a UK storefront: please buy with a UK sandbox account. Every feature works the same throughout; English only.
 
 6. REGULATION AND THIRD-PARTY MATERIAL
 Not a regulated industry. The app contains and downloads no third-party content: no recipes, cookbook text or images. Users photograph books they own, for their own use. It keeps the ingredients, yield, title and page number, never the method. Page photos stay on the device and in the user's own iCloud; household members see only the 240-pixel thumbnail, too small to read. Every recipe in our screenshots and sample pages was written by us, and the recordings scan one of the sample pages.
@@ -212,7 +212,9 @@ would not be the app App Review has.
   products. Check, in order: the Paid Apps Agreement is Active (Business → Agreements; it is not while banking is
   processing); both plans have a review screenshot under Review Information, without which App Store Connect will
   not put them in a submission and the sandbox may not offer them; and any Sandbox Apple Account signed in on the
-  phone (Settings → Developer) is in the United Kingdom.
+  phone (Settings → Developer) is in the United Kingdom. A Debug build installed with `devicectl` answers the last
+  one directly: Settings → **Check the App Store (debug)** shows the storefront the phone is shopping in and what
+  came back for both plan IDs.
 - **Fresh free scans.** The trial is kept in the Keychain, which survives deleting the app and is shared by Xcode
   and TestFlight builds. The Worker counts against the phone's attested key, or its device id. So a phone used for
   development has none left, and "Reset scans (debug)" alone does not help. To start over:
@@ -546,6 +548,13 @@ Items 9 and 10 need a phone in a real household. Then say only what was walked.
       first refused them for want of a review screenshot each (taken from the simulator, which shows the local
       StoreKit prices) and then put them in a new draft. They could not join 1.0, whose submission has Unresolved
       Issues and so takes no new items. 1.0 has to move into their draft instead (**Sending it**, above).
+
+    - **With both of those fixed, the paywall still read "Subscription Unavailable".** Check the App Store (debug)
+      showed "Storefront: USA" and no plans. The sandbox tester signed in on the phone had the United States as its
+      region, which is the default for a new tester, and the app and its plans are sold only in the UK. The fix is
+      to change the tester's Country or Region to the United Kingdom (Users and Access → Sandbox), then sign out
+      and back in on the phone. A reviewer on a US sandbox account would hit the same wall, so the answer's
+      Regions item now asks App Review to buy with a UK sandbox account.
 
     Leon's phone also had no free scans left in TestFlight, from development. **Start over as a new device
     (debug)** in Settings is the fix.
