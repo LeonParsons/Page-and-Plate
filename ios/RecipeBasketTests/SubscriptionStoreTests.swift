@@ -90,3 +90,38 @@ struct SubscriptionStoreTests {
         #expect(store.entitlementJWS == nil)
     }
 }
+
+@Suite("Store check (debug builds only)")
+@MainActor
+struct StoreCheckTests {
+
+    @Test("Nothing back names the storefront and every id that was asked for")
+    func nothingBack() {
+        let report = StoreCheck.summary(storefront: "GBR", canMakePayments: true, plans: [])
+        #expect(report == """
+            Storefront: GBR
+            Can make payments: yes
+            No plans came back for:
+            com.leonparsons.RecipeBasket.unlimited.monthly
+            com.leonparsons.RecipeBasket.unlimited.yearly
+            """)
+    }
+
+    @Test("Plans come back sorted, with their prices")
+    func plansBack() {
+        let report = StoreCheck.summary(storefront: "GBR", canMakePayments: true, plans: ["yearly: £19.99", "monthly: £1.99"])
+        #expect(report == "Storefront: GBR\nCan make payments: yes\nmonthly: £1.99\nyearly: £19.99")
+    }
+
+    @Test("A failed request says so, and a missing storefront reads none")
+    func failure() {
+        let report = StoreCheck.summary(storefront: nil, canMakePayments: false, plans: [], failure: "offline")
+        #expect(report == "Storefront: none\nCan make payments: no\nThe product request failed: offline")
+    }
+
+    @Test("Product ids shorten to the plan's own name")
+    func shortName() {
+        #expect(StoreCheck.shortName(Unlimited.monthly) == "monthly")
+        #expect(StoreCheck.shortName("plain") == "plain")
+    }
+}

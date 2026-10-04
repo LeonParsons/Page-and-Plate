@@ -26,6 +26,10 @@ struct SettingsView: View {
     /// Owned here, not by `SharePlanSection`: the sharing sheet has to hang off the `Form`, like the paywall.
     @State private var sharePresentation: SharePresentation?
     @AppStorage(WelcomeView.hasSeenKey) private var hasSeenWelcome = false
+    #if DEBUG
+    /// What "Check the App Store (debug)" last found. See `StoreCheck`.
+    @State private var storeCheck: String?
+    #endif
 
     var body: some View {
         @Bindable var settings = settings
@@ -68,6 +72,16 @@ struct SettingsView: View {
                         get: { quota.pretendsSubscribed },
                         set: { quota.setPretendSubscribed($0) }
                     ))
+                    // A build installed with `devicectl` asks the real sandbox, not RecipeBasket.storekit, so this
+                    // is what TestFlight and App Review are offered too.
+                    Button("Check the App Store (debug)") {
+                        Task { storeCheck = await StoreCheck.run() }
+                    }
+                    if let storeCheck {
+                        Text(storeCheck)
+                            .font(.caption.monospaced())
+                            .textSelection(.enabled)
+                    }
                     #endif
                 } header: {
                     Text("Scans")

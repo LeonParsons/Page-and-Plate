@@ -150,3 +150,45 @@ final class SubscriptionStore: EntitlementSource {
         await refresh()
     }
 }
+
+#if DEBUG
+/// Debug builds only: what the App Store actually offers this device.
+///
+/// The paywall's "Subscription Unavailable" says only that no plan came back. This says which storefront asked, and
+/// whether the answer was nothing, the plans, or an error. That is what separates an App Store Connect setting from a
+/// storefront mismatch, which looked the same on the paywall (2026-10-04).
+enum StoreCheck {
+    static func run() async -> String {
+        let storefront = await Storefront.current?.countryCode
+        let canPay = AppStore.canMakePayments
+        do {
+            let plans = try await Product.products(for: Unlimited.all).map { "\(shortName($0.id)): \($0.displayPrice)" }
+            return summary(storefront: storefront, canMakePayments: canPay, plans: plans)
+        } catch {
+            return summary(storefront: storefront, canMakePayments: canPay, plans: [], failure: error.localizedDescription)
+        }
+    }
+
+    /// The report itself, apart from StoreKit so it can be tested.
+    static func summary(storefront: String?, canMakePayments: Bool, plans: [String], failure: String? = nil) -> String {
+        var lines = [
+            "Storefront: \(storefront ?? "none")",
+            "Can make payments: \(canMakePayments ? "yes" : "no")",
+        ]
+        if let failure {
+            lines.append("The product request failed: \(failure)")
+        } else if plans.isEmpty {
+            lines.append("No plans came back for:")
+            lines.append(contentsOf: Unlimited.all)
+        } else {
+            lines.append(contentsOf: plans.sorted())
+        }
+        return lines.joined(separator: "\n")
+    }
+
+    /// "monthly" from "com.leonparsons.RecipeBasket.unlimited.monthly".
+    static func shortName(_ productID: String) -> String {
+        productID.split(separator: ".").last.map(String.init) ?? productID
+    }
+}
+#endif
