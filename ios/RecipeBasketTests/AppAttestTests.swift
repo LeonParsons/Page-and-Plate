@@ -61,4 +61,12 @@ struct AppAttestTests {
         try store.remove(forKey: AppAttest.keyIdentifierKey)
         #expect(try store.string(forKey: AppAttest.keyIdentifierKey) == nil)
     }
+
+    @Test("Forgetting the key (debug builds) removes it, so the next scan attests a fresh one")
+    func forgettingTheKey() throws {
+        let store = KeychainStore(service: "app.recipe-basket.tests.\(UUID().uuidString)")
+        try store.set("a-key-id", forKey: AppAttest.keyIdentifierKey)
+        AppAttest.forgetKey(store: store)
+        #expect(try store.string(forKey: AppAttest.keyIdentifierKey) == nil)
+    }
 }

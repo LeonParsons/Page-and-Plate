@@ -86,4 +86,12 @@ nonisolated enum DeviceIdentity {
             return fallback
         }
     }
+
+    #if DEBUG
+    /// Debug builds only: forget this device's id, so the next scan presents a new one. Half of "Start over as a
+    /// new device" in Settings: the Worker counts an unattested scan against this id.
+    static func forget(store: KeychainStore = KeychainStore(), key: String = defaultKey) {
+        try? store.remove(forKey: key)
+    }
+    #endif
 }

@@ -53,6 +53,15 @@ struct SettingsView: View {
                     #if DEBUG
                     Button("Use up scans (debug)") { quota.useUpScans() }
                     Button("Reset scans (debug)") { quota.resetScans() }
+                    // Reset scans clears only this phone's own tally; the Worker goes on counting against the
+                    // attested key, or the device id when a scan is not attested. Forgetting both makes the next
+                    // scan come from a new device, which is what a demo on a well-used phone needs. Install the
+                    // TestFlight build afterwards and it attests a fresh production key.
+                    Button("Start over as a new device (debug)") {
+                        quota.resetScans()
+                        DeviceIdentity.forget()
+                        AppAttest.forgetKey()
+                    }
                     // Lets a device host a household before the products exist in App Store Connect. It does
                     // not grant scans: the Worker still sees no entitlement and still applies the free trial.
                     Toggle("Pretend subscribed (debug)", isOn: Binding(

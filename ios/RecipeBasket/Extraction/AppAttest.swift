@@ -43,6 +43,14 @@ actor AppAttest {
 
     nonisolated var isSupported: Bool { DCAppAttestService.shared.isSupported }
 
+    #if DEBUG
+    /// Debug builds only: forget the attested key, so the next scan attests a fresh one. The Worker counts an
+    /// attested scan against this key, so it is the half of "Start over as a new device" the Worker actually sees.
+    nonisolated static func forgetKey(store: KeychainStore = KeychainStore()) {
+        try? store.remove(forKey: keyIdentifierKey)
+    }
+    #endif
+
     /// The headers a scan should carry, or nothing at all when this device cannot attest.
     ///
     /// Never throws: an attestation that cannot be obtained must not stop someone cooking. The Worker

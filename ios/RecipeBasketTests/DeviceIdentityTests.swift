@@ -41,4 +41,19 @@ struct DeviceIdentityTests {
         let id = DeviceIdentity.id(store: store, key: key)
         #expect(try store.string(forKey: key) == id.uuidString)
     }
+
+    @Test("Forgetting the id (debug builds) makes the next one new, and that one is then stable")
+    func forget() throws {
+        let key = "device-\(UUID().uuidString)"
+        let store = KeychainStore(service: "app.recipe-basket.tests")
+        defer { try? store.remove(forKey: key) }
+
+        let before = DeviceIdentity.id(store: store, key: key)
+        DeviceIdentity.forget(store: store, key: key)
+        #expect(try store.string(forKey: key) == nil)
+
+        let after = DeviceIdentity.id(store: store, key: key)
+        #expect(after != before)
+        #expect(DeviceIdentity.id(store: store, key: key) == after)
+    }
 }
