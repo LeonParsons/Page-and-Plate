@@ -3,11 +3,12 @@
 Everything to paste into App Store Connect, plus the featuring nomination. Character counts are checked by
 `docs/appstore-counts.py`; run it after any edit here.
 
-**Before this goes live:** as of 2026-09-29 the App Store Connect side is set up — both subscriptions exist
-at their real prices with Billing Grace Period on, the age rating and App Privacy answers are in, and the
-terms and privacy URLs are live and pointed at by `Subscription/Products.swift`. **What is left is a build:**
-nothing has ever been archived or uploaded, and that one step gates TestFlight, the App Attest switch and the
-CloudKit production schema.
+**Where it stands (2026-10-04):** version 1.0 is built, uploaded and submitted, and App Review has asked for
+more information under Guideline 2.1. That is item 18 below, which also records the two App Store Connect gaps
+the request turned up: the Paid Apps Agreement waiting on banking, and the subscriptions not submitted with the
+version. The rest of the App Store Connect side is in: both subscriptions at their real prices with Billing
+Grace Period on, the age rating and App Privacy answers, and the live terms and privacy URLs that
+`Subscription/Products.swift` points at.
 
 **The listing now sells the household** (11c-iii). Every length-limited field was written before sharing
 existed and pitched scanning alone — which stopped being the whole story when typed recipes became free and
@@ -128,59 +129,54 @@ the existing StoreKit configuration.
 
 ## App Review notes — 4000 max
 
-Pasted into **App Store Connect → the version → App Review Information → Notes** at submission. Not visible to
-customers, editable at any time. Apple's limit is 4000 **bytes**, not characters (App Store Connect Help,
-checked 2026-09-29), so this block is deliberately plain ASCII — no en dashes, curly quotes or ellipsis
-characters, which cost two or three bytes each and would make `appstore-counts.py` disagree with the form.
+Pasted into **App Store Connect → the version → App Review Information → Notes**, and since 2026-10-04 also the
+**reply** to App Review's Guideline 2.1 request (item 18). It answers that request's six questions in Apple's own
+numbering, and Apple asked for the same answers in both places. Not visible to customers, editable at any time.
+Apple's limit for Notes is 4000 **bytes**, not characters (App Store Connect Help, checked 2026-09-29), and the
+reply box takes 4000 characters, so this block is deliberately plain ASCII — no en dashes, curly quotes or
+ellipsis characters, which cost two or three bytes each and would make `appstore-counts.py` disagree with the form.
 
-It exists because **a reviewer cannot reach the household on their own** and the listing leads with it. They
-have one Apple Account; a household needs two, hosting is behind the subscription, and `HouseholdDemoSeed` —
-the thing that made marketing frame 5 possible — is `#if DEBUG`, so there is no demo household in the build
-they receive. Unexplained, that is a paywall in front of the headline feature with no way to finish the
-journey: a plausible rejection rather than an unfair one.
+It began because **a reviewer cannot reach the household on their own**, and the listing leads with it. They have
+one Apple Account, a household needs two, hosting is behind the subscription, and `HouseholdDemoSeed` is
+`#if DEBUG`, so the build they receive has no demo household. The second recording (**App Review screen
+recording**, below) is what shows them the member's side.
 
 ```
-Page & Plate turns a photograph of a cookbook page into a scaled ingredient list, plans a week of meals, and sends the whole shop to Reminders.
+Answers to the Guideline 2.1 questions, numbered as asked. This text is also our reply.
 
-There is no account and no sign-in anywhere in the app, so there are no credentials to give you. Everything below works on a fresh install.
+1. SCREEN RECORDINGS
+Two recordings of the submitted build from TestFlight, attached to our reply and in App Review Information:
+- Recording 1, iPhone 17 Pro, iOS 27.0.1, from launch: scanning, review, scaling, the week, shopping to Reminders, typing a recipe in, subscribing, sharing a household.
+- Recording 2, a second iPhone and Apple Account: accepting the invite, editing the shared week, leaving.
+Accounts: none. No registration, no login, nothing to delete.
+Shared content: nothing is public. A household is iCloud sharing with people the host invites; nobody else can join. No profiles, feeds, messages or search. Members see the week, meal notes, recipe titles and ingredients, each person's chosen name and a 240-pixel page thumbnail. The host can remove anyone or stop sharing, and anyone can leave; both recordings show it.
+Paid: scanning after 7 free scans, and hosting a household.
 
-WHAT NEEDS NO SETUP
+2. PURPOSE AND AUDIENCE
+For adults who cook from cookbooks they own, and their households. The recipe serves four; the cook is feeding one, or six. The app reads a photographed page's ingredients and yield, the user checks them, and every quantity scales to the portions wanted. A week of recipes becomes one shopping list in Apple Reminders, planned together by the household. Nothing is aimed at children.
 
-On "My recipes", the + menu offers "Scan a recipe" (photograph any recipe page) and "Type one in" (enter one by hand, which is free and unlimited and useful if no cookbook is nearby). Extracted ingredients are always shown for confirmation before anything is saved. Scale the portions on the recipe screen, add meals to days on the Week tab, then export to Reminders.
+3. SETUP
+No setup or credentials; it works on a fresh install.
+Sample pages, recipes we wrote: https://leonparsons.github.io/Page-and-Plate/review/ - save one to Photos, then Recipes > + > Scan a recipe > Choose photos > Extract.
+- Recipes tab: + > Scan a recipe, or Type one in (free, unlimited, no scan spent). Ingredients are always shown for review before Save.
+- A recipe: "I want" scales it; More (...) > Add to plan.
+- Plan tab: the week; Shop sends it to Reminders, or Share as text.
+- Settings: the gear at the top of either tab, or in its (...) menu.
+Subscription: 7 free scans per device, then GBP 1.99 a month or GBP 19.99 a year (Settings > Subscribe...). Typing recipes never needs it. Subscribers have a fair-use ceiling of 25 scans in any rolling 7 days, against automated abuse. It is far above real cooking and not shown to users as a number, so nothing calls the subscription unlimited.
+Household: needs iCloud. Hosting needs the subscription; joining is free. With one account: subscribe, fill in Settings > Your household > Your name, tap "Share with your household..." for Apple's invite sheet. Accepting needs a second account and device: see recording 2, or ask us for a live demonstration.
+Permissions: Reminders (the app only adds) and Camera (the scanner).
 
-Settings is in the toolbar overflow menu ("...") on "My recipes".
+4. EXTERNAL SERVICES
+- Google Gemini API (Gemini 3.8 Flash) reads the ingredients from the page photo; Anthropic Claude API (Claude Sonnet 5) is the fallback if Gemini fails. Only our proxy calls them, only when the user taps Extract. We never store or log images, and neither provider trains on them.
+- Cloudflare Workers runs that proxy; Cloudflare KV keeps per-device scan counts.
+- Apple: StoreKit (subscriptions; the only payment processor), iCloud and CloudKit (sync and household sharing, in users' own iCloud), App Attest (checks scans come from the app), EventKit (Reminders), VisionKit (scanner).
+No sign-in, analytics, advertising or tracking services.
 
-SCANS AND THE SUBSCRIPTION
+5. REGIONS
+United Kingdom only. Every feature works the same throughout; English only.
 
-The first 7 scans on a device are free. After that, scanning needs the subscription (GBP 1.99 monthly or GBP 19.99 yearly). Typing a recipe in never spends a scan and never needs the subscription.
-
-Subscribers also have a fair-use ceiling of 25 scans in any rolling 7 days, which exists to stop automated abuse of the extraction service. It is well above real cooking use and is not presented to users as a number, which is why nothing in the app or the listing calls the subscription "unlimited".
-
-THE HOUSEHOLD, AND WHY ONE ACCOUNT CANNOT SEE ALL OF IT
-
-A household is CloudKit sharing of the user's own data: one week that everyone edits, and a catalogue that is the union of everyone's recipes. It needs iCloud signed in on the device. Without it, Settings shows "Not signed in" and there is no household.
-
-Hosting a household requires the subscription. Joining one is free, deliberately: one person subscribes and their household cooks from it.
-
-With a single Apple Account you can reach everything up to acceptance:
-
-1. Settings, then "Subscribe...", and buy either plan.
-2. In Settings, under "Your household", fill in "Your name". iOS 17 removed the API that told apps a user's name, so the app asks for it; it is what the household sees beside a shared recipe.
-3. Tap "Share with your household...". Apple's own share sheet opens with a real invite link.
-
-That exercises hosting, the share and the invite. Accepting the invite needs a second Apple Account on a second device, and there is no demo or mock household in a release build, so the member side cannot be simulated for you. If you would like to see it, please email the contact address above and we will arrange a demonstration or provide a second test account.
-
-PERMISSIONS
-
-Reminders: requested the first time a shopping list is exported, and used only to add reminders. The app never reads, changes or deletes anything already in Reminders.
-
-Camera: the document scanner, for photographing a page. Photo library: optional, for a page already photographed.
-
-PRIVACY
-
-No accounts, no analytics, no tracking, no advertising. Recipes, page photos and the week are kept in the user's own private iCloud database, and a shared household week in the shared CloudKit database. Never on our servers. A page photo leaves the device only when the user taps Extract: our extraction proxy passes it to Google's Gemini API, or to Anthropic's Claude API if Gemini fails, to read the ingredient list. We do not store or log images, and neither provider uses them to train its models. The privacy policy names both.
-
-Thank you for reviewing.
+6. REGULATION AND THIRD-PARTY MATERIAL
+Not a regulated industry. The app contains and downloads no third-party content: no recipes, cookbook text or images. Users photograph books they own, for their own use. It keeps the ingredients, yield, title and page number, never the method. Page photos stay on the device and in the user's own iCloud; household members see only the 240-pixel thumbnail, too small to read. Every recipe in our screenshots and sample pages was written by us, and the recordings scan one of the sample pages.
 ```
 
 **The fair-use paragraph stays** (Leon, 2026-09-29). Rule 9b keeps the 25-in-7-days ceiling from the user — in
@@ -190,10 +186,91 @@ says it covers the week's cooking, is a misleading-subscription rejection. Discl
 found there it costs a submission. **This is not a licence to soften rule 9b anywhere else** — App Review
 Information is not a user-facing surface, and nothing in the app or the Worker learned a number from it.
 
+**The household is not user-generated content** (2026-10-04), in the sense Guideline 1.2 uses: filtering,
+reporting and blocking exist for content that reaches people who did not choose it. A household is private
+iCloud sharing with the people its host invites — `CloudSharingSheet` offers `.allowPrivate` only, so an invite
+works for the person it was sent to and nobody else. There are no profiles, feeds, messages or search. The
+controls a household does have are removal (the host, through Apple's sharing sheet) and leaving (any member),
+so the answer names them and both recordings show them. If App Review reads it differently it will say so, and
+a way to report a shared recipe or meal note is the likely ask.
+
 **Also before submitting:** `ALLOW_SANDBOX_ENTITLEMENTS` must still be `"true"` in `api/wrangler.jsonc`.
 Every App Review purchase is a Sandbox transaction and `api/src/entitlement.ts` refuses one when the flag is
 false, so a reviewer would subscribe and then be told they had no scans left after 7 — see item 7, which reads
 "before public release" and means *after approval*, not before review.
+
+## App Review screen recording
+
+App Review asked for one on 2026-10-04 (item 18), and the answer above promises it, so this is the script. Record
+on a physical iPhone on the **latest iOS**, starting on the Home Screen, with the **submitted build installed from
+TestFlight**. An Xcode build would use the development CloudKit environment and the local StoreKit file, so it
+would not be the app App Review has.
+
+### Before recording
+
+- **The paywall works in TestFlight.** Settings → Subscribe… lists Monthly £1.99 and Yearly £19.99. "Subscription
+  Unavailable — the subscription is unavailable in the current storefront" means the App Store returned no
+  products. Check, in order: the Paid Apps Agreement is Active (Business → Agreements; it is not while banking is
+  processing); both plans are attached to the version under In-App Purchases and Subscriptions; and any Sandbox
+  Apple Account signed in on the phone (Settings → Developer) is in the United Kingdom.
+- **Fresh free scans.** The trial is kept in the Keychain, which survives deleting the app and is shared by Xcode
+  and TestFlight builds. The Worker counts against the phone's attested key, or its device id. So a phone used for
+  development has none left, and "Reset scans (debug)" alone does not help. To start over:
+  1. Install a Debug build with `devicectl`.
+  2. Turn on Airplane Mode, so the development build does no CloudKit work against the store.
+  3. Open Settings → **Start over as a new device (debug)**, which forgets the tally, the device id and the
+     attested key. Then force-quit.
+  4. Turn Airplane Mode off and reinstall from TestFlight.
+
+  Settings then reads "7 of 7 free scans left", and the first scan attests a fresh production key. Do not scan
+  again before recording: every scan spends one.
+- **Not subscribed**, so the purchase can be shown: Settings says **Subscribe…**. A TestFlight subscription renews
+  daily, at most six times. Cancel an old one under Manage subscription. A lapse ends any household the phone
+  hosts on that build, by design.
+- **A second phone and a second Apple Account**, on the same build. That person is an internal TestFlight tester:
+  an App Store Connect user with the Developer or Marketing role, added to the internal group.
+- **The CloudKit production schema** has `SharedRecipe`, `SharedMeal`, `SharedMember` and the `CD_` types, or the
+  household does nothing (CloudKit Console → Deploy Schema Changes).
+- Do Not Disturb on both phones. Print the page-88 sample. Settings → Show welcome screen, then swipe the app
+  away, so the recording opens on the welcome screen.
+
+### Recording 1 — the host's iPhone
+
+1. Home Screen → tap the icon → welcome → **Get started**.
+2. Recipes → + → **Scan a recipe** ("7 of 7 free scans left") → Book "Page & Plate samples", Page 88 → **Scan
+   pages** → the printed page → **Extract 1 page**.
+3. Review: scroll the rows, correct one, **Save**.
+4. **I want** 1: the tomatoes become ¼ tin and the oil for frying "doesn't scale". More (…) → **Add to plan…** →
+   a day.
+5. Plan: **Add meal** on another day; swipe → **Move**.
+6. **Shop**: allow Reminders, pick a list (staples unticked), add. Show the list in Reminders, then come back.
+7. Recipes → + → **Type one in** → **Save**. No scan is spent.
+8. Settings → **Subscribe…** → Monthly → buy. Then "Enough for the week", Restore purchases, Manage subscription.
+9. Your household → **Your name** → **Share with your household…** → invite the second phone by Messages.
+10. Once the second phone has added a meal: Plan shows "Added by …". Then Settings → the member's row → **Manage
+    your household…** → the member → **Remove Access** (cancel), and **Stop sharing and take the plan back**
+    (cancel). Do this before the member leaves.
+
+### Recording 2 — the member's iPhone
+
+1. Home Screen → Messages → tap the invite. The app opens on the host's week.
+2. Settings → **Your name**.
+3. Plan → **Add meal** → one of the host's recipes → a day.
+4. Settings → Your plans → swipe the host's plan → **Leave** → confirm.
+
+### Sending it
+
+AirDrop both recordings to the Mac and watch them through for notifications or anything private. If a file is too
+large to attach, use QuickTime → Export As → 1080p, or `avconvert --preset Preset1920x1080 --source in.MOV
+--output out.mp4`. Then:
+
+1. App Store Connect → App Review → Resolve → **Reply to App Review**: paste the notes block, attach both
+   recordings, and Reply.
+2. Paste the same block into the version's App Review Information → Notes, and put the recordings under
+   Attachment.
+3. If asked, resubmit the **same** build.
+
+If the iOS version differs from the block's "iOS 27.0.1", change the block first.
 
 ---
 
@@ -399,10 +476,8 @@ Items 9 and 10 need a phone in a real household. Then say only what was walked.
    `SharedMember`, `SharedMeal.note` and `systemFields` on both shared types — so deploy after the final build
    is made, not before.
 10. ~~**App Review notes explaining how to test sharing.**~~ Drafted 2026-09-29 and living in
-    **App Review notes** above, counted by `appstore-counts.py` against Apple's 4000-*byte* limit.
-    **Still to do:** paste it into App Store Connect at submission (App Review Information → Notes), fill in
-    the contact name, email and phone beside it, and decide whether the fair-use paragraph stays — the
-    section says why it is there and why it is a judgement call.
+    **App Review notes** above, counted by `appstore-counts.py` against Apple's 4000-*byte* limit. Rewritten
+    2026-10-04 as the answer to App Review's 2.1 request, with the fair-use paragraph kept: see item 18.
 11. ~~**Age rating questionnaire and the App Privacy answers**~~ Both answered 2026-09-29 (Leon), "Data Not
     Collected" throughout — the app has no accounts, and CloudKit private and shared databases are not
     developer collection. These were the two that block a submission outright.
@@ -442,3 +517,29 @@ Items 9 and 10 need a phone in a real household. Then say only what was walked.
     refuses an upload whose code calls a required-reason API without declaring why (ITMS-91053), and the app
     uses `UserDefaults` (reason `CA92.1`, its own data only). No tracking and no collected data, matching
     item 11. Any new required-reason API needs an entry there before it ships.
+18. **App Review asked for more information (Guideline 2.1, 2026-10-04).** It is the standard request for a new
+    developer account. Apple wants a screen recording from launch on a physical device on the latest iOS, the
+    app's purpose and audience, setup and sample files, the external services, any regional differences, and
+    any regulated or third-party material. The answers go in a reply and in Notes.
+    - The answer is the **App Review notes** block above, which doubles as the reply.
+    - The recording is scripted under **App Review screen recording**.
+    - The sample pages are `review/`, served at `https://leonparsons.github.io/Page-and-Plate/review/`. They are
+      the three `marketing/pages/` recipes, rendered by `html2png.swift`.
+
+    The TestFlight build showed two gaps on the way, and either one would have failed the review itself:
+    - **The paywall read "Subscription Unavailable".** The Paid Apps Agreement was not Active, because the
+      banking details were still processing (App Store Connect said about 24 hours from 2026-10-04). The
+      sandbox, which is TestFlight and App Review alike, returns no products until it is Active.
+    - **The two subscriptions were never submitted with 1.0.** App Store Connect showed "Unable to Submit for
+      Review: new subscription groups must be submitted with an auto-renewable subscription from within that
+      group". They go to review by being added to the version's In-App Purchases and Subscriptions section.
+
+    Leon's phone also had no free scans left in TestFlight, from development. **Start over as a new device
+    (debug)** in Settings is the fix.
+
+    Still to do, in order:
+    1. The agreement shows Active.
+    2. Both plans are attached to 1.0.
+    3. TestFlight's paywall lists £1.99 and £19.99.
+    4. Record.
+    5. Reply with the recordings attached, paste the block into Notes, and resubmit the same build.

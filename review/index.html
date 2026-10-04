@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Page &amp; Plate — Sample pages</title>
+<style>
+/* The legal pages' palette, so this reads as part of the same site. */
+:root {
+  --paper: #FAF7F0;
+  --ink: #23201B;
+  --ink-secondary: #5C554A;
+  --tomato: #B23A1B;
+  --rule: #E4DDD0;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #1A1713;
+    --ink: #F2EDE4;
+    --ink-secondary: #A79E90;
+    --tomato: #F2775A;
+    --rule: #332E27;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  padding: 0 16px 64px;
+  background: var(--paper);
+  color: var(--ink);
+  font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-text-size-adjust: 100%;
+}
+main { max-width: 42rem; margin: 0 auto; }
+header { padding: 48px 0 24px; border-bottom: 1px solid var(--rule); margin-bottom: 32px; }
+h1 { font-size: 2rem; line-height: 1.2; margin: 0 0 8px; }
+.lede, figcaption, footer { color: var(--ink-secondary); }
+a { color: var(--tomato); }
+ol { padding-left: 1.25rem; }
+li { margin: 6px 0; }
+figure { margin: 40px 0 0; }
+/* The pages are paper-coloured in both themes, as a printed page would be. */
+img { display: block; width: 100%; height: auto; border: 1px solid var(--rule); }
+figcaption { font-size: 0.9rem; margin-top: 8px; }
+footer { margin-top: 56px; padding-top: 24px; border-top: 1px solid var(--rule); font-size: 0.9rem; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Sample pages</h1>
+    <p class="lede">Three cookbook pages for trying Page &amp; Plate without a cookbook to hand. The recipes were
+    written for the app and come from nobody's book.</p>
+  </header>
+
+  <ol>
+    <li>Touch and hold a page below, then choose <strong>Save to Photos</strong>.</li>
+    <li>In Page &amp; Plate, open <strong>Recipes</strong>, tap <strong>+</strong>, then <strong>Scan a recipe</strong>.</li>
+    <li>Tap <strong>Choose photos</strong>, pick the page, then <strong>Extract</strong>.</li>
+  </ol>
+  <p>Or print a page, or show it on another screen, and photograph it with <strong>Scan pages</strong>.</p>
+
+  <figure>
+    <img src="88-smoky-butter-beans.png" width="1118" height="1736"
+      alt="Cookbook page 88: Smoky butter beans with roasted peppers, serves 4, with its ingredients and method.">
+    <figcaption>Page 88 · Smoky butter beans · serves 4. A range, a tin, dual units and an oil for frying that
+    does not scale.</figcaption>
+  </figure>
+
+  <figure>
+    <img src="42-chickpea-arrabbiata.png" width="1118" height="1580"
+      alt="Cookbook page 42: Chickpea arrabbiata, serves 2, with its ingredients and method.">
+    <figcaption>Page 42 · Chickpea arrabbiata · serves 2.</figcaption>
+  </figure>
+
+  <figure>
+    <img src="64-butter-bean-kale-soup.png" width="1118" height="1520"
+      alt="Cookbook page 64: Butter bean and kale soup, serves 4, with its ingredients and method.">
+    <figcaption>Page 64 · Butter bean and kale soup · serves 4.</figcaption>
+  </figure>
+
+  <footer><a href="../legal/">Support, privacy and terms</a></footer>
+</main>
+</body>
+</html>
