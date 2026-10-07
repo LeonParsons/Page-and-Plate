@@ -119,13 +119,19 @@ Both sit in the subscription group **Page & Plate**.
 
 | Product | Display name (30) | Description (45) | UK price |
 |---|---|---|---|
-| `com.leonparsons.RecipeBasket.unlimited.monthly` | `Monthly` | `Scan and share a plan, billed monthly` | £1.99 |
-| `com.leonparsons.RecipeBasket.unlimited.yearly` | `Yearly` | `Scan and share a plan, billed yearly` | £19.99 |
+| `Pageandplatemonthly` | `Monthly` | `Scan and share a plan, billed monthly` | £1.99 |
+| `Pageandplateyearly` | `Yearly` | `Scan and share a plan, billed yearly` | £19.99 |
 
 Prices confirmed 2026-09-28 and matching `ios/RecipeBasket.storekit`.
 
-The product IDs keep the old working name. They are never shown to anyone, and changing them now would orphan
-the existing StoreKit configuration.
+**The product IDs are `Pageandplatemonthly` and `Pageandplateyearly`** (2026-10-07), because that is what App
+Store Connect holds. When the plans were created, the intended `com.leonparsons.RecipeBasket.unlimited.monthly` and
+`.yearly` went into the **Reference Name** field and these into **Product ID**, and a product ID can never be edited
+or reused. The app asked for IDs that did not exist, so StoreKit returned nothing and the paywall said
+"Subscription Unavailable". The code now follows App Store Connect in three places that must agree:
+`Subscription/Products.swift`, `ios/RecipeBasket.storekit`, and `PRODUCT_IDS` in `api/src/app.ts`. The Worker
+refuses a purchase of any other product. Nobody ever sees a product ID, so the odd shape costs nothing; the
+reference names can be tidied to "Monthly" and "Yearly" at any time, since that field is editable.
 
 ## App Review notes — 4000 max
 
@@ -201,9 +207,10 @@ false, so a reviewer would subscribe and then be told they had no scans left aft
 ## App Review screen recording
 
 App Review asked for one on 2026-10-04 (item 18), and the answer above promises it, so this is the script. Record
-on a physical iPhone on the **latest iOS**, starting on the Home Screen, with the **submitted build installed from
-TestFlight**. An Xcode build would use the development CloudKit environment and the local StoreKit file, so it
-would not be the app App Review has.
+on a physical iPhone on the **latest iOS**, starting on the Home Screen, with **the build you will submit,
+installed from TestFlight**. Since 2026-10-07 that is a new build carrying the real product IDs, not the one first
+submitted. An Xcode build would use the development CloudKit environment and the local StoreKit file, so it would
+not be the app App Review has.
 
 ### Before recording
 
@@ -271,11 +278,11 @@ large to attach, use QuickTime → Export As → 1080p, or `avconvert --preset P
 2. On the same submission, hold the pointer over **iOS App 1.0** and click the delete button (–). It is the
    submission's only item, so the submission moves to Completed. That is why the reply comes first: App Review's
    message thread goes with it.
-3. On the version page (iOS App 1.0), paste the same block into App Review Information → Notes, put the
-   recordings under Attachment, and Save. Then click **Add for Review** and choose the existing draft that holds
-   the subscription group and both plans.
+3. On the version page (iOS App 1.0), choose the new build under **Build**, paste the same block into App Review
+   Information → Notes, put the recordings under Attachment, and Save. Then click **Add for Review** and choose
+   the existing draft that holds the subscription group and both plans.
 4. App Review → that draft: it should list iOS App 1.0, the group, Monthly and Yearly. Click **Submit for
-   Review**. It is the same build; upload nothing new.
+   Review**.
 
 The version has to go to the plans, not the other way round. Since 15 July 2026, subscriptions go to review from
 Monetization → Subscriptions → **Add for Review**, which puts them in a draft submission. A first subscription
@@ -555,6 +562,11 @@ Items 9 and 10 need a phone in a real household. Then say only what was walked.
       to change the tester's Country or Region to the United Kingdom (Users and Access → Sandbox), then sign out
       and back in on the phone. A reviewer on a US sandbox account would hit the same wall, so the answer's
       Regions item now asks App Review to buy with a UK sandbox account.
+    - **With the storefront fixed, still nothing came back, because the IDs did not exist.** App Store Connect had
+      the product ID and reference name swapped (see **In-app purchases**, above), so the app had always asked
+      for two products App Store Connect did not have. No waiting could have fixed it. The code switched to the
+      real IDs on 2026-10-07, and the submitted build, which has the old ones compiled in, is replaced by a new
+      one.
 
     Leon's phone also had no free scans left in TestFlight, from development. **Start over as a new device
     (debug)** in Settings is the fix.
@@ -562,7 +574,8 @@ Items 9 and 10 need a phone in a real household. Then say only what was walked.
     Still to do, in order:
     1. ~~The agreement shows Active.~~ Done 2026-10-04.
     2. ~~Both plans complete, and in a draft submission.~~ Done 2026-10-04.
-    3. TestFlight's paywall lists £1.99 and £19.99.
-    4. Record.
-    5. Send it in the order under **App Review screen recording → Sending it**: reply first, then move 1.0 into
-       the plans' draft and submit the same build.
+    3. A new build with the real IDs is uploaded and chosen for 1.0, and the Worker deployed with them.
+    4. TestFlight's paywall lists £1.99 and £19.99.
+    5. Record.
+    6. Send it in the order under **App Review screen recording → Sending it**: reply first, then move 1.0, with the new
+       build, into the plans' draft and submit.

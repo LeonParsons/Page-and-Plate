@@ -1,10 +1,15 @@
 import Foundation
 
 /// The auto-renewable subscription (SPEC §9): one group, two plans. The ids are mirrored in `RecipeBasket.storekit`
-/// for local testing and must match App Store Connect exactly.
+/// for local testing and in the Worker's `PRODUCT_IDS`, and must match App Store Connect exactly.
+///
+/// **They are App Store Connect's, not the reverse-DNS ones this once asked for** (2026-10-07). When the plans were
+/// created, the reverse-DNS ids went into the Reference Name field and these into Product ID, and a product id can
+/// never be edited or reused. Asking for the intended ids returned no products at all, which the paywall reported
+/// as "Subscription Unavailable".
 enum Unlimited {
-    static let monthly = "com.leonparsons.RecipeBasket.unlimited.monthly"
-    static let yearly = "com.leonparsons.RecipeBasket.unlimited.yearly"
+    static let monthly = "Pageandplatemonthly"
+    static let yearly = "Pageandplateyearly"
     static let all = [monthly, yearly]
 }
 

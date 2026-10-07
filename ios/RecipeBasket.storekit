@@ -95,7 +95,7 @@
               "locale" : "en_GB"
             }
           ],
-          "productID" : "com.leonparsons.RecipeBasket.unlimited.monthly",
+          "productID" : "Pageandplatemonthly",
           "recurringSubscriptionPeriod" : "P1M",
           "referenceName" : "Monthly",
           "subscriptionGroupID" : "5A1C2B3D",
@@ -123,7 +123,7 @@
               "locale" : "en_GB"
             }
           ],
-          "productID" : "com.leonparsons.RecipeBasket.unlimited.yearly",
+          "productID" : "Pageandplateyearly",
           "recurringSubscriptionPeriod" : "P1Y",
           "referenceName" : "Yearly",
           "subscriptionGroupID" : "5A1C2B3D",

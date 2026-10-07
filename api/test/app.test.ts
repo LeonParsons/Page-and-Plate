@@ -171,7 +171,7 @@ describe("POST /extract", () => {
     const jws = "a-transaction-that-verifies";
     const verifyEntitlement = async (header: string) =>
       header === jws
-        ? { productId: "com.leonparsons.RecipeBasket.unlimited.monthly", expiresAt: new Date("2027-01-01"), environment: "Production" }
+        ? { productId: "Pageandplatemonthly", expiresAt: new Date("2027-01-01"), environment: "Production" }
         : null;
 
     beforeEach(() => {

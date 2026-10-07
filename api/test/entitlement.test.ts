@@ -23,8 +23,8 @@ const ROOT = "C1:ED:A3:E3:C9:AF:AF:40:4D:B3:6D:B6:24:36:81:E2:E8:AF:F9:66:7C:7B:
 const OTHER_ROOT = "C4:84:2F:70:FE:C3:60:8E:F2:08:26:00:67:28:AF:73:00:A2:A7:B5:FD:49:3E:CC:E8:88:5E:08:56:1B:03:88";
 
 const BUNDLE = "com.leonparsons.RecipeBasket";
-const MONTHLY = "com.leonparsons.RecipeBasket.unlimited.monthly";
-const YEARLY = "com.leonparsons.RecipeBasket.unlimited.yearly";
+const MONTHLY = "Pageandplatemonthly";
+const YEARLY = "Pageandplateyearly";
 const NOW = new Date("2026-09-25T12:00:00Z");
 const NEXT_MONTH = new Date("2026-10-25T12:00:00Z").getTime();
 

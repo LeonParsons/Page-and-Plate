@@ -162,7 +162,7 @@ enum StoreCheck {
         let storefront = await Storefront.current?.countryCode
         let canPay = AppStore.canMakePayments
         do {
-            let plans = try await Product.products(for: Unlimited.all).map { "\(shortName($0.id)): \($0.displayPrice)" }
+            let plans = try await Product.products(for: Unlimited.all).map { "\($0.id): \($0.displayPrice)" }
             return summary(storefront: storefront, canMakePayments: canPay, plans: plans)
         } catch {
             return summary(storefront: storefront, canMakePayments: canPay, plans: [], failure: error.localizedDescription)
@@ -184,11 +184,6 @@ enum StoreCheck {
             lines.append(contentsOf: plans.sorted())
         }
         return lines.joined(separator: "\n")
-    }
-
-    /// "monthly" from "com.leonparsons.RecipeBasket.unlimited.monthly".
-    static func shortName(_ productID: String) -> String {
-        productID.split(separator: ".").last.map(String.init) ?? productID
     }
 }
 #endif

@@ -67,10 +67,10 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const BUNDLE_ID = "com.leonparsons.RecipeBasket";
 /** What Apple hashes into an attestation's `rpIdHash`: the team id and the bundle id. */
 const APP_ID = "F6VXT39M7H.com.leonparsons.RecipeBasket";
-/** The two Unlimited plans, mirrored from `Subscription/Products.swift`. */
+/** The two plans, mirrored from `Subscription/Products.swift`, which says why the ids look as they do. */
 const PRODUCT_IDS = [
-  "com.leonparsons.RecipeBasket.unlimited.monthly",
-  "com.leonparsons.RecipeBasket.unlimited.yearly",
+  "Pageandplatemonthly",
+  "Pageandplateyearly",
 ] as const;
 const EFFORTS = new Set(["low", "medium", "high", "xhigh", "max"]);
 
