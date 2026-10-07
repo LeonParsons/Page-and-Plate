@@ -1,6 +1,6 @@
 # CLAUDE.md — Page & Plate
 
-(The Xcode target, bundle id and StoreKit product ids are still `RecipeBasket` / `com.leonparsons.RecipeBasket`. Internal only; a user never sees them.)
+(The Xcode target and bundle id are still `RecipeBasket` / `com.leonparsons.RecipeBasket`; the StoreKit product ids are `Pageandplatemonthly` / `Pageandplateyearly`, for the reason in `docs/APPSTORE.md` → In-app purchases. Internal only; a user never sees them.)
 
 Native iPhone and iPad app: photograph a recipe page → extract ingredients and yield → user confirms → scale to the portions wanted → add that recipe's ingredients to Apple Reminders (or share as text). A week planner puts recipes on days, each meal with its own portions, and exports the whole week at once.
 
@@ -15,7 +15,7 @@ Each recipe can be exported on its own, or a planned week in one go. The week ex
 - **Persistence:** SwiftData, mirrored to the user's own private iCloud database (container `iCloud.com.leonparsons.RecipeBasket`). `AppModelContainer` migrates locally first, then opens mirrored. Schema versions live in `SchemaV1.swift` (frozen) and `AppSchemaVersions.swift`.
 - **Capture:** VisionKit `VNDocumentCameraViewController` (wrapped for SwiftUI; auto-crops and flattens pages) plus `PhotosPicker` for existing photos. Resize long edge to ≤1568 px, JPEG quality ≈0.8 before upload.
 - **Export:** EventKit (`requestFullAccessToReminders`) for Reminders; SwiftUI `ShareLink` for plain text.
-- **Subscription:** StoreKit 2 (`Transaction.currentEntitlements` / `Transaction.updates`, `SubscriptionStoreView`); product ids in `Subscription/Products.swift`, mirrored in `ios/RecipeBasket.storekit` for the simulator (the scheme's StoreKit configuration). The free tier is `ScanAllowance` in RecipeCore plus a Keychain ledger.
+- **Subscription:** StoreKit 2 (`Transaction.currentEntitlements` / `Transaction.updates`, `SubscriptionStoreView`); product ids in `Subscription/Products.swift`, mirrored in `ios/RecipeBasket.storekit` for the simulator (the scheme's StoreKit configuration) and in the Worker's `PRODUCT_IDS`; all three must match App Store Connect's Product ID field exactly. The free tier is `ScanAllowance` in RecipeCore plus a Keychain ledger.
 - **Core logic:** local Swift package `RecipeCore` (models, scaling, rounding, fraction formatting, line formatting). Tests use Swift Testing.
 - **API proxy:** Cloudflare Worker (TypeScript) + Hono + Zod 4. **Gemini 3.8 Flash reads the page and Claude Sonnet 5 is the backup** (2026-10-02): `EXTRACT_MODEL` / `EXTRACT_FALLBACK_MODEL` / `EXTRACT_EFFORT` in `wrangler.jsonc`, routed by name (`gemini-*` → Google over plain `fetch`, anything else → `@anthropic-ai/sdk`). The fallback takes the one retry after an invalid reply, and the whole scan when Google fails or refuses. Each provider's key (`GEMINI_API_KEY`, `ANTHROPIC_API_KEY`) is a Wrangler secret; a configured model without its key refuses every scan. The Anthropic system prompt carries the only prompt-cache breakpoint, so keep it byte-identical across requests. Tests with Vitest.
 - **Dependencies:** no third-party Swift packages without asking first.
