@@ -148,10 +148,10 @@ one Apple Account, a household needs two, hosting is behind the subscription, an
 recording**, below) is what shows them the member's side.
 
 ```
-Answers to the Guideline 2.1 questions, numbered as asked; also our reply. We are resubmitting 1.0 with its two subscriptions, which the first submission lacked.
+Answers to the Guideline 2.1 questions, numbered as asked; also our reply. We are resubmitting 1.0 with the two subscriptions the first submission lacked.
 
 1. SCREEN RECORDINGS
-Two recordings of the submitted build from TestFlight, attached to our reply and in App Review Information:
+Two recordings of the submitted build (TestFlight), attached here and in App Review Information:
 - Recording 1, iPhone 17 Pro, iOS 27.0.1, from launch: scanning, review, scaling, the week, shopping to Reminders, typing a recipe in, subscribing, sharing a household.
 - Recording 2, a second iPhone and Apple Account: accepting the invite, editing the shared week, leaving.
 Accounts: none. No registration, no login, nothing to delete.
@@ -168,8 +168,8 @@ Sample pages, recipes we wrote: https://leonparsons.github.io/Page-and-Plate/rev
 - A recipe: "I want" scales it; More (...) > Add to plan.
 - Plan tab: the week; Shop sends it to Reminders, or Share as text.
 - Settings: the gear at the top of either tab, or in its (...) menu.
-Subscription: 7 free scans per device, then GBP 1.99 a month or GBP 19.99 a year (Settings > Subscribe...). Typing recipes never needs it. Subscribers have a fair-use ceiling of 25 scans in any rolling 7 days, against automated abuse. It is far above real cooking and not shown to users as a number, so nothing calls the subscription unlimited.
-Household: needs iCloud. Hosting needs the subscription; joining is free. With one account: subscribe, fill in Settings > Your household > Your name, tap "Share with your household..." for Apple's invite sheet. Accepting needs a second account and device: see recording 2, or ask us for a live demonstration.
+Subscription: 7 free scans per device, then GBP 1.99 a month or GBP 19.99 a year (Settings > Subscribe...). TestFlight shows our paywall in USD; Apple's sheet shows GBP. Typing recipes never needs it. Subscribers have a fair-use ceiling of 25 scans in any rolling 7 days, against automated abuse. It is far above real cooking and not shown to users as a number, so nothing calls the subscription unlimited.
+Household: needs iCloud. Hosting needs the subscription; joining is free. With one account: subscribe, fill in Settings > Your household > Your name, tap "Share with your household..." for Apple's invite sheet. Accepting needs a second account and device: see recording 2, or ask us for a live demo.
 
 4. EXTERNAL SERVICES
 - Google Gemini API (Gemini 3.8 Flash) reads the ingredients from the page photo; Anthropic Claude API (Claude Sonnet 5) is the fallback if Gemini fails. Only our proxy calls them, only when the user taps Extract. We never store or log images, and neither provider trains on them.
@@ -181,7 +181,7 @@ No sign-in, analytics, advertising or tracking services.
 United Kingdom only; please test purchases with a UK sandbox account. Every feature works the same throughout; English only.
 
 6. REGULATION AND THIRD-PARTY MATERIAL
-Not a regulated industry. The app contains and downloads no third-party content: no recipes, cookbook text or images. Users photograph books they own, for their own use. It keeps the ingredients, yield, title and page number, never the method. Page photos stay on the device and in the user's own iCloud; household members see only the 240-pixel thumbnail, too small to read. Every recipe in our screenshots and sample pages was written by us, and the recordings scan one of the sample pages.
+Not a regulated industry. The app contains and downloads no third-party content: no recipes, cookbook text or images. Users photograph books they own, for their own use. It keeps the ingredients, yield, title and page number, never the method. Page photos stay on the device and in the user's own iCloud; household members see only the 240-pixel thumbnail, too small to read. Every recipe in our screenshots and sample pages was written by us; the recordings scan one.
 ```
 
 **The fair-use paragraph stays** (Leon, 2026-09-29). Rule 9b keeps the 25-in-7-days ceiling from the user — in
@@ -214,7 +214,9 @@ not be the app App Review has.
 
 ### Before recording
 
-- **The paywall works in TestFlight.** Settings → Subscribe… lists Monthly £1.99 and Yearly £19.99. "Subscription
+- **The paywall works in TestFlight.** Settings → Subscribe… lists both plans. **In dollars, which is fine:** TestFlight
+  hands the app US-dollar prices whatever the tester's region (reported by other developers in 2026), while Apple's
+  purchase sheet shows the real £1.99, as App Store Connect does. "Subscription
   Unavailable — the subscription is unavailable in the current storefront" means the App Store returned no
   products. Check, in order: the Paid Apps Agreement is Active (Business → Agreements; it is not while banking is
   processing); both plans have a review screenshot under Review Information, without which App Store Connect will
@@ -567,6 +569,9 @@ Items 9 and 10 need a phone in a real household. Then say only what was walked.
       for two products App Store Connect did not have. No waiting could have fixed it. The code switched to the
       real IDs on 2026-10-07, and the submitted build, which has the old ones compiled in, is replaced by a new
       one.
+    - **Build 1.0 (4) then showed the plans in dollars.** That is TestFlight, not configuration: Leon's Media &
+      Purchases account is UK, Apple's purchase sheet showed £1.99, and so does the United Kingdom row in App Store
+      Connect. The answer now says so, so the dollars in the recording don't read as a pricing error.
 
     Leon's phone also had no free scans left in TestFlight, from development. **Start over as a new device
     (debug)** in Settings is the fix.
