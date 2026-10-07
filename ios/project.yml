@@ -48,6 +48,10 @@ targets:
       path: RecipeBasket/Info.plist
       properties:
         CFBundleDisplayName: Page & Plate
+        # XcodeGen writes the literals "1.0" and "1" unless told otherwise, which is why every archive said build 1
+        # and the Organizer had to bump it at upload. These make the settings above the single source.
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         RBAPIBaseURL: $(RB_API_BASE_URL)
         RBAppKey: $(RB_APP_KEY)
         NSCameraUsageDescription: Page & Plate uses the camera to photograph cookbook pages.
