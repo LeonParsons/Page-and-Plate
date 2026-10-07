@@ -579,8 +579,11 @@ Items 9 and 10 need a phone in a real household. Then say only what was walked.
     Still to do, in order:
     1. ~~The agreement shows Active.~~ Done 2026-10-04.
     2. ~~Both plans complete, and in a draft submission.~~ Done 2026-10-04.
-    3. A new build with the real IDs is uploaded and chosen for 1.0, and the Worker deployed with them.
-    4. TestFlight's paywall lists £1.99 and £19.99.
-    5. Record.
+    3. ~~A new build with the real IDs uploaded, and the Worker deployed with them.~~ Done 2026-10-07: 1.0 (4),
+       Worker version 12ead503. It is chosen for 1.0 in step 6.
+    4. ~~TestFlight's paywall lists both plans.~~ Done 2026-10-07: in dollars, with £1.99 on Apple's sheet.
+       Also done: Leon's iPhone on iOS 27.0.1, Sara added as an internal tester, the CloudKit production schema
+       checked.
+    5. Record, planned for the weekend of 10–11 October.
     6. Send it in the order under **App Review screen recording → Sending it**: reply first, then move 1.0, with the new
        build, into the plans' draft and submit.
