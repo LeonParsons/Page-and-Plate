@@ -178,7 +178,7 @@ Household: needs iCloud. Hosting needs the subscription; joining is free. With o
 No sign-in, analytics, advertising or tracking services.
 
 5. REGIONS
-United Kingdom only, so the plans load only in a UK storefront: please buy with a UK sandbox account. Every feature works the same throughout; English only.
+United Kingdom only; please test purchases with a UK sandbox account. Every feature works the same throughout; English only.
 
 6. REGULATION AND THIRD-PARTY MATERIAL
 Not a regulated industry. The app contains and downloads no third-party content: no recipes, cookbook text or images. Users photograph books they own, for their own use. It keeps the ingredients, yield, title and page number, never the method. Page photos stay on the device and in the user's own iCloud; household members see only the 240-pixel thumbnail, too small to read. Every recipe in our screenshots and sample pages was written by us, and the recordings scan one of the sample pages.
@@ -558,7 +558,7 @@ Items 9 and 10 need a phone in a real household. Then say only what was walked.
 
     - **With both of those fixed, the paywall still read "Subscription Unavailable".** Check the App Store (debug)
       showed "Storefront: USA" and no plans. The sandbox tester signed in on the phone had the United States as its
-      region, which is the default for a new tester, and the app and its plans are sold only in the UK. The fix is
+      region, which is the default for a new tester, and the app is sold only in the UK. The fix is
       to change the tester's Country or Region to the United Kingdom (Users and Access → Sandbox), then sign out
       and back in on the phone. A reviewer on a US sandbox account would hit the same wall, so the answer's
       Regions item now asks App Review to buy with a UK sandbox account.
