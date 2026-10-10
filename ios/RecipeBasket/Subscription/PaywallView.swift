@@ -18,8 +18,8 @@ struct PaywallView: View {
 
     var body: some View {
         SubscriptionStoreView(productIDs: Unlimited.all) {
-            VStack(spacing: 8) {
-                BrandMark(size: 48)
+            VStack(spacing: 12) {
+                BrandMark(size: 64)
                     .foregroundStyle(Brand.tomato)
                 Text(Brand.name)
                     .font(Brand.display(28, relativeTo: .title2))
@@ -38,11 +38,9 @@ struct PaywallView: View {
             // an ellipsis ("share one wee…") rather than wrapped. Asking for the text's full height makes it wrap.
             .fixedSize(horizontal: false, vertical: true)
             .padding(.horizontal, 24)
-            .padding(.top, 16)
+            .padding(.top, 24)
         }
-        // Compact tiles, so both plans sit above the Subscribe button without scrolling. The prominent tiles
-        // pushed Yearly off the bottom once the header wrapped in full.
-        .modifier(CompactPlanPicker())
+        .subscriptionStoreControlStyle(.prominentPicker)
         .storeButton(.visible, for: .restorePurchases)
         .storeButton(.visible, for: .cancellation)
         .subscriptionStorePolicyDestination(url: Legal.terms, for: .termsOfService)
@@ -56,13 +54,3 @@ struct PaywallView: View {
     }
 }
 
-/// `.compactPicker` arrived in iOS 18; iOS 17 gets the plain picker, which is just as short.
-private struct CompactPlanPicker: ViewModifier {
-    func body(content: Content) -> some View {
-        if #available(iOS 18.0, *) {
-            content.subscriptionStoreControlStyle(.compactPicker)
-        } else {
-            content.subscriptionStoreControlStyle(.picker)
-        }
-    }
-}
