@@ -26,7 +26,7 @@ struct PaywallView: View {
                 Text("Cook together, from your own books.")
                     .font(.headline)
                     .multilineTextAlignment(.center)
-                Text("Scan whatever you cook, and share the meal plan with your household.")
+                Text("Scan recipes you cook, and share the meal plan with your household.")
                     .font(.subheadline)
                     .multilineTextAlignment(.center)
                 Text("A subscription covers everything you need to cook breakfast, lunch and dinner each week.")

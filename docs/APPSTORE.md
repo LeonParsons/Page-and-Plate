@@ -583,8 +583,9 @@ Items 9 and 10 need a phone in a real household. Then say only what was walked.
        Worker version 12ead503. Superseded on 2026-10-10 by **1.0 (7)**: the paywall's header wraps instead of
        trailing off, with Leon's shorter wording; then by **1.0 (8)**, the same day: "You can cancel any time"
        moved below the plans; then by **1.0 (9)**, with the header's top padding and line gaps cut by a quarter so
-       the Yearly tile fits; then by **1.0 (10)**, with the cancel line removed altogether so nothing scrolls.
-       Build 10 is the one to record and to choose for 1.0 in step 6. (Build 5 tried compact plan tiles and was rejected as a redesign; 6 was a
+       the Yearly tile fits; then by **1.0 (10)**, with the cancel line removed altogether so nothing scrolls;
+       then by **1.0 (11)**: "Scan recipes you cook, and share the meal plan with your household." Build 11 is
+       the one to record and to choose for 1.0 in step 6. (Build 5 tried compact plan tiles and was rejected as a redesign; 6 was a
        number already taken.)
     4. ~~TestFlight's paywall lists both plans.~~ Done 2026-10-07: in dollars, with £1.99 on Apple's sheet.
        Also done: Leon's iPhone on iOS 27.0.1, Sara added as an internal tester, the CloudKit production schema
