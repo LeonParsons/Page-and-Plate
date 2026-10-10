@@ -41,15 +41,6 @@ struct PaywallView: View {
             .padding(.top, 18)
         }
         .subscriptionStoreControlStyle(.prominentPicker)
-        // Below the plans rather than in the header, so the header is a line shorter and the Yearly tile fits
-        // without scrolling (Leon, 2026-10-10).
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            Text("You can cancel any time.")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity)
-                .padding(.bottom, 4)
-        }
         .storeButton(.visible, for: .restorePurchases)
         .storeButton(.visible, for: .cancellation)
         .subscriptionStorePolicyDestination(url: Legal.terms, for: .termsOfService)
