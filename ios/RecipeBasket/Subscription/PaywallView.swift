@@ -18,7 +18,7 @@ struct PaywallView: View {
 
     var body: some View {
         SubscriptionStoreView(productIDs: Unlimited.all) {
-            VStack(spacing: 12) {
+            VStack(spacing: 9) {
                 BrandMark(size: 64)
                     .foregroundStyle(Brand.tomato)
                 Text(Brand.name)
@@ -38,7 +38,7 @@ struct PaywallView: View {
             // an ellipsis ("share one wee…") rather than wrapped. Asking for the text's full height makes it wrap.
             .fixedSize(horizontal: false, vertical: true)
             .padding(.horizontal, 24)
-            .padding(.top, 24)
+            .padding(.top, 18)
         }
         .subscriptionStoreControlStyle(.prominentPicker)
         // Below the plans rather than in the header, so the header is a line shorter and the Yearly tile fits

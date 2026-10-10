@@ -20,7 +20,7 @@ settings:
     GENERATE_INFOPLIST_FILE: YES     # no Info.plist files; usage strings are INFOPLIST_KEY_* settings
     CODE_SIGN_STYLE: Automatic
     DEVELOPMENT_TEAM: $(RB_TEAM_ID)
-    CURRENT_PROJECT_VERSION: 8      # every upload needs a higher one than App Store Connect has (7, 2026-10-10)
+    CURRENT_PROJECT_VERSION: 9      # every upload needs a higher one than App Store Connect has (8, 2026-10-10)
     MARKETING_VERSION: "1.0"
 
 packages:
