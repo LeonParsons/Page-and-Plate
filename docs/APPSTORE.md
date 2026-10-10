@@ -580,7 +580,8 @@ Items 9 and 10 need a phone in a real household. Then say only what was walked.
     1. ~~The agreement shows Active.~~ Done 2026-10-04.
     2. ~~Both plans complete, and in a draft submission.~~ Done 2026-10-04.
     3. ~~A new build with the real IDs uploaded, and the Worker deployed with them.~~ Done 2026-10-07: 1.0 (4),
-       Worker version 12ead503. It is chosen for 1.0 in step 6.
+       Worker version 12ead503. Superseded on 2026-10-10 by **1.0 (5)**, whose paywall wraps its header and shows
+       both plans without scrolling. Build 5 is the one to record and to choose for 1.0 in step 6.
     4. ~~TestFlight's paywall lists both plans.~~ Done 2026-10-07: in dollars, with £1.99 on Apple's sheet.
        Also done: Leon's iPhone on iOS 27.0.1, Sara added as an internal tester, the CloudKit production schema
        checked.
