@@ -34,6 +34,9 @@ struct PaywallView: View {
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
             }
+            // The store view offers its marketing content a fixed height, so a long line was cut to one line and
+            // an ellipsis ("share one wee…") rather than wrapped. Asking for the text's full height makes it wrap.
+            .fixedSize(horizontal: false, vertical: true)
             .padding(.horizontal, 24)
             .padding(.top, 24)
         }
