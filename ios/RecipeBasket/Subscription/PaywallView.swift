@@ -18,15 +18,15 @@ struct PaywallView: View {
 
     var body: some View {
         SubscriptionStoreView(productIDs: Unlimited.all) {
-            VStack(spacing: 12) {
-                BrandMark(size: 64)
+            VStack(spacing: 8) {
+                BrandMark(size: 48)
                     .foregroundStyle(Brand.tomato)
                 Text(Brand.name)
                     .font(Brand.display(28, relativeTo: .title2))
                 Text("Cook together, from your own books.")
                     .font(.headline)
                     .multilineTextAlignment(.center)
-                Text("Scan whatever you cook, and share one week with your household — everyone's recipes, one plan, everyone editing it.")
+                Text("Scan whatever you cook, and share the meal plan with your household.")
                     .font(.subheadline)
                     .multilineTextAlignment(.center)
                 Text("A subscription covers everything you need to cook breakfast, lunch and dinner each week, and you can cancel any time.")
@@ -38,9 +38,11 @@ struct PaywallView: View {
             // an ellipsis ("share one wee…") rather than wrapped. Asking for the text's full height makes it wrap.
             .fixedSize(horizontal: false, vertical: true)
             .padding(.horizontal, 24)
-            .padding(.top, 24)
+            .padding(.top, 16)
         }
-        .subscriptionStoreControlStyle(.prominentPicker)
+        // Compact tiles, so both plans sit above the Subscribe button without scrolling. The prominent tiles
+        // pushed Yearly off the bottom once the header wrapped in full.
+        .modifier(CompactPlanPicker())
         .storeButton(.visible, for: .restorePurchases)
         .storeButton(.visible, for: .cancellation)
         .subscriptionStorePolicyDestination(url: Legal.terms, for: .termsOfService)
@@ -50,6 +52,17 @@ struct PaywallView: View {
                 await store.refresh()
                 dismiss()
             }
+        }
+    }
+}
+
+/// `.compactPicker` arrived in iOS 18; iOS 17 gets the plain picker, which is just as short.
+private struct CompactPlanPicker: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 18.0, *) {
+            content.subscriptionStoreControlStyle(.compactPicker)
+        } else {
+            content.subscriptionStoreControlStyle(.picker)
         }
     }
 }
